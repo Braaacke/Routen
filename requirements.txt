@@ -4,4 +4,4 @@ folium
 osmnx
 networkx
 openpyxl
-git+https://github.com/randyzwitch/streamlit-leaflet.git
+leaflet
