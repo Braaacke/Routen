@@ -141,8 +141,8 @@ with st.sidebar:
                 st.success(f"Team {new_team} wurde erstellt und die ausgewählten Stop(s) wurden zugewiesen.")
                 st.session_state.show_new_team_form = False
                 st.rerun()
+m = folium.Map(location=[addresses_df["lat"].mean(), addresses_df["lon"].mean()], zoom_start=12)
 
-m = leafmap.Map(center=[addresses_df["lat"].mean(), addresses_df["lon"].mean()], zoom=12)
 graph = get_graph()
 
 color_list = ["#FF00FF", "#00FFFF", "#00FF00", "#FF0000", "#FFA500", "#FFFF00", "#00CED1", "#DA70D6", "#FF69B4", "#8A2BE2"]
