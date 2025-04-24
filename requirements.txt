@@ -5,3 +5,4 @@ leafmap
 networkx
 osmnx
 openpyxl
+scikit-learn
