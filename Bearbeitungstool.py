@@ -73,7 +73,11 @@ with st.sidebar:
         except Exception as e:
             st.error(f"Fehler beim Kopieren von addresses_df in den Session State: {e}")
 
-    selected_indices = st.multiselect("Stops auswählen (nach Adresse)", options=addresses_df["Wahlraum-A"].tolist())
+    if isinstance(addresses_df, pd.DataFrame) and "Wahlraum-A" in addresses_df.columns:
+        selected_indices = st.multiselect("Stops auswählen (nach Adresse)", options=addresses_df["Wahlraum-A"].dropna().tolist())
+    else:
+        selected_indices = []
+        st.warning("Daten konnten nicht geladen werden oder 'Wahlraum-A' fehlt.")
     existing_teams = sorted([int(t) for t in st.session_state.new_assignments["team"].dropna().unique()])
     selected_team = st.selectbox("Ziel-Team auswählen", options=[None] + existing_teams)
 
