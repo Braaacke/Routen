@@ -261,25 +261,36 @@ if st.session_state.show_map:
         subset = dfm[dfm['team'] == team_id]
         if 'tsp_order' in subset.columns:
             subset = subset.sort_values('tsp_order')
-        # Draw each road segment along graph geometry
+        # prepare coordinates list for fallback
+        coords = list(zip(subset['lat'], subset['lon']))
         node_ids = subset['node_id'].dropna().tolist()
+        drawn = False
+        # draw route segments along graph geometry
         for u, v in zip(node_ids[:-1], node_ids[1:]):
-            if u is None or v is None:
-                continue
             try:
                 path_nodes = nx.shortest_path(graph, u, v, weight='length')
                 segment_coords = [(graph.nodes[n]['y'], graph.nodes[n]['x']) for n in path_nodes]
-                folium.PolyLine(
-                    segment_coords,
-                    color=colors[i % len(colors)],
-                    weight=6,
-                    opacity=0.8,
-                    tooltip=f'Route {team_id}'
-                ).add_to(m)
+                if segment_coords:
+                    folium.PolyLine(
+                        segment_coords,
+                        color=colors[i % len(colors)],
+                        weight=6,
+                        opacity=0.8,
+                        tooltip=f'Route {team_id}'
+                    ).add_to(m)
+                    drawn = True
             except Exception:
                 continue
-    # Add markers for each stop
-    marker_cluster = MarkerCluster()
+        # fallback: draw direct line if no segments
+        if not drawn and len(coords) > 1:
+            folium.PolyLine(
+                coords,
+                color=colors[i % len(colors)],
+                weight=6,
+                opacity=0.8,
+                tooltip=f'Route {team_id}'
+            ).add_to(m)
+    marker_cluster = MarkerCluster()()
     for _, row in dfm.dropna(subset=['lat', 'lon']).iterrows():
         popup_html = (
             f"<div style='font-weight:bold;'>"
