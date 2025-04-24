@@ -198,3 +198,89 @@ def _generate_excel_bytes():
         service_min = int(rooms * 10)
         time_total = service_min + travel_min
         gmaps_link = "https://www.google.com/maps/dir/" + "/".join([f"{lat},{lon}" for lat, lon in coords])
+        overview.append({
+            "Kontrollbezirk": team,
+            "Anzahl Wahllokale": len(stops),
+            "Anzahl Stimmbezirke": int(rooms),
+            "Wegstrecke (km)": round(travel_km, 1),
+            "Fahrtzeit (min)": int(travel_min),
+            "Kontrollzeit (min)": service_min,
+            "Gesamtzeit": str(timedelta(minutes=int(time_total))),
+            "Google-Link": gmaps_link
+        })
+        rows = []
+        for idx, row in stops.iterrows():
+            coord_str = f"{row['lat']},{row['lon']}"
+            rows.append({
+                "Reihenfolge": idx,
+                "Adresse": row["Wahlraum-A"],
+                "Stimmbezirke": row.get('rooms', ''),
+                "Anzahl Stimmbezirke": row.get('num_rooms', ''),
+                "Google-Link": f"https://www.google.com/maps/search/?api=1&query={quote_plus(coord_str)}"
+            })
+        team_sheets[f"Team_{team}"] = pd.DataFrame(rows)
+
+    buf = io.BytesIO()
+    with pd.ExcelWriter(buf, engine="openpyxl") as writer:
+        overview_df = pd.DataFrame(overview)
+        overview_df.to_excel(writer, sheet_name="Übersicht", index=False)
+        from openpyxl.utils import get_column_letter
+        ws_over = writer.sheets["Übersicht"]
+        for col_idx, col in enumerate(overview_df.columns, 1):
+            max_len = max(overview_df[col].astype(str).map(len).max(), len(col))
+            ws_over.column_dimensions[get_column_letter(col_idx)].width = max_len + 2
+        for sheet_name, df in team_sheets.items():
+            df.to_excel(writer, sheet_name=sheet_name, index=False)
+            ws = writer.sheets[sheet_name]
+            for col_idx, col in enumerate(df.columns, 1):
+                max_len = max(df[col].astype(str).map(len).max(), len(col))
+                ws.column_dimensions[get_column_letter(col_idx)].width = max_len + 2
+    buf.seek(0)
+    return buf.getvalue()
+
+# Export & Download Excel in einem Button
+data = _generate_excel_bytes()
+st.download_button(
+    label="📥 Export & Download Excel",
+    data=data,
+    file_name="routen_zuweisung_aktualisiert.xlsx",
+    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+)
+
+# Karte mit farbigen Routen und dynamischen Popups
+addresses_df = st.session_state.new_assignments
+m = leafmap.Map(center=[addresses_df['lat'].mean(), addresses_df['lon'].mean()], zoom=12)
+color_list = ["#FF0000", "#00FF00", "#0000FF", "#FFA500", "#800080", "#008080", "#FFD700", "#FF1493", "#40E0D0", "#A52A2A"]
+for i, team_id in enumerate(sorted(addresses_df.team.dropna().unique())):
+    team_rows = addresses_df[addresses_df.team == team_id]
+    if 'tsp_order' in team_rows.columns:
+        team_rows = team_rows.sort_values('tsp_order')
+    coords = team_rows[['lat', 'lon']].values.tolist()
+    if len(coords) > 1:
+        nodes = [ox.distance.nearest_nodes(get_graph(), X=lon, Y=lat) for lat, lon in coords]
+        path = []
+        for u, v in zip(nodes[:-1], nodes[1:]):
+            segment = nx.shortest_path(get_graph(), u, v, weight='length')
+            path.extend([(get_graph().nodes[n]['y'], get_graph().nodes[n]['x']) for n in segment])
+        folium.PolyLine(
+            path,
+            color=color_list[i % len(color_list)],
+            weight=6,
+            opacity=0.8,
+            tooltip=f"Route {int(team_id)}"
+        ).add_to(m)
+marker_cluster = MarkerCluster()
+for _, row in addresses_df.dropna(subset=['lat', 'lon']).iterrows():
+    popup_html = f"""
+    <div style='font-weight:bold;'>
+        <b>{row.get('Wahlraum-B','')}</b><br>
+        <b>{row.get('Wahlraum-A','')}</b><br>
+        <b>Anzahl Räume:</b> {row.get('num_rooms','')}
+    </div>
+    """
+    folium.Marker(
+        [row['lat'], row['lon']], popup=folium.Popup(popup_html, max_width=0)
+    ).add_to(marker_cluster)
+marker_cluster.add_to(m)
+
+m.to_streamlit(height=700)
