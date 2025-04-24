@@ -178,5 +178,3 @@ marker_cluster.add_to(m)
 
 # Karte anzeigen
 folium_static(m)
-
-m.to_streamlit(height=700)
