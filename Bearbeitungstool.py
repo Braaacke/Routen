@@ -207,6 +207,12 @@ with st.sidebar:
         st.session_state.new_assignments = st.session_state.base_addresses.copy()
 
     addresses_df = st.session_state.new_assignments.reset_index(drop=True)
+    # Precompute node IDs to avoid repeated nearest_nodes calls
+    if 'node_id' not in addresses_df.columns:
+        g = get_graph()
+        addresses_df['node_id'] = addresses_df.apply(lambda r: ox.distance.nearest_nodes(g, X=r['lon'], Y=r['lat']), axis=1)
+        st.session_state.new_assignments = addresses_df.copy()
+
 
     # Auswahl & Buttons
     selected = st.multiselect('Stops auswählen',options=addresses_df['Wahlraum-A'])
