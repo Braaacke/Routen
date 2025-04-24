@@ -126,99 +126,91 @@ with st.sidebar:
         st.session_state.base_addresses = base_addresses.copy()
         st.session_state.new_assignments = base_addresses.copy()
 
-    addresses_df = st.session_state.base_addresses.copy()
-
-    # Optionaler Import zur Überschreibung
-    uploaded_file = st.file_uploader("Importiere alternative Zuweisung (Excel-Datei)", type=["xlsx"])
-    if uploaded_file:
-        imported_team_df = pd.read_excel(uploaded_file, sheet_name=None)
-        imported = []
-        for sheet, df in imported_team_df.items():
-            if sheet != "Übersicht" and "Adresse" in df.columns:
-                team = int(sheet.split("_")[1])
-                for addr in df["Adresse"]:
-                    imported.append((addr, team))
-        assignments_df = pd.DataFrame(imported, columns=["Wahlraum-A", "team"])
-        addresses_df = addresses_df.drop(columns=["team"], errors='ignore')
-        addresses_df = addresses_df.merge(assignments_df, on="Wahlraum-A", how="left")
-        st.session_state.new_assignments = addresses_df.copy()
-        st.success("Import erfolgreich – aktuelle Zuweisung wurde überschrieben.")
-        with st.expander("📋 Vorschau der importierten Zuweisung"):
-            st.dataframe(assignments_df)
-
     addresses_df = st.session_state.new_assignments.reset_index(drop=True)
 
-    # Stopps auswählen und Team
+    # Auswahl und Zuweisung
     selected_indices = st.multiselect("Stops auswählen (nach Adresse)", options=addresses_df['Wahlraum-A'].tolist())
     existing_teams = sorted([int(t) for t in addresses_df.team.dropna().unique()])
-    selected_team = st.selectbox("Ziel-Team auswählen", options=[None]+existing_teams)
+    selected_team = st.selectbox("Ziel-Team auswählen", options=[None] + existing_teams)
 
-    # Algorithmus und Target
+    # Algorithmus & Ausführung
     algo = st.selectbox("Optimierungs-Algorithmus wählen", ("Greedy","2-Opt","Simulated Annealing","Christofides"))
     target = st.radio("Zu optimierende Route", ("Alle Teams","Ausgewähltes Team"))
     if st.button("Routen optimieren"):
         optimize_routes(algo, target, selected_team)
 
-    # Übernehmen oder neues Team
+    # Zuweisung übernehmen
     if st.button("Zuweisung übernehmen") and selected_team is not None and selected_indices:
         graph = get_graph()
         for addr in selected_indices:
-            idx = addresses_df[addresses_df['Wahlraum-A']==addr].index[0]
-            st.session_state.new_assignments.at[idx,'team'] = selected_team
+            idx = addresses_df[addresses_df['Wahlraum-A'] == addr].index[0]
+            st.session_state.new_assignments.at[idx, 'team'] = selected_team
         for team_id in set([selected_team]):
-            rows = st.session_state.new_assignments[st.session_state.new_assignments.team==team_id]
+            rows = st.session_state.new_assignments[st.session_state.new_assignments.team == team_id]
             opt = tsp_solve_route(graph, rows)
-            st.session_state.new_assignments.loc[opt.index,'tsp_order'] = range(len(opt))
+            st.session_state.new_assignments.loc[opt.index, 'tsp_order'] = range(len(opt))
         st.rerun()
     if st.button("Neues Team erstellen"):
         st.session_state.show_new_team_form = True
     if st.session_state.get("show_new_team_form"):
-        max_team = max(existing_teams)+1 if existing_teams else 1
+        max_team = max(existing_teams) + 1 if existing_teams else 1
         with st.form("neues_team"):  
-            stops = st.multiselect("Stops für Team {max_team}", options=addresses_df['Wahlraum-A'].tolist())
+            stops = st.multiselect(f"Stops für Team {max_team}", options=addresses_df['Wahlraum-A'].tolist())
             if st.form_submit_button("Team erstellen") and stops:
                 for addr in stops:
-                    idx = addresses_df[addresses_df['Wahlraum-A']==addr].index[0]
-                    st.session_state.new_assignments.at[idx,'team']=max_team
-                st.session_state.show_new_team_form=False
+                    idx = addresses_df[addresses_df['Wahlraum-A'] == addr].index[0]
+                    st.session_state.new_assignments.at[idx, 'team'] = max_team
+                st.session_state.show_new_team_form = False
                 st.rerun()
 
-# Karte
+# Karte mit farbigen Routen
 addresses_df = st.session_state.new_assignments
-m = leafmap.Map(center=[addresses_df['lat'].mean(),addresses_df['lon'].mean()],zoom=12)
-for team_id in sorted(addresses_df.team.dropna().unique()):
-    team_rows=addresses_df[addresses_df.team==team_id]
+m = leafmap.Map(center=[addresses_df['lat'].mean(), addresses_df['lon'].mean()], zoom=12)
+# Farben für Routen
+color_list = ["#FF0000", "#00FF00", "#0000FF", "#FFA500", "#800080", "#008080", "#FFD700", "#FF1493", "#40E0D0", "#A52A2A"]
+for i, team_id in enumerate(sorted(addresses_df.team.dropna().unique())):
+    team_rows = addresses_df[addresses_df.team == team_id]
     if 'tsp_order' in team_rows.columns:
-        team_rows=team_rows.sort_values('tsp_order')
-    coords=team_rows[['lat','lon']].values.tolist()
-    if len(coords)>1:
-        nodes=[ox.distance.nearest_nodes(get_graph(),X=lon,Y=lat) for lat,lon in coords]
-        path=[]
-        for u,v in zip(nodes[:-1],nodes[1:]):
-            path+=[(get_graph().nodes[n]['y'],get_graph().nodes[n]['x']) for n in nx.shortest_path(get_graph(),u,v,weight='length')]
-        folium.PolyLine(path,weight=6,opacity=0.8).add_to(m)
-marker_cluster=MarkerCluster()
-for _,row in addresses_df.dropna(subset=['lat','lon']).iterrows():
-    popup=f"<b>{row['Wahlraum-A']}</b><br>Anz Räume:{row.get('num_rooms','')}"
-    folium.Marker([row['lat'],row['lon']],popup=popup).add_to(marker_cluster)
+        team_rows = team_rows.sort_values('tsp_order')
+    coords = team_rows[['lat', 'lon']].values.tolist()
+    if len(coords) > 1:
+        # Knoten und Pfad
+        nodes = [ox.distance.nearest_nodes(get_graph(), X=lon, Y=lat) for lat, lon in coords]
+        path = []
+        for u, v in zip(nodes[:-1], nodes[1:]):
+            segment = nx.shortest_path(get_graph(), u, v, weight='length')
+            path.extend([(get_graph().nodes[n]['y'], get_graph().nodes[n]['x']) for n in segment])
+        # Polyline mit Farbe und Tooltip
+        folium.PolyLine(
+            path,
+            color=color_list[i % len(color_list)],
+            weight=6,
+            opacity=0.8,
+            tooltip=f"Route {int(team_id)}"
+        ).add_to(m)
+# Marker-Cluster
+marker_cluster = MarkerCluster()
+for _, row in addresses_df.dropna(subset=['lat', 'lon']).iterrows():
+    popup = f"<b>{row['Wahlraum-A']}</b><br>Anz Räume: {row.get('num_rooms', '')}"
+    folium.Marker([row['lat'], row['lon']], popup=popup).add_to(marker_cluster)
 marker_cluster.add_to(m)
+
 m.to_streamlit(height=700)
 
-# Export
+# Export-Funktion bleibt unverändert
 if st.button('Zuordnung exportieren'):
-    overview=[]
-    sheets={}
+    overview = []
+    sheets = {}
     for t in sorted(addresses_df.team.dropna().unique()):
-        s=addresses_df[addresses_df.team==t]
-        if 'tsp_order' in s.columns: s=s.sort_values('tsp_order')
-        coords=s[['lat','lon']].values.tolist()
-        rows=[]
-        for i,row in s.iterrows():
-            rows.append({'Reihenfolge':i,'Adresse':row['Wahlraum-A']})
-        sheets[f'Team_{t}']=pd.DataFrame(rows)
-    out=io.BytesIO()
-    writer=pd.ExcelWriter(out,engine='openpyxl')
-    pd.DataFrame([{'Team':t,'Stops':len(sheets[f'Team_{t}'])} for t in sheets]).to_excel(writer,'Übersicht',index=False)
-    for name,df in sheets.items(): df.to_excel(writer,name,index=False)
-    writer.save();out.seek(0)
-    st.download_button('📥 Excel',data=out,file_name='zuweisung.xlsx',mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+        s = addresses_df[addresses_df.team == t]
+        if 'tsp_order' in s.columns:
+            s = s.sort_values('tsp_order')
+        rows = [{'Reihenfolge': i, 'Adresse': r['Wahlraum-A']} for i, r in s.iterrows()]
+        sheets[f'Team_{t}'] = pd.DataFrame(rows)
+    out = io.BytesIO()
+    with pd.ExcelWriter(out, engine='openpyxl') as writer:
+        pd.DataFrame([{'Team': t, 'Stops': len(sheets[f'Team_{t}'])} for t in sheets]).to_excel(writer, sheet_name='Übersicht', index=False)
+        for name, df in sheets.items():
+            df.to_excel(writer, sheet_name=name, index=False)
+    out.seek(0)
+    st.download_button('📥 Excel-Datei herunterladen', data=out, file_name='zuweisung.xlsx', mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
