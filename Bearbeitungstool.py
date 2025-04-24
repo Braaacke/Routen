@@ -317,13 +317,15 @@ if st.session_state.show_map:
             except:
                 continue
             path.extend([(graph.nodes[n]['y'], graph.nodes[n]['x']) for n in segment])
-        folium.PolyLine(
-            path,
-            color=colors[i % len(colors)],
-            weight=6,
-            opacity=0.8,
-            tooltip=f'Route {team_id}'
-        ).add_to(m)
+        # Only draw route if path has points
+        if path:
+            folium.PolyLine(
+                path,
+                color=colors[i % len(colors)],
+                weight=6,
+                opacity=0.8,
+                tooltip=f'Route {team_id}'
+            ).add_to(m)
     marker_cluster = MarkerCluster()
     for _, row in dfm.dropna(subset=['lat', 'lon']).iterrows():
         popup_html = (
