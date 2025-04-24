@@ -223,13 +223,15 @@ m.to_streamlit(height=700)
 
 # Export-Funktion mit Sidebar-Meldung
 if st.button("Zuordnung exportieren"):
+    # Graph einmal laden
+    graph = get_graph()
     overview = []
     team_sheets = {}
     for team in sorted(st.session_state.new_assignments["team"].dropna().unique()):
         stops = st.session_state.new_assignments[st.session_state.new_assignments["team"] == team]
         if "tsp_order" in stops.columns:
             stops = stops.sort_values("tsp_order")
-        rooms = stops["num_rooms"].sum()
+        rooms = stops.get("num_rooms", pd.Series()).sum()
         travel_km = 0
         travel_min = 0
         coords = stops[["lat", "lon"]].values.tolist()
@@ -240,7 +242,7 @@ if st.button("Zuordnung exportieren"):
                     length = nx.shortest_path_length(graph, u, v, weight="length")
                     travel_km += length / 1000
                     travel_min += length / 1000 * 2
-            except:
+            except Exception:
                 pass
         service_min = int(rooms * 10)
         time_total = service_min + travel_min
@@ -248,7 +250,7 @@ if st.button("Zuordnung exportieren"):
         overview.append({
             "Kontrollbezirk": team,
             "Anzahl Wahllokale": len(stops),
-            "Anzahl Stimmbezirke": rooms,
+            "Anzahl Stimmbezirke": int(rooms),
             "Wegstrecke (km)": round(travel_km, 1),
             "Fahrtzeit (min)": int(travel_min),
             "Kontrollzeit (min)": service_min,
@@ -256,14 +258,14 @@ if st.button("Zuordnung exportieren"):
             "Google-Link": gmaps_link
         })
         rows = []
-        for i, row in stops.iterrows():
-            address_coords = f"{row['lat']},{row['lon']}"
+        for idx, row in stops.iterrows():
+            coord_str = f"{row['lat']},{row['lon']}"
             rows.append({
-                "Reihenfolge": i,
+                "Reihenfolge": idx,
                 "Adresse": row["Wahlraum-A"],
-                "Stimmbezirke": row["rooms"],
-                "Anzahl Stimmbezirke": row["num_rooms"],
-                "Google-Link": f"https://www.google.com/maps/search/?api=1&query={quote_plus(address_coords)}"
+                "Stimmbezirke": row.get('rooms', ''),
+                "Anzahl Stimmbezirke": row.get('num_rooms', ''),
+                "Google-Link": f"https://www.google.com/maps/search/?api=1&query={quote_plus(coord_str)}"
             })
         team_sheets[f"Team_{team}"] = pd.DataFrame(rows)
 
@@ -281,3 +283,5 @@ if st.button("Zuordnung exportieren"):
         file_name="routen_zuweisung_aktualisiert.xlsx",
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
+
+m.to_streamlit(height=700)(height=700)
