@@ -215,14 +215,14 @@ if st.button("Zuordnung exportieren"):
         time_total = service_min + travel_min
         gmaps_link = "https://www.google.com/maps/dir/" + "/".join([f"{lat},{lon}" for lat, lon in coords])
         overview.append({
-            "Team": team,
-            "Stops": len(stops),
-            "Rooms": rooms,
-            "Travel_km": round(travel_km, 1),
-            "Travel_min": int(travel_min),
-            "Service_min": service_min,
-            "Time_h": str(timedelta(minutes=int(time_total))),
-            "GMaps": gmaps_link
+            "Kontrollbezirk": team,
+            "Anzahl Wahllokale": len(stops),
+            "Anzahl Stimmbezirke": rooms,
+            "Wegstrecke (km)": round(travel_km, 1),
+            "Fahrtzeit (min)": int(travel_min),
+            "Kontrollzeit (min)": service_min,
+            "Gesamtzeit": str(timedelta(minutes=int(time_total))),
+            "Google-Link": gmaps_link
         })
         rows = []
         for i, row in stops.iterrows():
@@ -230,8 +230,8 @@ if st.button("Zuordnung exportieren"):
             rows.append({
                 "Reihenfolge": i,
                 "Adresse": row["Wahlraum-A"],
-                "WahlraumIDs": row["rooms"],
-                "Anzahl_Wahlräume": row["num_rooms"],
+                "Stimmbezirke": row["rooms"],
+                "Anzahl Stimmbezirke": row["num_rooms"],
                 "GMaps": f"https://www.google.com/maps/search/?api=1&query={quote_plus(address_coords)}"
             })
         team_sheets[f"Team_{team}"] = pd.DataFrame(rows)
