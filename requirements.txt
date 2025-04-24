@@ -5,4 +5,6 @@ leafmap
 networkx
 osmnx
 openpyxl
-scikit-learn
+fpdf2
+selenium
+chromedriver-autoinstaller
