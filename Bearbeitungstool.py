@@ -84,6 +84,7 @@ with st.sidebar:
 # Karte vorbereiten
 m = leafmap.Map(center=[addresses_df["lat"].mean(), addresses_df["lon"].mean()], zoom=12)
 graph = get_graph()
+st.write(f"Graph geladen mit {len(graph.nodes)} Knoten und {len(graph.edges)} Kanten.")
 
 # Routen aus Session State neu zeichnen
 color_list = ["#FF00FF", "#00FFFF", "#00FF00", "#FF0000", "#FFA500", "#FFFF00", "#00CED1", "#DA70D6", "#FF69B4", "#8A2BE2"]
