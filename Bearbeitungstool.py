@@ -2,16 +2,22 @@
 
 import streamlit as st
 import pandas as pd
-import leafmap.foliumap as leafmap
 import folium
 from folium.plugins import MarkerCluster
-import networkx as nx
+import os
+import io
+from fpdf import FPDF
+import zipfile
+from selenium import webdriver
+import chromedriver_autoinstaller
+from pathlib import Path
 import osmnx as ox
-import pickle
+import networkx as nx
 from networkx.algorithms.approximation.traveling_salesman import greedy_tsp
+from streamlit_folium import folium_static
 from urllib.parse import quote_plus
 from datetime import timedelta
-import io
+import pickle
 
 # Funktionen für TSP
 @st.cache_resource
@@ -40,7 +46,20 @@ st.set_page_config(layout="wide")
 
 with st.sidebar:
     st.title("Interaktives Tool zur Routenbearbeitung")
-
+# Dropdown und Button zur Re-Optimierung
+    st.markdown("---")
+    st.subheader("🔁 Routen neu optimieren")
+    graph = get_graph()
+    team_options = sorted([int(t) for t in st.session_state.new_assignments["team"].dropna().unique()])
+    team_selection = st.selectbox("Team auswählen für Re-Optimierung", options=["Alle Teams"] + team_options)
+    if st.button("Route neu optimieren"):
+        if team_selection == "Alle Teams":
+            reoptimize_all_routes(graph)
+            st.success("Alle Routen wurden neu optimiert.")
+        else:
+            reoptimize_team_route(team_selection, graph)
+            st.success(f"Route von Team {team_selection} wurde neu optimiert.")
+        st.rerun()
     # Standardmäßiges Laden nur einmal beim Start (initialisieren, wenn nicht im Session State)
     if "base_addresses" not in st.session_state:
         base_addresses = pd.read_csv("cleaned_addresses.csv").reset_index(drop=True)
