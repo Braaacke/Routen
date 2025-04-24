@@ -194,9 +194,17 @@ with st.sidebar:
             pd.DataFrame(assigns, columns=['Wahlraum-A','team']), on='Wahlraum-A', how='left')
         st.session_state.new_assignments = st.session_state.base_addresses.copy()
     df = st.session_state.new_assignments.reset_index(drop=True)
-    if 'node_id' not in df:
+        if 'node_id' not in df:
         g = get_graph()
-        df['node_id'] = df.apply(lambda r: ox.distance.nearest_nodes(g, X=r['lon'], Y=r['lat']), axis=1)
+        # precompute node ids with exception handling
+        node_list = []
+        for _, row in df.iterrows():
+            try:
+                node = ox.distance.nearest_nodes(g, X=row['lon'], Y=row['lat'])
+            except Exception:
+                node = None
+            node_list.append(node)
+        df['node_id'] = node_list
         st.session_state.new_assignments = df.copy()
     stops = st.multiselect('Stops', options=df['Wahlraum-A'])
     teams = sorted(df['team'].dropna().unique())
