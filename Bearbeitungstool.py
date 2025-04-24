@@ -58,6 +58,9 @@ with st.sidebar:
         addresses_df = addresses_df.merge(assignments_df, on="Wahlraum-A", how="left")
         st.success("Import erfolgreich – aktuelle Zuweisung wurde geladen.")
 
+        with st.expander("📋 Vorschau der importierten Zuweisung"):
+            st.dataframe(assignments_df)
+
     # Fallback falls addresses_df nicht definiert ist
     try:
         addresses_df = addresses_df.reset_index(drop=True)
@@ -65,7 +68,10 @@ with st.sidebar:
         st.error(f"Fehler beim Zurücksetzen des Index von addresses_df: {e}")
 
     if "new_assignments" not in st.session_state:
-        st.session_state.new_assignments = addresses_df.copy()
+        try:
+            st.session_state.new_assignments = addresses_df.copy()
+        except Exception as e:
+            st.error(f"Fehler beim Kopieren von addresses_df in den Session State: {e}")
 
     selected_indices = st.multiselect("Stops auswählen (nach Adresse)", options=addresses_df["Wahlraum-A"].tolist())
     existing_teams = sorted([int(t) for t in st.session_state.new_assignments["team"].dropna().unique()])
