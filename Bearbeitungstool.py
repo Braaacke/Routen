@@ -1,3 +1,5 @@
+"""Interaktives Routenbearbeitungstool mit Zoom-abhängiger Markersichtbarkeit und TSP-Optimierung bei Zuweisung"""
+
 import streamlit as st
 import pandas as pd
 import leafmap.foliumap as leafmap
@@ -6,303 +8,257 @@ from folium.plugins import MarkerCluster
 import networkx as nx
 import osmnx as ox
 import pickle
-from networkx.algorithms.approximation import greedy_tsp, christofides
-import random
-import math
-from datetime import timedelta
+from networkx.algorithms.approximation.traveling_salesman import greedy_tsp
 from urllib.parse import quote_plus
+from datetime import timedelta
 import io
 
-# Load graph for routing
+# Funktionen für TSP
 @st.cache_resource
 def get_graph():
     with open("munster_graph.pickle", "rb") as f:
         return pickle.load(f)
 
-# Initialize session state
-if "action_log" not in st.session_state:
-    st.session_state.action_log = []
-if "show_map" not in st.session_state:
-    st.session_state.show_map = True
-if "show_new_team_form" not in st.session_state:
-    st.session_state.show_new_team_form = False
-
-# Load base data and precompute node IDs once
-if 'new_assignments' not in st.session_state:
-    base_addresses = pd.read_csv('cleaned_addresses.csv')
-    routes = pd.read_excel('routes_optimized.xlsx', sheet_name=None)
-    assigns = []
-    for sheet_name, df0 in routes.items():
-        if sheet_name == 'Übersicht' or 'Adresse' not in df0.columns:
-            continue
-        team_id = int(sheet_name.split('_')[1])
-        assigns.extend([(addr, team_id) for addr in df0['Adresse']])
-    df_full = base_addresses.merge(
-        pd.DataFrame(assigns, columns=['Wahlraum-A', 'team']),
-        on='Wahlraum-A', how='left'
-    )
-    graph = get_graph()
-    node_ids = []
-    for _, row in df_full.iterrows():
-        try:
-            nid = ox.distance.nearest_nodes(graph, X=row['lon'], Y=row['lat'])
-        except:
-            nid = None
-        node_ids.append(nid)
-    df_full['node_id'] = node_ids
-    st.session_state.new_assignments = df_full.copy()
-
-# TSP heuristics
-
-def two_opt(G, weight='weight'):
-    n = G.number_of_nodes()
-    tour = greedy_tsp(G, weight=weight)
-    improved = True
-    while improved:
-        improved = False
-        for i in range(1, n-2):
-            for j in range(i+1, n):
-                if j - i == 1:
-                    continue
-                a, b = tour[i-1], tour[i]
-                c, d = tour[j-1], tour[j % n]
-                if G[a][c][weight] + G[b][d][weight] < G[a][b][weight] + G[c][d][weight]:
-                    tour[i:j] = list(reversed(tour[i:j]))
-                    improved = True
-    return tour
-
-
-def simulated_annealing(G, weight='weight', initial_temp=10000, cooling_rate=0.995,
-                        stopping_temp=1e-3, max_iter=10000):
-    def tour_length(tour):
-        return sum(G[tour[i]][tour[(i+1)%len(tour)]][weight] for i in range(len(tour)))
-    n = G.number_of_nodes()
-    current = greedy_tsp(G, weight=weight)
-    best, current_len = current.copy(), tour_length(current)
-    best_len = current_len
-    T = initial_temp
-    for _ in range(max_iter):
-        if T < stopping_temp:
-            break
-        i, j = sorted(random.sample(range(n), 2))
-        new = current.copy()
-        new[i:j] = list(reversed(new[i:j]))
-        new_len = tour_length(new)
-        delta = new_len - current_len
-        if delta < 0 or random.random() < math.exp(-delta / T):
-            current, current_len = new, new_len
-            if new_len < best_len:
-                best, best_len = new.copy(), new_len
-        T *= cooling_rate
-    return best
-
-
-def tsp_solve_route(graph, stops_df, method="Greedy"):
+def tsp_solve_route(graph, stops_df):
     if len(stops_df) <= 2:
-        return stops_df.reset_index(drop=True)
-    node_ids = stops_df['node_id'].tolist()
-    H = nx.complete_graph(len(node_ids))
-    for i in H.nodes:
-        for j in H.nodes:
-            if i == j:
-                continue
-            ni, nj = node_ids[i], node_ids[j]
-            w = float('inf')
-            if ni is not None and nj is not None:
+        return stops_df
+    coords = list(zip(stops_df["lat"], stops_df["lon"]))
+    nodes = [ox.distance.nearest_nodes(graph, X=lon, Y=lat) for lat, lon in coords]
+    G = nx.complete_graph(len(nodes))
+    for i in G.nodes:
+        for j in G.nodes:
+            if i != j:
                 try:
-                    w = nx.shortest_path_length(graph, ni, nj, weight='length')
+                    length = nx.shortest_path_length(graph, nodes[i], nodes[j], weight='length')
+                    G[i][j]['weight'] = length
                 except:
-                    pass
-            H[i][j]['weight'] = w
-    if method == "Greedy":
-        path = greedy_tsp(H, weight='weight')
-    elif method == "Christofides":
-        path = christofides(H, weight='weight')
-    elif method == "2-Opt":
-        path = two_opt(H, weight='weight')
-    elif method == "Simulated Annealing":
-        path = simulated_annealing(H, weight='weight')
+                    G[i][j]['weight'] = float('inf')
+    tsp_path = greedy_tsp(G)
+    return stops_df.iloc[tsp_path].reset_index(drop=True)
+
+st.set_page_config(layout="wide")
+
+with st.sidebar:
+    st.title("Interaktives Tool zur Routenbearbeitung")
+
+    # Standardmäßiges Laden nur einmal beim Start (initialisieren, wenn nicht im Session State)
+    if "base_addresses" not in st.session_state:
+        base_addresses = pd.read_csv("cleaned_addresses.csv").reset_index(drop=True)
+        team_df = pd.read_excel("routes_optimized.xlsx", sheet_name=None)
+        temp_assignments = []
+        for sheet, df in team_df.items():
+            if sheet != "Übersicht" and "Adresse" in df.columns:
+                team = int(sheet.split("_")[1])
+                for addr in df["Adresse"]:
+                    temp_assignments.append((addr, team))
+        assignments_df = pd.DataFrame(temp_assignments, columns=["Wahlraum-A", "team"])
+        base_addresses = base_addresses.merge(assignments_df, on="Wahlraum-A", how="left")
+        st.session_state.base_addresses = base_addresses.copy()
+        st.session_state.new_assignments = base_addresses.copy()
+
+    addresses_df = st.session_state.base_addresses.copy()
+
+    # Optionaler manueller Import zur Überschreibung der Zuordnung
+    uploaded_file = st.file_uploader("Importiere alternative Zuweisung (Excel-Datei)", type=["xlsx"])
+    if uploaded_file:
+        imported_team_df = pd.read_excel(uploaded_file, sheet_name=None)
+        imported_assignments = []
+        for sheet, df in imported_team_df.items():
+            if sheet != "Übersicht" and "Adresse" in df.columns:
+                team = int(sheet.split("_")[1])
+                for addr in df["Adresse"]:
+                    imported_assignments.append((addr, team))
+        assignments_df = pd.DataFrame(imported_assignments, columns=["Wahlraum-A", "team"])
+        if "team" in addresses_df.columns:
+            addresses_df = addresses_df.drop(columns="team")
+        addresses_df = addresses_df.merge(assignments_df, on="Wahlraum-A", how="left")
+        st.success("Import erfolgreich – aktuelle Zuweisung wurde überschrieben.")
+
+        # Routen nach Import neu berechnen
+        graph = get_graph()
+        for team_id in assignments_df["team"].dropna().unique():
+            team_rows = addresses_df[addresses_df["team"] == team_id]
+            optimized_rows = tsp_solve_route(graph, team_rows)
+            addresses_df.loc[optimized_rows.index, "tsp_order"] = range(len(optimized_rows))
+        st.session_state.new_assignments = addresses_df.copy()
+
+        with st.expander("📋 Vorschau der importierten Zuweisung"):
+            st.dataframe(assignments_df)
+
+    # Fallback falls addresses_df nicht definiert ist
+    try:
+        addresses_df = addresses_df.reset_index(drop=True)
+    except Exception as e:
+        st.error(f"Fehler beim Zurücksetzen des Index von addresses_df: {e}")
+
+    if "new_assignments" not in st.session_state:
+        try:
+            st.session_state.new_assignments = addresses_df.copy()
+        except Exception as e:
+            st.error(f"Fehler beim Kopieren von addresses_df in den Session State: {e}")
+
+    if isinstance(addresses_df, pd.DataFrame) and "Wahlraum-A" in addresses_df.columns:
+        selected_indices = st.multiselect("Stops auswählen (nach Adresse)", options=addresses_df["Wahlraum-A"].dropna().tolist())
     else:
-        path = greedy_tsp(H, weight='weight')
-    return stops_df.iloc[path].reset_index(drop=True)
+        selected_indices = []
+        st.warning("Daten konnten nicht geladen werden oder 'Wahlraum-A' fehlt.")
+    # Bestehende Teams erst nach allen möglichen Änderungen ermitteln
+    existing_teams = sorted([int(t) for t in st.session_state.new_assignments["team"].dropna().unique()])
+    selected_team = st.selectbox("Ziel-Team auswählen", options=[None] + existing_teams)
 
-# Batch optimization handler
+    if st.button("Zuweisung übernehmen") and selected_team is not None and selected_indices:
+        graph = get_graph()
 
-def optimize_routes(algo, target, selected_team=None):
-    graph = get_graph()
-    df = st.session_state.new_assignments
-    teams = ([selected_team] if target == 'Ausgewähltes Team' and selected_team else df['team'].dropna().unique())
-    for t in teams:
-        subset = df[df['team'] == t]
-        optimized = tsp_solve_route(graph, subset, method=algo)
-        st.session_state.new_assignments.loc[optimized.index, 'tsp_order'] = range(len(optimized))
-    st.session_state.action_log.append(f"Routen optimiert ('{algo}', {target})")
-    st.session_state.show_map = True
-    st.experimental_rerun()
+        for addr in selected_indices:
+            current_team = st.session_state.new_assignments.loc[st.session_state.new_assignments["Wahlraum-A"] == addr, "team"].values[0]
+            idx = st.session_state.new_assignments[st.session_state.new_assignments["Wahlraum-A"] == addr].index[0]
+            st.session_state.new_assignments.at[idx, "team"] = selected_team
 
-# Generate Excel report bytes
+        for team_id in [current_team, selected_team]:
+            team_rows = st.session_state.new_assignments[st.session_state.new_assignments["team"] == team_id]
+            optimized_rows = tsp_solve_route(get_graph(), team_rows)
+            st.session_state.new_assignments.loc[optimized_rows.index, "tsp_order"] = range(len(optimized_rows))
 
-def _generate_excel_bytes():
-    graph = get_graph()
-    df = st.session_state.new_assignments
+        st.rerun()
+
+    if st.button("Neues Team erstellen"):
+        st.session_state.show_new_team_form = True
+
+    if st.session_state.get("show_new_team_form"):
+        max_team = max([int(t) for t in st.session_state.new_assignments["team"].dropna().unique()]) if len(st.session_state.new_assignments["team"].dropna()) > 0 else 0
+        new_team = max_team + 1
+        with st.form(key="neues_team_form", clear_on_submit=True):
+            st.markdown(f"### Stop(s) für Team {new_team} auswählen")
+            new_team_stops = st.multiselect("Stop(s) auswählen", options=st.session_state.new_assignments["Wahlraum-A"].dropna().tolist(), key="form_team_selection")
+            submitted = st.form_submit_button("Stop(s) zuweisen und Team erstellen")
+            if submitted and new_team_stops:
+                for addr in new_team_stops:
+                    idx = st.session_state.new_assignments[st.session_state.new_assignments["Wahlraum-A"] == addr].index[0]
+                    st.session_state.new_assignments.at[idx, "team"] = new_team
+
+                team_rows = st.session_state.new_assignments[st.session_state.new_assignments["team"] == new_team]
+                optimized_rows = tsp_solve_route(get_graph(), team_rows)
+                st.session_state.new_assignments.loc[optimized_rows.index, "tsp_order"] = range(len(optimized_rows))
+                st.success(f"Team {new_team} wurde erstellt und die ausgewählten Stop(s) wurden zugewiesen.")
+                st.session_state.show_new_team_form = False
+                st.rerun()
+
+m = leafmap.Map(center=[addresses_df["lat"].mean(), addresses_df["lon"].mean()], zoom=12)
+graph = get_graph()
+
+color_list = ["#FF00FF", "#00FFFF", "#00FF00", "#FF0000", "#FFA500", "#FFFF00", "#00CED1", "#DA70D6", "#FF69B4", "#8A2BE2"]
+for i, team_id in enumerate(sorted(st.session_state.new_assignments["team"].dropna().unique())):
+    team_rows = st.session_state.new_assignments[st.session_state.new_assignments["team"] == team_id]
+    if "tsp_order" in team_rows.columns:
+        team_rows = team_rows.sort_values("tsp_order")
+    coords = team_rows[["lat", "lon"]].values.tolist()
+    if len(coords) > 1:
+        route_coords = []
+        try:
+            nodes = [ox.distance.nearest_nodes(graph, X=lon, Y=lat) for lat, lon in coords]
+            for u, v in zip(nodes[:-1], nodes[1:]):
+                try:
+                    path = nx.shortest_path(graph, u, v, weight="length")
+                    segment = [(graph.nodes[n]["y"], graph.nodes[n]["x"]) for n in path]
+                    route_coords.extend(segment)
+                except Exception as e:
+                    st.warning(f"Routing für Segment {u} → {v} in Team {team_id} fehlgeschlagen: {e}")
+                    continue
+            folium.PolyLine(route_coords, color=color_list[i % len(color_list)], weight=8, opacity=0.9,
+                            tooltip=f"Team {int(team_id)}").add_to(m)
+        except Exception as e:
+            st.warning(f"Routenaufbau für Team {team_id} fehlgeschlagen: {e}")
+            continue
+
+# Marker Cluster hinzufügen
+marker_cluster = MarkerCluster()
+
+# Für jedes Stop in der cleaned_addresses.csv, füge Marker mit Popups hinzu
+for _, row in addresses_df.dropna(subset=["lat", "lon"]).iterrows():
+    # Extrahiere die relevanten Spalten für das Popup
+    wahlraum_b = row.get("Wahlraum-B", "Keine Wahlraum-B-Daten")
+    wahlraum_a = row.get("Wahlraum-A", "Keine Wahlraum-A-Daten")
+    num_rooms = row.get("num_rooms", "Keine Raumanzahl")
+
+    # Popup-Inhalt formatieren
+    popup_content = f"""
+    <b>{wahlraum_b}</b><br>
+    <b>{wahlraum_a}</b><br>
+    <b>Anzahl Räume:</b> {num_rooms}
+    """
+
+    # Erstelle ein HTML Popup mit max-width und max-height für die dynamische Größe
+    popup_html = f"""
+    <div style="max-width: 500px; max-height: 500px; overflow:auto;">
+        {popup_content}
+    </div>
+    """    
+    
+    # Marker für jeden Stop erstellen und zum Marker-Cluster hinzufügen
+    marker = folium.Marker(location=[row["lat"], row["lon"]], popup=folium.Popup(popup_html, max_width=500))
+    marker.add_to(marker_cluster)
+
+# Füge das Marker Cluster zur Karte hinzu
+marker_cluster.add_to(m)
+
+m.to_streamlit(height=700)
+
+if st.button("Zuordnung exportieren"):
     overview = []
     team_sheets = {}
-    for t in sorted(df['team'].dropna().unique()):
-        stops = df[df['team'] == t].copy()
-        if 'tsp_order' in stops.columns:
-            stops.sort_values('tsp_order', inplace=True)
-        rooms = int(stops.get('num_rooms', 0).sum())
-        km = mn = 0
-        node_ids = stops['node_id'].tolist()
-        for u, v in zip(node_ids[:-1], node_ids[1:]):
-            dist = 0
-            if u is not None and v is not None:
-                try:
-                    dist = nx.shortest_path_length(graph, u, v, weight='length')
-                except:
-                    pass
-            km += dist/1000
-            mn += dist/1000*2
-        service = rooms*10
-        total = int(service + mn)
-        link = "https://www.google.com/maps/dir/" + "/".join(
-            f"{lat},{lon}" for lat, lon in stops[['lat','lon']].values
-        )
+    for team in sorted(st.session_state.new_assignments["team"].dropna().unique()):
+        stops = st.session_state.new_assignments[st.session_state.new_assignments["team"] == team]
+        if "tsp_order" in stops.columns:
+            stops = stops.sort_values("tsp_order")
+        rooms = stops["num_rooms"].sum()
+        travel_km = 0
+        travel_min = 0
+        coords = stops[["lat", "lon"]].values.tolist()
+        if len(coords) > 1:
+            try:
+                nodes = [ox.distance.nearest_nodes(graph, X=lon, Y=lat) for lat, lon in coords]
+                for u, v in zip(nodes[:-1], nodes[1:]):
+                    length = nx.shortest_path_length(graph, u, v, weight="length")
+                    travel_km += length / 1000
+                    travel_min += length / 1000 * 2
+            except:
+                pass
+        service_min = int(rooms * 10)
+        time_total = service_min + travel_min
+        gmaps_link = "https://www.google.com/maps/dir/" + "/".join([f"{lat},{lon}" for lat, lon in coords])
         overview.append({
-            'Kontrollbezirk': t,
-            'Stops': len(stops),
-            'Stimmbezirke': rooms,
-            'Wegstrecke (km)': round(km,1),
-            'Fahrtzeit (min)': int(mn),
-            'Kontrollzeit (min)': service,
-            'Gesamtzeit': str(timedelta(minutes=total)),
-            'Google-Link': link
+            "Kontrollbezirk": team,
+            "Anzahl Wahllokale": len(stops),
+            "Anzahl Stimmbezirke": rooms,
+            "Wegstrecke (km)": round(travel_km, 1),
+            "Fahrtzeit (min)": int(travel_min),
+            "Kontrollzeit (min)": service_min,
+            "Gesamtzeit": str(timedelta(minutes=int(time_total))),
+            "Google-Link": gmaps_link
         })
         rows = []
-        for idx, row in stops.iterrows():
-            coord = f"{row['lat']},{row['lon']}"
+        for i, row in stops.iterrows():
+            address_coords = f"{row['lat']},{row['lon']}"
             rows.append({
-                'Reihenfolge': idx,
-                'Adresse': row['Wahlraum-A'],
-                'Stimmbezirke': row.get('rooms',''),
-                'Anzahl Stimmbezirke': row.get('num_rooms',''),
-                'Link': f"https://www.google.com/maps/search/?api=1&query={quote_plus(coord)}"
+                "Reihenfolge": i,
+                "Adresse": row["Wahlraum-A"],
+                "Stimmbezirke": row["rooms"],
+                "Anzahl Stimmbezirke": row["num_rooms"],
+                "Google-Link": f"https://www.google.com/maps/search/?api=1&query={quote_plus(address_coords)}"
             })
-        team_sheets[f'Team_{t}'] = pd.DataFrame(rows)
-    buf = io.BytesIO()
-    with pd.ExcelWriter(buf, engine='openpyxl') as writer:
-        df_over = pd.DataFrame(overview)
-        df_over.to_excel(writer, sheet_name='Übersicht', index=False)
-        from openpyxl.utils import get_column_letter
-        ws0 = writer.sheets['Übersicht']
-        for i, col in enumerate(df_over.columns, 1):
-            ws0.column_dimensions[get_column_letter(i)].width = max(
-                df_over[col].astype(str).map(len).max(), len(col)
-            ) + 2
-        for name, df_sheet in team_sheets.items():
-            df_sheet.to_excel(writer, sheet_name=name, index=False)
-            ws = writer.sheets[name]
-            for i, col in enumerate(df_sheet.columns, 1):
-                ws.column_dimensions[get_column_letter(i)].width = max(
-                    df_sheet[col].astype(str).map(len).max(), len(col)
-                ) + 2
-    buf.seek(0)
-    return buf.getvalue()
+        team_sheets[f"Team_{team}"] = pd.DataFrame(rows)
 
-# Streamlit UI setup
-st.set_page_config(layout='wide')
-with st.sidebar:
-    st.title('Routenbearbeitung')
-    df = st.session_state.new_assignments
-    stops = st.multiselect('Stops auswählen', options=df['Wahlraum-A'].tolist())
-    teams = sorted(df['team'].dropna().tolist())
-    sel_team = st.selectbox('Team auswählen', [None] + teams)
-    algo = st.selectbox('Algorithmus', ['Greedy', '2-Opt', 'Simulated Annealing', 'Christofides'])
-    target = st.radio('Zu optimierende Route', ['Alle Teams', 'Ausgewähltes Team'])
-    if st.button('Routen optimieren'):
-        optimize_routes(algo, target, sel_team)
-    if st.button('Zuweisung übernehmen') and sel_team and stops:
-        for addr in stops:
-            idx = df[df['Wahlraum-A'] == addr].index[0]
-            st.session_state.new_assignments.at[idx, 'team'] = sel_team
-        st.session_state.action_log.append(f'Zuweisung übernommen: {len(stops)} → Team {sel_team}')
-        st.session_state.show_map = True
-        st.experimental_rerun()
-    if st.button('Neues Team erstellen'):
-        st.session_state.show_new_team_form = True
-    if st.session_state.show_new_team_form:
-        next_team = max(teams) + 1 if teams else 1
-        form = st.form('new_team_form')
-        new_stops = form.multiselect(f'Stops für Team {next_team}', options=df['Wahlraum-A'].tolist())
-        if form.form_submit_button('Team erstellen') and new_stops:
-            for addr in new_stops:
-                idx = df[df['Wahlraum-A'] == addr].index[0]
-                st.session_state.new_assignments.at[idx, 'team'] = next_team
-            st.session_state.action_log.append(f'Team {next_team} erstellt mit {len(new_stops)} Stops')
-            st.session_state.show_map = True
-    excel_bytes = _generate_excel_bytes()
+    overview_df = pd.DataFrame(overview)
+    output = io.BytesIO()
+    with pd.ExcelWriter(output, engine="openpyxl") as writer:
+        overview_df.to_excel(writer, sheet_name="Übersicht", index=False)
+        for sheet_name, df in team_sheets.items():
+            df.to_excel(writer, sheet_name=sheet_name, index=False)
+    output.seek(0)
+
     st.download_button(
-        '📥 Export & Download Excel',
-        data=excel_bytes,
-        file_name='routen_zuweisung.xlsx',
-        mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        label="📥 Excel-Datei herunterladen",
+        data=output,
+        file_name="routen_zuweisung_aktualisiert.xlsx",
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
-    st.markdown('---')
-    st.subheader('Aktionen-Log')
-    for entry in st.session_state.action_log:
-        st.write(f'- {entry}')
-
-if st.session_state.show_map:
-    dfm = st.session_state.new_assignments
-    graph = get_graph()
-    m = leafmap.Map(center=[dfm['lat'].mean(), dfm['lon'].mean()], zoom=12)
-    colors = ["#FF0000", "#00FF00", "#0000FF", "#FFA500"]
-    for i, team_id in enumerate(sorted(dfm['team'].dropna().tolist())):
-        subset = dfm[dfm['team'] == team_id]
-        if 'tsp_order' in subset.columns:
-            subset = subset.sort_values('tsp_order')
-        # prepare coordinates list for fallback
-        coords = list(zip(subset['lat'], subset['lon']))
-        node_ids = subset['node_id'].dropna().tolist()
-        drawn = False
-        # draw route segments along graph geometry
-        for u, v in zip(node_ids[:-1], node_ids[1:]):
-            try:
-                path_nodes = nx.shortest_path(graph, u, v, weight='length')
-                segment_coords = [(graph.nodes[n]['y'], graph.nodes[n]['x']) for n in path_nodes]
-                if segment_coords:
-                    folium.PolyLine(
-                        segment_coords,
-                        color=colors[i % len(colors)],
-                        weight=6,
-                        opacity=0.8,
-                        tooltip=f'Route {team_id}'
-                    ).add_to(m)
-                    drawn = True
-            except Exception:
-                continue
-        # fallback: draw direct line if no segments
-        if not drawn and len(coords) > 1:
-            folium.PolyLine(
-                coords,
-                color=colors[i % len(colors)],
-                weight=6,
-                opacity=0.8,
-                tooltip=f'Route {team_id}'
-            ).add_to(m)
-    marker_cluster = MarkerCluster()()
-    for _, row in dfm.dropna(subset=['lat', 'lon']).iterrows():
-        popup_html = (
-            f"<div style='font-weight:bold;'>"
-            f"<b>{row['Wahlraum-B']}</b><br>"
-            f"<b>{row['Wahlraum-A']}</b><br>"
-            f"<b>Anzahl Räume:</b> {row.get('num_rooms', '')}"
-            f"</div>"
-        )
-        folium.Marker(
-            [row['lat'], row['lon']],
-            popup=folium.Popup(popup_html, max_width=0)
-        ).add_to(marker_cluster)
-    marker_cluster.add_to(m)
-
-    m.to_streamlit(height=700)
