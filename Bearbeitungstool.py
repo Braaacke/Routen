@@ -175,7 +175,6 @@ with st.sidebar:
 
         # Export und Download in einem Button
 # Funktion zur Generierung des Excels als Bytes
-import pandas as pd as _pd
 
 def _generate_excel_bytes():
     graph = get_graph()
