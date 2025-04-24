@@ -3,7 +3,6 @@
 import streamlit as st
 import pandas as pd
 import leafmap.foliumap as leafmap
-from uuid import uuid4
 import folium
 from folium.plugins import MarkerCluster
 import networkx as nx
