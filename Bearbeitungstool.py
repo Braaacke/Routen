@@ -183,7 +183,7 @@ color_list = ["#FF0000", "#00FF00", "#0000FF", "#FFA500", "#800080", "#008080", 
 for i, team_id in enumerate(sorted(addresses_df.team.dropna().unique())):
     team_rows = addresses_df[addresses_df.team == team_id]
     if 'tsp_order' in team_rows.columns:
-        team_rows = team_rows.sort
+        team_rows = team_rows.sort_values('tsp_order')
     coords = team_rows[['lat', 'lon']].values.tolist()
     if len(coords) > 1:
         nodes = [ox.distance.nearest_nodes(get_graph(), X=lon, Y=lat) for lat, lon in coords]
