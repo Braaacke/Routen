@@ -12,6 +12,7 @@ import pickle
 from networkx.algorithms.approximation.traveling_salesman import greedy_tsp
 from urllib.parse import quote_plus
 from datetime import timedelta
+import io
 
 # Funktionen für TSP
 @st.cache_resource
@@ -41,7 +42,6 @@ st.set_page_config(layout="wide")
 with st.sidebar:
     st.title("Interaktives Tool zur Routenbearbeitung")
 
-    # Daten laden
     addresses_df = pd.read_csv("cleaned_addresses.csv").reset_index(drop=True)
     team_df = pd.read_excel("routes_optimized.xlsx", sheet_name=None)
 
@@ -81,12 +81,10 @@ with st.sidebar:
         new_team = max_team + 1
         st.success(f"Neues Team {new_team} erstellt. Bitte Stop(s) auswählen und zuweisen.")
 
-# Karte vorbereiten
 m = leafmap.Map(center=[addresses_df["lat"].mean(), addresses_df["lon"].mean()], zoom=12)
 graph = get_graph()
 st.write(f"Graph geladen mit {len(graph.nodes)} Knoten und {len(graph.edges)} Kanten.")
 
-# Routen aus Session State neu zeichnen
 color_list = ["#FF00FF", "#00FFFF", "#00FF00", "#FF0000", "#FFA500", "#FFFF00", "#00CED1", "#DA70D6", "#FF69B4", "#8A2BE2"]
 for i, team_id in enumerate(sorted(st.session_state.new_assignments["team"].dropna().unique())):
     team_rows = st.session_state.new_assignments[st.session_state.new_assignments["team"] == team_id]
@@ -112,7 +110,6 @@ for i, team_id in enumerate(sorted(st.session_state.new_assignments["team"].drop
             st.warning(f"Routenaufbau für Team {team_id} fehlgeschlagen: {e}")
             continue
 
-# Marker erst bei hohem Zoomlevel sichtbar machen
 marker_cluster = MarkerCluster()
 for _, row in st.session_state.new_assignments.dropna(subset=["lat", "lon"]).iterrows():
     wahlraum_b = row.get("Wahlraum-B", "")
@@ -133,11 +130,7 @@ marker_cluster.add_to(m)
 m.to_streamlit(height=700)
 
 if st.button("Zuordnung exportieren"):
-    st.session_state.new_assignments[["Wahlraum-A", "team"]].to_csv("routen_zuweisung_aktualisiert.csv", index=False)
-    st.success("Datei routen_zuweisung_aktualisiert.csv gespeichert.")
-
     overview = []
-    overview_df = pd.DataFrame()
     team_sheets = {}
     for team in sorted(st.session_state.new_assignments["team"].dropna().unique()):
         stops = st.session_state.new_assignments[st.session_state.new_assignments["team"] == team]
@@ -180,9 +173,18 @@ if st.button("Zuordnung exportieren"):
                 "GMaps": f"https://www.google.com/maps/search/?api=1&query={quote_plus(address_coords)}"
             })
         team_sheets[f"Team_{team}"] = pd.DataFrame(rows)
+
     overview_df = pd.DataFrame(overview)
-    with pd.ExcelWriter("routen_zuweisung_aktualisiert.xlsx", engine="openpyxl") as writer:
+    output = io.BytesIO()
+    with pd.ExcelWriter(output, engine="openpyxl") as writer:
         overview_df.to_excel(writer, sheet_name="Übersicht", index=False)
         for sheet_name, df in team_sheets.items():
             df.to_excel(writer, sheet_name=sheet_name, index=False)
-    st.success("Datei routen_zuweisung_aktualisiert.xlsx gespeichert.")
+    output.seek(0)
+
+    st.download_button(
+        label="📥 Excel-Datei herunterladen",
+        data=output,
+        file_name="routen_zuweisung_aktualisiert.xlsx",
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
