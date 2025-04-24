@@ -104,6 +104,7 @@ def optimize_routes(algo, target, selected_team=None):
         optimized = tsp_solve_route(graph, stops, method=algo)
         st.session_state.new_assignments.loc[optimized.index, "tsp_order"] = range(len(optimized))
     st.success(f"Routen für {target.lower()} mit '{algo}' optimiert.")
+    st.sidebar.info(f"Routen optimiert mit '{algo}' für {target}.")
     st.rerun()
 
 # Streamlit UI
@@ -145,11 +146,14 @@ with st.sidebar:
         for addr in selected_indices:
             idx = addresses_df[addresses_df['Wahlraum-A'] == addr].index[0]
             st.session_state.new_assignments.at[idx, 'team'] = selected_team
+        st.sidebar.info(f"Zuweisung übernommen: {len(selected_indices)} Stop(s) → Team {selected_team}.")
         for team_id in set([selected_team]):
             rows = st.session_state.new_assignments[st.session_state.new_assignments.team == team_id]
             opt = tsp_solve_route(graph, rows)
             st.session_state.new_assignments.loc[opt.index, 'tsp_order'] = range(len(opt))
         st.rerun()
+
+    # Neues Team erstellen
     if st.button("Neues Team erstellen"):
         st.session_state.show_new_team_form = True
     if st.session_state.get("show_new_team_form"):
@@ -160,13 +164,13 @@ with st.sidebar:
                 for addr in stops:
                     idx = addresses_df[addresses_df['Wahlraum-A'] == addr].index[0]
                     st.session_state.new_assignments.at[idx, 'team'] = max_team
+                st.sidebar.info(f"Team {max_team} erstellt mit {len(stops)} Stop(s).")
                 st.session_state.show_new_team_form = False
                 st.rerun()
 
-# Karte mit farbigen Routen
+# Karte mit farbigen Routen bleibt unverändert
 addresses_df = st.session_state.new_assignments
 m = leafmap.Map(center=[addresses_df['lat'].mean(), addresses_df['lon'].mean()], zoom=12)
-# Farben für Routen
 color_list = ["#FF0000", "#00FF00", "#0000FF", "#FFA500", "#800080", "#008080", "#FFD700", "#FF1493", "#40E0D0", "#A52A2A"]
 for i, team_id in enumerate(sorted(addresses_df.team.dropna().unique())):
     team_rows = addresses_df[addresses_df.team == team_id]
@@ -174,13 +178,11 @@ for i, team_id in enumerate(sorted(addresses_df.team.dropna().unique())):
         team_rows = team_rows.sort_values('tsp_order')
     coords = team_rows[['lat', 'lon']].values.tolist()
     if len(coords) > 1:
-        # Knoten und Pfad
         nodes = [ox.distance.nearest_nodes(get_graph(), X=lon, Y=lat) for lat, lon in coords]
         path = []
         for u, v in zip(nodes[:-1], nodes[1:]):
             segment = nx.shortest_path(get_graph(), u, v, weight='length')
             path.extend([(get_graph().nodes[n]['y'], get_graph().nodes[n]['x']) for n in segment])
-        # Polyline mit Farbe und Tooltip
         folium.PolyLine(
             path,
             color=color_list[i % len(color_list)],
@@ -188,14 +190,13 @@ for i, team_id in enumerate(sorted(addresses_df.team.dropna().unique())):
             opacity=0.8,
             tooltip=f"Route {int(team_id)}"
         ).add_to(m)
-# Marker-Cluster mit dynamischen Popups
+
+# Marker-Cluster unverändert
 marker_cluster = MarkerCluster()
 for _, row in addresses_df.dropna(subset=['lat', 'lon']).iterrows():
-    # Inhalte für Popup
     wahlraum_b = row.get('Wahlraum-B', '')
     wahlraum_a = row.get('Wahlraum-A', '')
     num_rooms = row.get('num_rooms', '')
-    # HTML Popup mit allen Inhalten fett und ohne feste Größe
     popup_html = f"""
     <div style=\"font-weight:bold;\">
         <b>{wahlraum_b}</b><br>
@@ -204,14 +205,13 @@ for _, row in addresses_df.dropna(subset=['lat', 'lon']).iterrows():
     </div>
     """
     folium.Marker(
-        [row['lat'], row['lon']],
-        popup=folium.Popup(popup_html, max_width=0)
+        [row['lat'], row['lon']], popup=folium.Popup(popup_html, max_width=0)
     ).add_to(marker_cluster)
 marker_cluster.add_to(m)
 
 m.to_streamlit(height=700)
 
-# Export-Funktion bleibt unverändert
+# Export-Funktion mit Sidebar-Meldung
 if st.button('Zuordnung exportieren'):
     overview = []
     sheets = {}
@@ -227,4 +227,5 @@ if st.button('Zuordnung exportieren'):
         for name, df in sheets.items():
             df.to_excel(writer, sheet_name=name, index=False)
     out.seek(0)
+    st.sidebar.info("Zuordnung exportiert und Download vorbereitet.")
     st.download_button('📥 Excel-Datei herunterladen', data=out, file_name='zuweisung.xlsx', mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
