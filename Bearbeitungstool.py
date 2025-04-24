@@ -131,10 +131,13 @@ with st.sidebar:
                 st.session_state.show_new_team_form = False
                 st.rerun()
 
-# Karte vorbereiten
-m = folium.Map(center=[addresses_df["lat"].mean(), addresses_df["lon"].mean()], zoom=12)
-graph = get_graph()
+# Interaktive Karte vorbereiten
+m = folium.Map(
+    location=[addresses_df["lat"].mean(), addresses_df["lon"].mean()],
+    zoom_start=12  # <-- korrekt statt 'zoom'
+)
 
+# Routen zeichnen
 color_list = ["#FF00FF", "#00FFFF", "#00FF00", "#FF0000", "#FFA500", "#FFFF00", "#00CED1", "#DA70D6", "#FF69B4", "#8A2BE2"]
 for i, team_id in enumerate(sorted(st.session_state.new_assignments["team"].dropna().unique())):
     team_rows = st.session_state.new_assignments[st.session_state.new_assignments["team"] == team_id]
@@ -159,30 +162,20 @@ for i, team_id in enumerate(sorted(st.session_state.new_assignments["team"].drop
             st.warning(f"Routenaufbau für Team {team_id} fehlgeschlagen: {e}")
             continue
 
-# Marker Cluster hinzufügen
+# Marker hinzufügen
 marker_cluster = MarkerCluster()
-
-# Für jedes Stop in der cleaned_addresses.csv, füge Marker mit Popups hinzu
 for _, row in addresses_df.dropna(subset=["lat", "lon"]).iterrows():
-    wahlraum_b = row.get("Wahlraum-B", "Keine Wahlraum-B-Daten")
-    wahlraum_a = row.get("Wahlraum-A", "Keine Wahlraum-A-Daten")
-    num_rooms = row.get("num_rooms", "Keine Raumanzahl")
-
-    popup_content = f"""
-    <b>{wahlraum_b}</b><br>
-    <b>{wahlraum_a}</b><br>
-    <b>Anzahl Räume:</b> {num_rooms}
-    """
-
-    popup_html = f"""
-    <div style="max-width: 500px; max-height: 500px; overflow:auto;">
-        {popup_content}
-    </div>
-    """    
-    
-    marker = folium.Marker(location=[row["lat"], row["lon"]], popup=folium.Popup(popup_html, max_width=500))
-    marker.add_to(marker_cluster)
-
+    wahlraum_b = row.get("Wahlraum-B", "")
+    wahlraum_a = row.get("Wahlraum-A", "")
+    num_rooms = row.get("num_rooms", "")
+    popup = f"<b>{wahlraum_b}</b><br>{wahlraum_a}<br>Anzahl Räume: {num_rooms}"
+    folium.Marker(
+        location=[row["lat"], row["lon"]],
+        popup=folium.Popup(popup, max_width=300)
+    ).add_to(marker_cluster)
 marker_cluster.add_to(m)
+
+# Karte anzeigen
+folium_static(m)
 
 m.to_streamlit(height=700)
