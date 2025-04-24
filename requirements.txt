@@ -7,4 +7,4 @@ osmnx
 openpyxl
 scikit-learn
 streamlit_folium 
-streamlit_leaflet
+streamlit-leaflet
