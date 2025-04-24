@@ -51,9 +51,6 @@ def select_stop_on_map(df_addresses):
         # Capture the stop when clicked (update the selected_stops list in session_state)
         marker.add_child(folium.Popup(f"Click to select {row['Wahlraum-A']}"))
 
-    # Display the map with interactive stop selection
-    folium_static(m)
-
     # Rückgabe der aktuell ausgewählten Stops
     return st.session_state.selected_stops  # Diese Liste wird dynamisch aktualisiert
 
