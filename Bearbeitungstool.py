@@ -20,7 +20,6 @@ def get_graph():
         return pickle.load(f)
 
 # 2-Opt Optimierung
-```python
 def two_opt(G, weight='weight'):
     n = G.number_of_nodes()
     tour = greedy_tsp(G, weight=weight)
@@ -37,7 +36,7 @@ def two_opt(G, weight='weight'):
                     tour[i:j] = list(reversed(tour[i:j]))
                     improved = True
     return tour
-```
+
 # Simulated Annealing Optimierung
 def simulated_annealing(G, weight='weight', initial_temp=10000, cooling_rate=0.995, stopping_temp=1e-3, max_iter=10000):
     def tour_length(tour):
