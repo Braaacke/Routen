@@ -232,7 +232,7 @@ if st.button("Zuordnung exportieren"):
                 "Adresse": row["Wahlraum-A"],
                 "Stimmbezirke": row["rooms"],
                 "Anzahl Stimmbezirke": row["num_rooms"],
-                "GMaps": f"https://www.google.com/maps/search/?api=1&query={quote_plus(address_coords)}"
+                "Google-Link": f"https://www.google.com/maps/search/?api=1&query={quote_plus(address_coords)}"
             })
         team_sheets[f"Team_{team}"] = pd.DataFrame(rows)
 
