@@ -4,4 +4,4 @@ folium
 osmnx
 networkx
 openpyxl
-git clone https://github.com/AmirSarrafzadeh/Streamlit.git
+git https://github.com/AmirSarrafzadeh/Streamlit.git
