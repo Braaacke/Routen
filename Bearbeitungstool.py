@@ -42,6 +42,10 @@ def tsp_solve_route(graph, stops_df):
     tsp_path = greedy_tsp(G)
     return stops_df.iloc[tsp_path].reset_index(drop=True)
 
+def reoptimize_all_routes(graph):
+    for team_id in sorted(st.session_state.new_assignments["team"].dropna().unique()):
+        reoptimize_team_route(team_id, graph)
+
 st.set_page_config(layout="wide")
 
 with st.sidebar:
