@@ -1,10 +1,7 @@
-streamlit
+streamlit>=1.20
 pandas
 folium
-leafmap
-networkx
 osmnx
+networkx
 openpyxl
-scikit-learn
-streamlit_folium 
 streamlit-leaflet
