@@ -145,7 +145,6 @@ with st.sidebar:
 
 m = leafmap.Map(center=[addresses_df["lat"].mean(), addresses_df["lon"].mean()], zoom=12)
 graph = get_graph()
-st.write(f"Graph geladen mit {len(graph.nodes)} Knoten und {len(graph.edges)} Kanten.")
 
 color_list = ["#FF00FF", "#00FFFF", "#00FF00", "#FF0000", "#FFA500", "#FFFF00", "#00CED1", "#DA70D6", "#FF69B4", "#8A2BE2"]
 for i, team_id in enumerate(sorted(st.session_state.new_assignments["team"].dropna().unique())):
@@ -153,7 +152,6 @@ for i, team_id in enumerate(sorted(st.session_state.new_assignments["team"].drop
     if "tsp_order" in team_rows.columns:
         team_rows = team_rows.sort_values("tsp_order")
     coords = team_rows[["lat", "lon"]].values.tolist()
-    st.write(f"Team {team_id}: {len(coords)} Koordinaten")
     if len(coords) > 1:
         route_coords = []
         try:
