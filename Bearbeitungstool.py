@@ -205,7 +205,7 @@ for _, row in addresses_df.dropna(subset=['lat', 'lon']).iterrows():
     """
     folium.Marker(
         [row['lat'], row['lon']],
-        popup=folium.Popup(popup_html, max_width='auto')
+        popup=folium.Popup(popup_html, max_width=0)
     ).add_to(marker_cluster)
 marker_cluster.add_to(m)
 
