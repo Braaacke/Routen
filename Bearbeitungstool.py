@@ -298,4 +298,4 @@ if st.session_state.show_map:
             popup=folium.Popup(popup_html, max_width=0)
         ).add_to(marker_cluster)
     marker_cluster.add_to(m)
-    m.to_streamlit(height=700)(height=700)
+    m.to_streamlit(height=700)
