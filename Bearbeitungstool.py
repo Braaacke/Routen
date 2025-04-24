@@ -8,6 +8,7 @@ import pickle
 from networkx.algorithms.approximation.traveling_salesman import greedy_tsp
 from datetime import timedelta
 import io
+from streamlit_folium import folium_static
 
 # Funktionen für TSP
 @st.cache_resource
