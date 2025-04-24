@@ -11,6 +11,7 @@ import zipfile
 from selenium import webdriver
 import chromedriver_autoinstaller
 from pathlib import Path
+import osmnx as ox
 
 # Funktionen für TSP
 @st.cache_resource
