@@ -38,6 +38,7 @@ def tsp_solve_route(graph, stops_df):
 
 st.set_page_config(layout="wide")
 
+# Sidebar-Logik
 with st.sidebar:
     st.title("Interaktives Tool zur Routenbearbeitung")
 
@@ -55,11 +56,12 @@ with st.sidebar:
         base_addresses = base_addresses.merge(assignments_df, on="Wahlraum-A", how="left")
         st.session_state.base_addresses = base_addresses.copy()
         st.session_state.new_assignments = base_addresses.copy()
+        st.session_state.needs_rerun = False
 
-    # Arbeits-Daten setzen (nach Import oder initial)
+    # Arbeits-Daten setzen
     addresses_df = st.session_state.new_assignments.copy()
 
-    # Manueller Import alternative Zuweisung
+    # Manueller Import
     uploaded_file = st.file_uploader("Importiere alternative Zuweisung (Excel-Datei)", type=["xlsx"])
     if uploaded_file:
         imported = pd.read_excel(uploaded_file, sheet_name=None)
@@ -69,8 +71,7 @@ with st.sidebar:
                 team = int(sheet.split("_")[1])
                 for addr in df["Adresse"]:
                     imported_list.append((addr, team))
-        assignments_df = pd.DataFrame(imported_list, columns=["Wahlraum-A", "team"] )
-        # Merge auf new_assignments
+        assignments_df = pd.DataFrame(imported_list, columns=["Wahlraum-A", "team"])
         df_merge = pd.merge(
             st.session_state.base_addresses.drop(columns=["team"]),
             assignments_df,
@@ -78,10 +79,10 @@ with st.sidebar:
             how="left"
         )
         st.session_state.new_assignments = df_merge.copy()
-        st.success("Import erfolgreich – aktuelle Zuweisung wurde überschrieben.")
-        st.experimental_rerun()
+        st.session_state.needs_rerun = True
+        st.success("Import erfolgreich – Karte wird aktualisiert.")
 
-    # Auswahl für manuelle Zuordnung
+    # Manuelle Zuweisung
     stops = addresses_df["Wahlraum-A"].dropna().tolist()
     selected = st.multiselect("Stops auswählen (nach Adresse)", options=stops)
     teams = sorted([int(t) for t in addresses_df["team"].dropna().unique()])
@@ -91,11 +92,11 @@ with st.sidebar:
             idx = st.session_state.new_assignments[st.session_state.new_assignments["Wahlraum-A"] == addr].index[0]
             st.session_state.new_assignments.at[idx, "team"] = target
         # Routen neu berechnen
-        for tid in set([target]):
-            rows = st.session_state.new_assignments[st.session_state.new_assignments["team"] == tid]
-            opt = tsp_solve_route(get_graph(), rows)
-            st.session_state.new_assignments.loc[opt.index, "tsp_order"] = range(len(opt))
-        st.experimental_rerun()
+        rows = st.session_state.new_assignments[st.session_state.new_assignments["team"] == target]
+        opt = tsp_solve_route(get_graph(), rows)
+        st.session_state.new_assignments.loc[opt.index, "tsp_order"] = range(len(opt))
+        st.session_state.needs_rerun = True
+        st.success("Zuweisung übernommen – Karte wird aktualisiert.")
 
     # Neues Team erstellen
     if st.button("Neues Team erstellen"):
@@ -112,20 +113,19 @@ with st.sidebar:
                     st.session_state.new_assignments.at[idx, "team"] = new_team
                 opt = tsp_solve_route(get_graph(), st.session_state.new_assignments[st.session_state.new_assignments["team"] == new_team])
                 st.session_state.new_assignments.loc[opt.index, "tsp_order"] = range(len(opt))
-                st.success(f"Team {new_team} erstellt.")
                 st.session_state.show_new_team_form = False
-                st.experimental_rerun()
+                st.session_state.needs_rerun = True
+                st.success(f"Team {new_team} erstellt – Karte wird aktualisiert.")
+
+    # Bei Bedarf neu laden
+    if st.session_state.get("needs_rerun"):
+        st.experimental_rerun()
 
 # Karte zeichnen aus new_assignments
 m = leafmap.Map(center=[
     st.session_state.new_assignments["lat"].mean(),
     st.session_state.new_assignments["lon"].mean()
 ], zoom=12)
-
-# Routenlinien
-graph = get_graph()
-color_list = ["#FF00FF", "#00FFFF", "#00FF00", "#FF0000", "#FFA500", "#FFFF00",
-              "#00CED1", "#DA70D6", "#FF69B4", "#8A2BE2"]
 for i, tid in enumerate(sorted(st.session_state.new_assignments["team"].dropna().unique())):
     df = st.session_state.new_assignments[st.session_state.new_assignments["team"] == tid]
     if "tsp_order" in df.columns:
