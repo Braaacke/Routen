@@ -188,14 +188,28 @@ for i, team_id in enumerate(sorted(addresses_df.team.dropna().unique())):
             opacity=0.8,
             tooltip=f"Route {int(team_id)}"
         ).add_to(m)
-# Marker-Cluster
+# Marker-Cluster mit dynamischen Popups
 marker_cluster = MarkerCluster()
 for _, row in addresses_df.dropna(subset=['lat', 'lon']).iterrows():
-    popup = f"<b>{row['Wahlraum-A']}</b><br>Anz Räume: {row.get('num_rooms', '')}"
-    folium.Marker([row['lat'], row['lon']], popup=popup).add_to(marker_cluster)
+    # Inhalte für Popup
+    wahlraum_b = row.get('Wahlraum-B', '')
+    wahlraum_a = row.get('Wahlraum-A', '')
+    num_rooms = row.get('num_rooms', '')
+    # HTML Popup mit allen Inhalten fett und ohne feste Größe
+    popup_html = f"""
+    <div style=\"font-weight:bold;\">
+        <b>{wahlraum_b}</b><br>
+        <b>{wahlraum_a}</b><br>
+        <b>Anzahl Räume:</b> {num_rooms}
+    </div>
+    """
+    folium.Marker(
+        [row['lat'], row['lon']],
+        popup=folium.Popup(popup_html, max_width='auto')
+    ).add_to(marker_cluster)
 marker_cluster.add_to(m)
 
-m.to_streamlit(height=700)
+m.to_streamlit(height=700)(height=700)
 
 # Export-Funktion bleibt unverändert
 if st.button('Zuordnung exportieren'):
