@@ -172,4 +172,4 @@ with st.sidebar:
         graph = get_graph()
         current_teams = []
         for addr in selected_indices:
-            idx = st.session_state.new_assignments[st.session_state.new_assignments["Wahlraum-A"] == addr].
+            idx = st.session_state.new_assignments[st.session_state.new_assignments["Wahlraum-A"] == addr]
