@@ -173,78 +173,82 @@ with st.sidebar:
                 st.session_state.show_new_team_form = False
                 st.rerun()
 
-        # Export-Funktion mit Sidebar-Meldung
-    if st.button("Zuordnung exportieren"):
-        # Graph einmal laden
-        graph = get_graph()
-        overview = []
-        team_sheets = {}
-        for team in sorted(st.session_state.new_assignments["team"].dropna().unique()):
-            stops = st.session_state.new_assignments[st.session_state.new_assignments["team"] == team]
-            if "tsp_order" in stops.columns:
-                stops = stops.sort_values("tsp_order")
-            rooms = stops.get("num_rooms", pd.Series()).sum()
-            travel_km = 0
-            travel_min = 0
-            coords = stops[["lat", "lon"]].values.tolist()
-            if len(coords) > 1:
+        # Export und Download in einem Button
+# Funktion zur Generierung des Excels als Bytes
+import pandas as pd as _pd
+
+def _generate_excel_bytes():
+    graph = get_graph()
+    overview = []
+    team_sheets = {}
+    for team in sorted(st.session_state.new_assignments["team"].dropna().unique()):
+        stops = st.session_state.new_assignments[st.session_state.new_assignments["team"] == team]
+        if "tsp_order" in stops.columns:
+            stops = stops.sort_values("tsp_order")
+        rooms = stops.get("num_rooms", _pd.Series()).sum()
+        travel_km = 0
+        travel_min = 0
+        coords = stops[["lat", "lon"]].values.tolist()
+        if len(coords) > 1:
+            nodes = [ox.distance.nearest_nodes(graph, X=lon, Y=lat) for lat, lon in coords]
+            for u, v in zip(nodes[:-1], nodes[1:]):
                 try:
-                    nodes = [ox.distance.nearest_nodes(graph, X=lon, Y=lat) for lat, lon in coords]
-                    for u, v in zip(nodes[:-1], nodes[1:]):
-                        length = nx.shortest_path_length(graph, u, v, weight="length")
-                        travel_km += length / 1000
-                        travel_min += length / 1000 * 2
-                except Exception:
+                    length = nx.shortest_path_length(graph, u, v, weight="length")
+                    travel_km += length / 1000
+                    travel_min += length / 1000 * 2
+                except:
                     pass
-            service_min = int(rooms * 10)
-            time_total = service_min + travel_min
-            gmaps_link = "https://www.google.com/maps/dir/" + "/".join([f"{lat},{lon}" for lat, lon in coords])
-            overview.append({
-                "Kontrollbezirk": team,
-                "Anzahl Wahllokale": len(stops),
-                "Anzahl Stimmbezirke": int(rooms),
-                "Wegstrecke (km)": round(travel_km, 1),
-                "Fahrtzeit (min)": int(travel_min),
-                "Kontrollzeit (min)": service_min,
-                "Gesamtzeit": str(timedelta(minutes=int(time_total))),
-                "Google-Link": gmaps_link
+        service_min = int(rooms * 10)
+        time_total = service_min + travel_min
+        gmaps_link = "https://www.google.com/maps/dir/" + "/".join([f"{lat},{lon}" for lat, lon in coords])
+        overview.append({
+            "Kontrollbezirk": team,
+            "Anzahl Wahllokale": len(stops),
+            "Anzahl Stimmbezirke": int(rooms),
+            "Wegstrecke (km)": round(travel_km, 1),
+            "Fahrtzeit (min)": int(travel_min),
+            "Kontrollzeit (min)": service_min,
+            "Gesamtzeit": str(timedelta(minutes=int(time_total))),
+            "Google-Link": gmaps_link
+        })
+        rows = []
+        for idx, row in stops.iterrows():
+            coord_str = f"{row['lat']},{row['lon']}"
+            rows.append({
+                "Reihenfolge": idx,
+                "Adresse": row["Wahlraum-A"],
+                "Stimmbezirke": row.get('rooms', ''),
+                "Anzahl Stimmbezirke": row.get('num_rooms', ''),
+                "Google-Link": f"https://www.google.com/maps/search/?api=1&query={quote_plus(coord_str)}"
             })
-            rows = []
-            for idx, row in stops.iterrows():
-                coord_str = f"{row['lat']},{row['lon']}"
-                rows.append({
-                    "Reihenfolge": idx,
-                    "Adresse": row["Wahlraum-A"],
-                    "Stimmbezirke": row.get('rooms', ''),
-                    "Anzahl Stimmbezirke": row.get('num_rooms', ''),
-                    "Google-Link": f"https://www.google.com/maps/search/?api=1&query={quote_plus(coord_str)}"
-                })
-            team_sheets[f"Team_{team}"] = pd.DataFrame(rows)
+        team_sheets[f"Team_{team}"] = _pd.DataFrame(rows)
+    overview_df = _pd.DataFrame(overview)
+    buf = io.BytesIO()
+    with _pd.ExcelWriter(buf, engine="openpyxl") as writer:
+        overview_df.to_excel(writer, sheet_name="Übersicht", index=False)
+        # Auto-adjust column widths
+        from openpyxl.utils import get_column_letter
+        ws_over = writer.sheets["Übersicht"]
+        for i, col in enumerate(overview_df.columns, 1):
+            max_len = max(overview_df[col].astype(str).map(len).max(), len(col))
+            ws_over.column_dimensions[get_column_letter(i)].width = max_len + 2
+        for sheet_name, df in team_sheets.items():
+            df.to_excel(writer, sheet_name=sheet_name, index=False)
+            ws = writer.sheets[sheet_name]
+            for i, col in enumerate(df.columns, 1):
+                max_len = max(df[col].astype(str).map(len).max(), len(col))
+                ws.column_dimensions[get_column_letter(i)].width = max_len + 2
+    buf.seek(0)
+    return buf.getvalue()
 
-        overview_df = pd.DataFrame(overview)
-        output = io.BytesIO()
-        with pd.ExcelWriter(output, engine="openpyxl") as writer:
-            overview_df.to_excel(writer, sheet_name="Übersicht", index=False)
-            # Auto-adjust column widths for Übersicht
-            ws_over = writer.sheets["Übersicht"]
-            from openpyxl.utils import get_column_letter
-            for idx, col in enumerate(overview_df.columns, 1):
-                max_len = max(overview_df[col].astype(str).map(len).max(), len(col))
-                ws_over.column_dimensions[get_column_letter(idx)].width = max_len + 2
-            for sheet_name, df in team_sheets.items():
-                df.to_excel(writer, sheet_name=sheet_name, index=False)
-                ws = writer.sheets[sheet_name]
-                for idx, col in enumerate(df.columns, 1):
-                    max_len = max(df[col].astype(str).map(len).max(), len(col))
-                    ws.column_dimensions[get_column_letter(idx)].width = max_len + 2
-        output.seek(0)
-
-        st.download_button(
-            label="📥 Excel-Datei herunterladen",
-            data=output,
-            file_name="routen_zuweisung_aktualisiert.xlsx",
-            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-        )
+# Einziger Button für Export und Download
+data = _generate_excel_bytes()
+st.download_button(
+    label="📥 Export & Download Excel",
+    data=data,
+    file_name="routen_zuweisung_aktualisiert.xlsx",
+    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+)
 
 
  # Log-Ausgabe
