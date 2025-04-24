@@ -54,7 +54,10 @@ with st.sidebar:
     st.markdown("---")
     st.subheader("🔁 Routen neu optimieren")
     graph = get_graph()
+    if "new_assignments" in st.session_state:
     team_options = sorted([int(t) for t in st.session_state.new_assignments["team"].dropna().unique()])
+    else:
+    team_options = []
     team_selection = st.selectbox("Team auswählen für Re-Optimierung", options=["Alle Teams"] + team_options)
     if st.button("Route neu optimieren"):
         if team_selection == "Alle Teams":
