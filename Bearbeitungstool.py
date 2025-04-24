@@ -99,12 +99,17 @@ for i, team_id in enumerate(sorted(st.session_state.new_assignments["team"].drop
         try:
             nodes = [ox.distance.nearest_nodes(graph, X=lon, Y=lat) for lat, lon in coords]
             for u, v in zip(nodes[:-1], nodes[1:]):
-                path = nx.shortest_path(graph, u, v, weight="length")
-                segment = [(graph.nodes[n]["y"], graph.nodes[n]["x"]) for n in path]
-                route_coords.extend(segment)
+                try:
+                    path = nx.shortest_path(graph, u, v, weight="length")
+                    segment = [(graph.nodes[n]["y"], graph.nodes[n]["x"]) for n in path]
+                    route_coords.extend(segment)
+                except Exception as e:
+                    st.warning(f"Routing für Segment {u} → {v} in Team {team_id} fehlgeschlagen: {e}")
+                    continue
             folium.PolyLine(route_coords, color=color_list[i % len(color_list)], weight=8, opacity=0.9,
                             tooltip=f"Team {int(team_id)}").add_to(m)
-        except:
+        except Exception as e:
+            st.warning(f"Routenaufbau für Team {team_id} fehlgeschlagen: {e}")
             continue
 
 # Marker erst bei hohem Zoomlevel sichtbar machen
