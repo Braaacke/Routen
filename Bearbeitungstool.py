@@ -160,6 +160,20 @@ def optimize_routes(algo, target, selected_team=None):
 # Generate Excel report bytes
 
 def _generate_excel_bytes():
+    # Ensure node_id exists in case new_assignments was modified
+    df = st.session_state.new_assignments
+    if 'node_id' not in df.columns:
+        g = get_graph()
+        node_list = []
+        for _, row in df.iterrows():
+            try:
+                nid = ox.distance.nearest_nodes(g, X=row['lon'], Y=row['lat'])
+            except:
+                nid = None
+            node_list.append(nid)
+        df['node_id'] = node_list
+        st.session_state.new_assignments = df.copy()
+    graph = get_graph()
     graph = get_graph()
     df = st.session_state.new_assignments
     overview = []
