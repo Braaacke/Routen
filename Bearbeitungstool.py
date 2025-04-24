@@ -256,7 +256,14 @@ if st.session_state.show_map:
         if 'tsp_order' in rows: rows=rows.sort_values('tsp_order')
         cr=rows[['lat','lon']].values.tolist()
         if len(cr)>1:
-            nodes=[ox.distance.nearest_nodes(g,X=lon,Y=lat) for lat,lon in cr]
+            # compute nearest nodes with exception handling
+            nodes = []
+            for lat, lon in cr:
+                try:
+                    node = ox.distance.nearest_nodes(g, X=lon, Y=lat)
+                except Exception:
+                    node = None
+                nodes.append(node)
             path=[]
             for u,v in zip(nodes[:-1],nodes[1:]): path+=[(g.nodes[n]['y'],g.nodes[n]['x']) for n in nx.shortest_path(g,u,v,weight='length')]
             folium.PolyLine(path,color=cols[i%len(cols)],weight=6,opacity=0.8,tooltip=f'Route{t}').add_to(m)
