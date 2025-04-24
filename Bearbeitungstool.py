@@ -57,11 +57,12 @@ def simulated_annealing(G, weight='weight', initial_temp=10000, cooling_rate=0.9
         if i == j:
             continue
         new_tour = current_tour.copy()
-        new_tour[i:j] = reversed(new_tour[i:j])
+        # Korrigiere In-Place-Reverse zu List-Reversal für Konsistenz
+        new_tour[i:j] = list(reversed(new_tour[i:j]))
         new_len = tour_length(new_tour)
         delta = new_len - current_len
         if delta < 0 or random.random() < math.exp(-delta / T):
-            current_tour = list(new_tour)
+            current_tour = new_tour
             current_len = new_len
             if current_len < best_len:
                 best_tour = current_tour.copy()
