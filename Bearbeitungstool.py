@@ -63,7 +63,6 @@ with st.sidebar:
         addresses_df = addresses_df.reset_index(drop=True)
     except Exception as e:
         st.error(f"Fehler beim Zurücksetzen des Index von addresses_df: {e}")
-        addresses_df = addresses_df.reset_index(drop=True)
 
     if "new_assignments" not in st.session_state:
         st.session_state.new_assignments = addresses_df.copy()
