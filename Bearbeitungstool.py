@@ -197,4 +197,4 @@ def _generate_excel_bytes():
                     pass
         service_min = int(rooms * 10)
         time_total = service_min + travel_min
-        gmaps_link = "https://www.google.com/maps/dir/" + "/".join([f"{lat
+        gmaps_link = "https://www.google.com/maps/dir/" + "/".join([f"{lat},{lon}" for lat, lon in coords])
