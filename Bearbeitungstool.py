@@ -104,12 +104,20 @@ def optimize_routes(algo, target, selected_team=None):
         optimized = tsp_solve_route(graph, stops, method=algo)
         st.session_state.new_assignments.loc[optimized.index, "tsp_order"] = range(len(optimized))
     st.success(f"Routen für {target.lower()} mit '{algo}' optimiert.")
-    st.sidebar.info(f"Routen optimiert mit '{algo}' für {target}.")
+    st.session_state.message = f"Routen optimiert mit '{algo}' für {target}."
     st.rerun()
+
+# Initialisiere Sidebar-Nachrichten
+if "message" not in st.session_state:
+    st.session_state.message = ""
 
 # Streamlit UI
 st.set_page_config(layout="wide")
 with st.sidebar:
+    # Zeige letzte Aktion
+    if st.session_state.message:
+        st.info(st.session_state.message)
+
     st.title("Interaktives Tool zur Routenbearbeitung")
 
     # Basisdaten laden
