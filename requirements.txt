@@ -4,4 +4,4 @@ folium
 osmnx
 networkx
 openpyxl
-leaflet
+streamlit_leaflet
