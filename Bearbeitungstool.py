@@ -21,7 +21,43 @@ if "show_map" not in st.session_state:
 if "show_new_team_form" not in st.session_state:
     st.session_state.show_new_team_form = False
 
+# STREAMLIT LOAD BASE DATA AND PRECOMPUTE
+# Load base addresses once and compute node_ids and distance map
+if 'base_addresses' not in st.session_state:
+    base_addresses = pd.read_csv('cleaned_addresses.csv')
+    team_df = pd.read_excel('routes_optimized.xlsx', sheet_name=None)
+    assigns=[]
+    for sh,df0 in team_df.items():
+        if sh!='Übersicht' and 'Adresse' in df0:
+            t0=int(sh.split('_')[1])
+            assigns += [(a,t0) for a in df0['Adresse']]
+    df_full = base_addresses.merge(pd.DataFrame(assigns,columns=['Wahlraum-A','team']),
+                                   on='Wahlraum-A', how='left')
+    st.session_state.new_assignments = df_full.copy()
+    # compute node IDs
+    g0 = get_graph()
+    node_list=[]
+    for _,r in df_full.iterrows():
+        try:
+            nid = ox.distance.nearest_nodes(g0, X=r['lon'], Y=r['lat'])
+        except:
+            nid = None
+        node_list.append(nid)
+    st.session_state.new_assignments['node_id'] = node_list
+    # precompute distance map between all node_ids
+    unique_nodes = [n for n in set(node_list) if n is not None]
+    dist_map = {}
+    for n in unique_nodes:
+        lengths = nx.single_source_dijkstra_path_length(g0, n, weight='length')
+        for m, d in lengths.items():
+            dist_map[(n,m)] = d
+    st.session_state.dist_map = dist_map
+
 # LOAD GRAPH FOR TSP
+@st.cache_resource
+def get_graph():
+    with open("munster_graph.pickle", "rb") as f:
+        return pickle.load(f)
 @st.cache_resource
 def get_graph():
     with open("munster_graph.pickle", "rb") as f:
