@@ -1,0 +1,7 @@
+streamlit
+pandas
+folium
+leafmap
+networkx
+osmnx
+openpyxl
