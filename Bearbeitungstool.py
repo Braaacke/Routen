@@ -32,9 +32,11 @@ def tsp_solve_route(graph, stops_df):
     tsp_path = greedy_tsp(G)
     return stops_df.iloc[tsp_path].reset_index(drop=True)
 
-# Kartenmarker auswählen und speichern
+# Funktion zur Stop-Auswahl
 def select_stop_on_map(df_addresses):
-    selected_stops = []
+    # Initialisierung der ausgewählten Stops
+    if 'selected_stops' not in st.session_state:
+        st.session_state.selected_stops = []
 
     # Streamlit Map-Integration
     m = folium.Map(location=[df_addresses["lat"].mean(), df_addresses["lon"].mean()], zoom_start=12)
@@ -45,16 +47,14 @@ def select_stop_on_map(df_addresses):
         marker = folium.Marker(location=[row['lat'], row['lon']], popup=row['Wahlraum-A'])
         marker.add_to(marker_cluster)
         
-        # Add click listener to select a stop
+        # Capture the stop when clicked (update the selected_stops list in session_state)
         marker.add_child(folium.Popup(f"Click to select {row['Wahlraum-A']}"))
-
-        # Capture the stop when clicked
-        # (This will be handled interactively with Streamlit later)
 
     # Display the map with interactive stop selection
     folium_static(m)
 
-    return selected_stops  # Update this list with user selection later
+    # Rückgabe der aktuell ausgewählten Stops
+    return st.session_state.selected_stops  # Diese Liste wird dynamisch aktualisiert
 
 
 st.set_page_config(layout="wide")
@@ -79,8 +79,14 @@ with st.sidebar:
 
     addresses_df = st.session_state.base_addresses.copy()
 
-    # Hier könnten die Stops durch Auswahl aus der Karte oder auch durch die Adressenliste erfolgen
-    selected_stops = select_stop_on_map(addresses_df)  # Wähle Stops über Karte
+    # Interaktive Stop-Auswahl auf der Karte
+    selected_stops = select_stop_on_map(addresses_df)
+
+    # Anzeige der aktuell ausgewählten Stops
+    st.write("### Ausgewählte Stops:")
+    st.write(f"Anzahl ausgewählter Stops: {len(selected_stops)}")
+    selected_stop_names = [addresses_df.loc[stop, "Wahlraum-A"] for stop in selected_stops]
+    st.write(selected_stop_names)
 
     # Bestehende Teams ermitteln
     existing_teams = sorted([int(t) for t in st.session_state.new_assignments["team"].dropna().unique()])
@@ -125,7 +131,7 @@ with st.sidebar:
                 st.rerun()
 
 # Karte vorbereiten
-m = leafmap.Map(center=[addresses_df["lat"].mean(), addresses_df["lon"].mean()], zoom=12)
+m = folium.Map(center=[addresses_df["lat"].mean(), addresses_df["lon"].mean()], zoom=12)
 graph = get_graph()
 
 color_list = ["#FF00FF", "#00FFFF", "#00FF00", "#FF0000", "#FFA500", "#FFFF00", "#00CED1", "#DA70D6", "#FF69B4", "#8A2BE2"]
@@ -179,4 +185,3 @@ for _, row in addresses_df.dropna(subset=["lat", "lon"]).iterrows():
 marker_cluster.add_to(m)
 
 m.to_streamlit(height=700)
-
