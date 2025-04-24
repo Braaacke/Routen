@@ -1,4 +1,7 @@
 streamlit>=1.20
 pandas
-pydeck>=0.8.0
-numpy
+folium
+leafmap
+networkx
+osmnx
+openpyxl
