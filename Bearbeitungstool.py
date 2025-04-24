@@ -170,6 +170,7 @@ for i, team_id in enumerate(sorted(st.session_state.new_assignments["team"].drop
             st.warning(f"Routenaufbau für Team {team_id} fehlgeschlagen: {e}")
             continue
 
+# Marker Cluster hinzufügen
 marker_cluster = MarkerCluster()
 
 # Für jedes Stop in der cleaned_addresses.csv, füge Marker mit Popups hinzu
@@ -181,25 +182,25 @@ for _, row in addresses_df.dropna(subset=["lat", "lon"]).iterrows():
 
     # Popup-Inhalt formatieren
     popup_content = f"""
-    {wahlraum_b}<br>
-    {wahlraum_a}<br>
-    Anzahl Räume: {num_rooms}
+    <b>{wahlraum_b}</b><br>
+    <b>{wahlraum_a}</b><br>
+    <b>Anzahl Räume:</b> {num_rooms}
     """
-    # Erstelle ein HTML Popup mit max-width und max-height
+
+    # Erstelle ein HTML Popup mit max-width und max-height für die dynamische Größe
     popup_html = f"""
     <div style="max-width: 500px; max-height: 500px; overflow:auto;">
         {popup_content}
     </div>
     """    
+    
     # Marker für jeden Stop erstellen und zum Marker-Cluster hinzufügen
-    marker = folium.Marker(location=[row["lat"], row["lon"]], popup=popup_content)
+    marker = folium.Marker(location=[row["lat"], row["lon"]], popup=folium.Popup(popup_html, max_width=500))
     marker.add_to(marker_cluster)
 
 # Füge das Marker Cluster zur Karte hinzu
 marker_cluster.add_to(m)
 
-# Füge Marker Cluster zur Karte hinzu
-marker_cluster.add_to(m)
 m.to_streamlit(height=700)
 
 if st.button("Zuordnung exportieren"):
