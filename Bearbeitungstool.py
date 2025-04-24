@@ -304,29 +304,37 @@ if st.session_state.show_map:
     m = leafmap.Map(center=[dfm['lat'].mean(), dfm['lon'].mean()], zoom=12)
     colors = ["#FF0000", "#00FF00", "#0000FF", "#FFA500", "#800080"]
     for i, team_id in enumerate(sorted(dfm['team'].dropna().unique())):
-        subset = dfm[dfm['team'] == team_id]
-        if 'tsp_order' in subset.columns:
-            subset = subset.sort_values('tsp_order')
-        node_ids = subset['node_id'].tolist()
-        path = []
-        for u, v in zip(node_ids[:-1], node_ids[1:]):
-            if u is None or v is None:
-                continue
-            try:
-                segment = nx.shortest_path(graph, u, v, weight='length')
-            except:
-                continue
-            path.extend([(graph.nodes[n]['y'], graph.nodes[n]['x']) for n in segment])
-        # Only draw route if path has points
-        if path:
-            folium.PolyLine(
-                path,
-                color=colors[i % len(colors)],
-                weight=6,
-                opacity=0.8,
-                tooltip=f'Route {team_id}'
-            ).add_to(m)
-    marker_cluster = MarkerCluster()
+    subset = dfm[dfm['team'] == team_id]
+    if 'tsp_order' in subset.columns:
+        subset = subset.sort_values('tsp_order')
+    node_ids = subset['node_id'].tolist()
+    path = []
+    for u, v in zip(node_ids[:-1], node_ids[1:]):
+        if u is None or v is None:
+            continue
+        try:
+            seg = nx.shortest_path(graph, u, v, weight='length')
+        except:
+            continue
+        path.extend([(graph.nodes[n]['y'], graph.nodes[n]['x']) for n in seg])
+    coords = list(zip(subset['lat'], subset['lon']))
+    if path:
+        folium.PolyLine(
+            path,
+            color=colors[i % len(colors)],
+            weight=6,
+            opacity=0.8,
+            tooltip=f'Route {team_id}'
+        ).add_to(m)
+    elif len(coords) > 1:
+        folium.PolyLine(
+            coords,
+            color=colors[i % len(colors)],
+            weight=6,
+            opacity=0.8,
+            tooltip=f'Route {team_id}'
+        ).add_to(m)
+marker_cluster = MarkerCluster()()
     for _, row in dfm.dropna(subset=['lat', 'lon']).iterrows():
         popup_html = (
             f"<div style='font-weight:bold;'>"
