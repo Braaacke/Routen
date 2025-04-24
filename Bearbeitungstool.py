@@ -178,7 +178,6 @@ for _, row in addresses_df.dropna(subset=["lat", "lon"]).iterrows():
     wahlraum_b = row.get("Wahlraum-B", "Keine Wahlraum-B-Daten")
     wahlraum_a = row.get("Wahlraum-A", "Keine Wahlraum-A-Daten")
     num_rooms = row.get("num_rooms", "Keine Raumanzahl")
-    bezirke = row.get("Wahlbezirke", "Keine Wahlbezirke")
 
     # Popup-Inhalt formatieren
     popup_content = f"""
