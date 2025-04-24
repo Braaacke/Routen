@@ -42,17 +42,22 @@ st.set_page_config(layout="wide")
 with st.sidebar:
     st.title("Interaktives Tool zur Routenbearbeitung")
 
-    addresses_df = pd.read_csv("cleaned_addresses.csv").reset_index(drop=True)
-    team_df = pd.read_excel("routes_optimized.xlsx", sheet_name=None)
+    # Manueller Import der aktualisierten Zuordnung
+    uploaded_file = st.file_uploader("Importiere bestehende Zuweisung (Excel-Datei)", type=["xlsx"])
+    if uploaded_file:
+        imported_team_df = pd.read_excel(uploaded_file, sheet_name=None)
+        imported_assignments = []
+        for sheet, df in imported_team_df.items():
+            if sheet != "Übersicht" and "Adresse" in df.columns:
+                team = int(sheet.split("_")[1])
+                for addr in df["Adresse"]:
+                    imported_assignments.append((addr, team))
+        assignments_df = pd.DataFrame(imported_assignments, columns=["Wahlraum-A", "team"])
+        addresses_df = addresses_df.drop(columns="team", errors="ignore")
+        addresses_df = addresses_df.merge(assignments_df, on="Wahlraum-A", how="left")
+        st.success("Import erfolgreich – aktuelle Zuweisung wurde geladen.")
 
-    temp_assignments = []
-    for sheet, df in team_df.items():
-        if sheet != "Übersicht" and "Adresse" in df.columns:
-            team = int(sheet.split("_")[1])
-            for addr in df["Adresse"]:
-                temp_assignments.append((addr, team))
-    assignments_df = pd.DataFrame(temp_assignments, columns=["Wahlraum-A", "team"])
-    addresses_df = addresses_df.merge(assignments_df, on="Wahlraum-A", how="left")
+    addresses_df = addresses_df.reset_index(drop=True)
 
     if "new_assignments" not in st.session_state:
         st.session_state.new_assignments = addresses_df.copy()
