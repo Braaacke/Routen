@@ -194,7 +194,7 @@ with st.sidebar:
             pd.DataFrame(assigns, columns=['Wahlraum-A','team']), on='Wahlraum-A', how='left')
         st.session_state.new_assignments = st.session_state.base_addresses.copy()
     df = st.session_state.new_assignments.reset_index(drop=True)
-        if 'node_id' not in df:
+    if 'node_id' not in df:
         g = get_graph()
         # precompute node ids with exception handling
         node_list = []
