@@ -183,9 +183,14 @@ for _, row in addresses_df.dropna(subset=["lat", "lon"]).iterrows():
     popup_content = f"""
     {wahlraum_b}<br>
     {wahlraum_a}<br>
-    <b>Anzahl Räume:</b> {num_rooms}<br>
+    <b>#Stimmbezirke:</b> {num_rooms}<br>
     """
-    
+    # Erstelle ein HTML Popup mit max-width und max-height
+    popup_html = f"""
+    <div style="max-width: 250px; max-height: 200px; overflow:auto;">
+        {popup_content}
+    </div>
+    """    
     # Marker für jeden Stop erstellen und zum Marker-Cluster hinzufügen
     marker = folium.Marker(location=[row["lat"], row["lon"]], popup=popup_content)
     marker.add_to(marker_cluster)
