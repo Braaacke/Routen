@@ -70,6 +70,14 @@ with st.sidebar:
         addresses_df = addresses_df.merge(assignments_df, on="Wahlraum-A", how="left")
         st.success("Import erfolgreich – aktuelle Zuweisung wurde überschrieben.")
 
+        # Routen nach Import neu berechnen
+        graph = get_graph()
+        for team_id in assignments_df["team"].dropna().unique():
+            team_rows = addresses_df[addresses_df["team"] == team_id]
+            optimized_rows = tsp_solve_route(graph, team_rows)
+            addresses_df.loc[optimized_rows.index, "tsp_order"] = range(len(optimized_rows))
+        st.session_state.new_assignments = addresses_df.copy()
+
         with st.expander("📋 Vorschau der importierten Zuweisung"):
             st.dataframe(assignments_df)
 
