@@ -175,6 +175,7 @@ with st.sidebar:
 
         # Export und Download in einem Button
 # Funktion zur Generierung des Excels als Bytes
+import pandas as pd as _pd
 
 def _generate_excel_bytes():
     graph = get_graph()
@@ -249,51 +250,11 @@ st.download_button(
     mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
 )
 
-
- # Log-Ausgabe
-    st.subheader("Aktionen-Log")
-    for entry in st.session_state.action_log:
-        st.write(f"- {entry}")
+# Log-Ausgabe
+st.subheader("Aktionen-Log")
+for entry in st.session_state.action_log:
+    st.write(f"- {entry}")
 
 # Karte mit farbigen Routen bleibt unverändert
 addresses_df = st.session_state.new_assignments
-m = leafmap.Map(center=[addresses_df['lat'].mean(), addresses_df['lon'].mean()], zoom=12)
-color_list = ["#FF0000", "#00FF00", "#0000FF", "#FFA500", "#800080", "#008080", "#FFD700", "#FF1493", "#40E0D0", "#A52A2A"]
-for i, team_id in enumerate(sorted(addresses_df.team.dropna().unique())):
-    team_rows = addresses_df[addresses_df.team == team_id]
-    if 'tsp_order' in team_rows.columns:
-        team_rows = team_rows.sort_values('tsp_order')
-    coords = team_rows[['lat', 'lon']].values.tolist()
-    if len(coords) > 1:
-        nodes = [ox.distance.nearest_nodes(get_graph(), X=lon, Y=lat) for lat, lon in coords]
-        path = []
-        for u, v in zip(nodes[:-1], nodes[1:]):
-            segment = nx.shortest_path(get_graph(), u, v, weight='length')
-            path.extend([(get_graph().nodes[n]['y'], get_graph().nodes[n]['x']) for n in segment])
-        folium.PolyLine(
-            path,
-            color=color_list[i % len(color_list)],
-            weight=6,
-            opacity=0.8,
-            tooltip=f"Route {int(team_id)}"
-        ).add_to(m)
-
-# Marker-Cluster unverändert
-marker_cluster = MarkerCluster()
-for _, row in addresses_df.dropna(subset=['lat', 'lon']).iterrows():
-    wahlraum_b = row.get('Wahlraum-B', '')
-    wahlraum_a = row.get('Wahlraum-A', '')
-    num_rooms = row.get('num_rooms', '')
-    popup_html = f"""
-    <div style=\"font-weight:bold;\">
-        <b>{wahlraum_b}</b><br>
-        <b>{wahlraum_a}</b><br>
-        <b>Anzahl Räume:</b> {num_rooms}
-    </div>
-    """
-    folium.Marker(
-        [row['lat'], row['lon']], popup=folium.Popup(popup_html, max_width=0)
-    ).add_to(marker_cluster)
-marker_cluster.add_to(m)
-
-m.to_streamlit(height=1000)
+m = leafmap.Map(center=[addresses_df['lat'].mean(), addresses_df['lon'].mean()], zoom=12)(height=1000)
