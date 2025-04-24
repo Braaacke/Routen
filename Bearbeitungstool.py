@@ -27,31 +27,28 @@ if "show_map" not in st.session_state:
 if "show_new_team_form" not in st.session_state:
     st.session_state.show_new_team_form = False
 
-# Load base data and precompute node IDs (once)
+# Load base data and precompute node IDs once
 if 'new_assignments' not in st.session_state:
-    # Load addresses and assignments
     base_addresses = pd.read_csv('cleaned_addresses.csv')
     routes = pd.read_excel('routes_optimized.xlsx', sheet_name=None)
     assigns = []
     for sheet_name, df0 in routes.items():
-        # Skip summary sheet and ensure 'Adresse' column exists
         if sheet_name == 'Übersicht' or 'Adresse' not in df0.columns:
             continue
-        # Extract team ID and extend assigns list
         team_id = int(sheet_name.split('_')[1])
         assigns.extend([(addr, team_id) for addr in df0['Adresse']])
     df_full = base_addresses.merge(
-        pd.DataFrame(assigns, columns=['Wahlraum-A','team']),
+        pd.DataFrame(assigns, columns=['Wahlraum-A', 'team']),
         on='Wahlraum-A', how='left'
     )
-    # Compute nearest node IDs
     graph = get_graph()
     node_ids = []
     for _, row in df_full.iterrows():
         try:
-            node_ids.append(ox.distance.nearest_nodes(graph, X=row['lon'], Y=row['lat']))
-        except Exception:
-            node_ids.append(None)
+            nid = ox.distance.nearest_nodes(graph, X=row['lon'], Y=row['lat'])
+        except:
+            nid = None
+        node_ids.append(nid)
     df_full['node_id'] = node_ids
     st.session_state.new_assignments = df_full.copy()
 
@@ -110,13 +107,12 @@ def tsp_solve_route(graph, stops_df, method="Greedy"):
             if i == j:
                 continue
             ni, nj = node_ids[i], node_ids[j]
-            if ni is None or nj is None:
-                w = float('inf')
-            else:
+            w = float('inf')
+            if ni is not None and nj is not None:
                 try:
                     w = nx.shortest_path_length(graph, ni, nj, weight='length')
                 except:
-                    w = float('inf')
+                    pass
             H[i][j]['weight'] = w
     if method == "Greedy":
         path = greedy_tsp(H, weight='weight')
@@ -135,20 +131,7 @@ def tsp_solve_route(graph, stops_df, method="Greedy"):
 def optimize_routes(algo, target, selected_team=None):
     graph = get_graph()
     df = st.session_state.new_assignments
-    # Ensure node_id column exists
-    if 'node_id' not in df.columns:
-        g = get_graph()
-        node_list = []
-        for _, row in df.iterrows():
-            try:
-                nid = ox.distance.nearest_nodes(g, X=row['lon'], Y=row['lat'])
-            except:
-                nid = None
-            node_list.append(nid)
-        df['node_id'] = node_list
-        st.session_state.new_assignments = df.copy()
-    teams = ([selected_team] if target == 'Ausgewähltes Team' and selected_team else
-             df['team'].dropna().unique())
+    teams = ([selected_team] if target == 'Ausgewähltes Team' and selected_team else df['team'].dropna().unique())
     for t in teams:
         subset = df[df['team'] == t]
         optimized = tsp_solve_route(graph, subset, method=algo)
@@ -160,59 +143,28 @@ def optimize_routes(algo, target, selected_team=None):
 # Generate Excel report bytes
 
 def _generate_excel_bytes():
-    # Ensure node_id column exists before export
-    df_export = st.session_state.new_assignments
-    if 'node_id' not in df_export.columns:
-        g = get_graph()
-        node_list = []
-        for _, row in df_export.iterrows():
-            try:
-                nid = ox.distance.nearest_nodes(g, X=row['lon'], Y=row['lat'])
-            except:
-                nid = None
-            node_list.append(nid)
-        df_export['node_id'] = node_list
-        st.session_state.new_assignments = df_export.copy()
-    # Begin export using updated DataFrame
-    graph = get_graph()
-    df = st.session_state.new_assignments
-    # Ensure node_id exists in case new_assignments was modified
-    df = st.session_state.new_assignments
-    if 'node_id' not in df.columns:
-        g = get_graph()
-        node_list = []
-        for _, row in df.iterrows():
-            try:
-                nid = ox.distance.nearest_nodes(g, X=row['lon'], Y=row['lat'])
-            except:
-                nid = None
-            node_list.append(nid)
-        df['node_id'] = node_list
-        st.session_state.new_assignments = df.copy()
-    graph = get_graph()
     graph = get_graph()
     df = st.session_state.new_assignments
     overview = []
     team_sheets = {}
     for t in sorted(df['team'].dropna().unique()):
         stops = df[df['team'] == t].copy()
-        if 'tsp_order' in stops:
+        if 'tsp_order' in stops.columns:
             stops.sort_values('tsp_order', inplace=True)
         rooms = int(stops.get('num_rooms', 0).sum())
-        travel_km = travel_min = 0
+        km = mn = 0
         node_ids = stops['node_id'].tolist()
         for u, v in zip(node_ids[:-1], node_ids[1:]):
+            dist = 0
             if u is not None and v is not None:
                 try:
                     dist = nx.shortest_path_length(graph, u, v, weight='length')
                 except:
-                    dist = 0
-            else:
-                dist = 0
-            travel_km += dist / 1000
-            travel_min += dist / 1000 * 2
-        service_min = rooms * 10
-        total_min = int(service_min + travel_min)
+                    pass
+            km += dist/1000
+            mn += dist/1000*2
+        service = rooms*10
+        total = int(service + mn)
         link = "https://www.google.com/maps/dir/" + "/".join(
             f"{lat},{lon}" for lat, lon in stops[['lat','lon']].values
         )
@@ -220,10 +172,10 @@ def _generate_excel_bytes():
             'Kontrollbezirk': t,
             'Stops': len(stops),
             'Stimmbezirke': rooms,
-            'Wegstrecke (km)': round(travel_km, 1),
-            'Fahrtzeit (min)': int(travel_min),
-            'Kontrollzeit (min)': service_min,
-            'Gesamtzeit': str(timedelta(minutes=total_min)),
+            'Wegstrecke (km)': round(km,1),
+            'Fahrtzeit (min)': int(mn),
+            'Kontrollzeit (min)': service,
+            'Gesamtzeit': str(timedelta(minutes=total)),
             'Google-Link': link
         })
         rows = []
@@ -232,8 +184,8 @@ def _generate_excel_bytes():
             rows.append({
                 'Reihenfolge': idx,
                 'Adresse': row['Wahlraum-A'],
-                'Stimmbezirke': row.get('rooms', ''),
-                'Anzahl Stimmbezirke': row.get('num_rooms', ''),
+                'Stimmbezirke': row.get('rooms',''),
+                'Anzahl Stimmbezirke': row.get('num_rooms',''),
                 'Link': f"https://www.google.com/maps/search/?api=1&query={quote_plus(coord)}"
             })
         team_sheets[f'Team_{t}'] = pd.DataFrame(rows)
@@ -244,14 +196,16 @@ def _generate_excel_bytes():
         from openpyxl.utils import get_column_letter
         ws0 = writer.sheets['Übersicht']
         for i, col in enumerate(df_over.columns, 1):
-            max_len = max(df_over[col].astype(str).map(len).max(), len(col))
-            ws0.column_dimensions[get_column_letter(i)].width = max_len + 2
+            ws0.column_dimensions[get_column_letter(i)].width = max(
+                df_over[col].astype(str).map(len).max(), len(col)
+            ) + 2
         for name, df_sheet in team_sheets.items():
             df_sheet.to_excel(writer, sheet_name=name, index=False)
             ws = writer.sheets[name]
             for i, col in enumerate(df_sheet.columns, 1):
-                max_len = max(df_sheet[col].astype(str).map(len).max(), len(col))
-                ws.column_dimensions[get_column_letter(i)].width = max_len + 2
+                ws.column_dimensions[get_column_letter(i)].width = max(
+                    df_sheet[col].astype(str).map(len).max(), len(col)
+                ) + 2
     buf.seek(0)
     return buf.getvalue()
 
@@ -259,21 +213,56 @@ def _generate_excel_bytes():
 st.set_page_config(layout='wide')
 with st.sidebar:
     st.title('Routenbearbeitung')
-    # ... sidebar code unchanged ...
+    df = st.session_state.new_assignments
+    stops = st.multiselect('Stops auswählen', options=df['Wahlraum-A'].tolist())
+    teams = sorted(df['team'].dropna().tolist())
+    sel_team = st.selectbox('Team auswählen', [None] + teams)
+    algo = st.selectbox('Algorithmus', ['Greedy', '2-Opt', 'Simulated Annealing', 'Christofides'])
+    target = st.radio('Zu optimierende Route', ['Alle Teams', 'Ausgewähltes Team'])
+    if st.button('Routen optimieren'):
+        optimize_routes(algo, target, sel_team)
+    if st.button('Zuweisung übernehmen') and sel_team and stops:
+        for addr in stops:
+            idx = df[df['Wahlraum-A'] == addr].index[0]
+            st.session_state.new_assignments.at[idx, 'team'] = sel_team
+        st.session_state.action_log.append(f'Zuweisung übernommen: {len(stops)} → Team {sel_team}')
+        st.session_state.show_map = True
+        st.experimental_rerun()
+    if st.button('Neues Team erstellen'):
+        st.session_state.show_new_team_form = True
+    if st.session_state.show_new_team_form:
+        next_team = max(teams) + 1 if teams else 1
+        form = st.form('new_team_form')
+        new_stops = form.multiselect(f'Stops für Team {next_team}', options=df['Wahlraum-A'].tolist())
+        if form.form_submit_button('Team erstellen') and new_stops:
+            for addr in new_stops:
+                idx = df[df['Wahlraum-A'] == addr].index[0]
+                st.session_state.new_assignments.at[idx, 'team'] = next_team
+            st.session_state.action_log.append(f'Team {next_team} erstellt mit {len(new_stops)} Stops')
+            st.session_state.show_map = True
+    excel_bytes = _generate_excel_bytes()
+    st.download_button(
+        '📥 Export & Download Excel',
+        data=excel_bytes,
+        file_name='routen_zuweisung.xlsx',
+        mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    )
+    st.markdown('---')
+    st.subheader('Aktionen-Log')
+    for entry in st.session_state.action_log:
+        st.write(f'- {entry}')
 
 if st.session_state.show_map:
     dfm = st.session_state.new_assignments
     graph = get_graph()
     m = leafmap.Map(center=[dfm['lat'].mean(), dfm['lon'].mean()], zoom=12)
-    colors = ["#FF0000", "#00FF00", "#0000FF", "#FFA500", "#800080"]
-    # Zeichne Routen entlang der Straßengeometrie
-    for i, team_id in enumerate(sorted(dfm['team'].dropna().unique())):
+    colors = ["#FF0000", "#00FF00", "#0000FF", "#FFA500"]
+    for i, team_id in enumerate(sorted(dfm['team'].dropna().tolist())):
         subset = dfm[dfm['team'] == team_id]
         if 'tsp_order' in subset.columns:
             subset = subset.sort_values('tsp_order')
         node_ids = subset['node_id'].dropna().tolist()
         if len(node_ids) > 1:
-            # Plot route with OSMnx geometry on existing folium map
             m = ox.plot_route_folium(
                 graph,
                 node_ids,
@@ -283,7 +272,6 @@ if st.session_state.show_map:
                 weight=6,
                 opacity=0.8
             )
-    # Marker-Cluster für Stops
     marker_cluster = MarkerCluster()
     for _, row in dfm.dropna(subset=['lat', 'lon']).iterrows():
         popup_html = (
