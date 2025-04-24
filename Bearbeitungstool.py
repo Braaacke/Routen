@@ -334,7 +334,7 @@ if st.session_state.show_map:
                 opacity=0.8,
                 tooltip=f'Route {team_id}'
             ).add_to(m)
-    marker_cluster = MarkerCluster()()()
+    marker_cluster = MarkerCluster()
     for _, row in dfm.dropna(subset=['lat', 'lon']).iterrows():
         popup_html = (
             f"<div style='font-weight:bold;'>"
