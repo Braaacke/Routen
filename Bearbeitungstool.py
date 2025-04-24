@@ -183,11 +183,11 @@ for _, row in addresses_df.dropna(subset=["lat", "lon"]).iterrows():
     popup_content = f"""
     {wahlraum_b}<br>
     {wahlraum_a}<br>
-    <b>#Stimmbezirke:</b> {num_rooms}<br>
+    Anzahl Räume: {num_rooms}
     """
     # Erstelle ein HTML Popup mit max-width und max-height
     popup_html = f"""
-    <div style="max-width: 250px; max-height: 200px; overflow:auto;">
+    <div style="max-width: 500px; max-height: 500px; overflow:auto;">
         {popup_content}
     </div>
     """    
