@@ -170,7 +170,22 @@ with st.sidebar:
                     st.session_state.new_assignments.at[idx, 'team'] = max_team
                 st.session_state.action_log.append(f"Team {max_team} erstellt mit {len(stops)} Stop(s).")
                 st.session_state.show_new_team_form = False
-                st.rerun()
+    st.rerun()
+
+    # Export & Download Excel
+    data = _generate_excel_bytes()
+    st.download_button(
+        label="📥 Export & Download Excel",
+        data=data,
+        file_name="routen_zuweisung_aktualisiert.xlsx",
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
+
+    # Aktionen-Log
+    st.markdown("---")
+    st.subheader("Aktionen-Log")
+    for entry in st.session_state.action_log:
+        st.write(f"- {entry}")
 
 # Funktion zur Generierung des Excels als Bytes
 
@@ -237,15 +252,6 @@ def _generate_excel_bytes():
                 ws.column_dimensions[get_column_letter(col_idx)].width = max_len + 2
     buf.seek(0)
     return buf.getvalue()
-
-# Export & Download Excel in einem Button
-data = _generate_excel_bytes()
-st.download_button(
-    label="📥 Export & Download Excel",
-    data=data,
-    file_name="routen_zuweisung_aktualisiert.xlsx",
-    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-)
 
 # Karte mit farbigen Routen und dynamischen Popups
 addresses_df = st.session_state.new_assignments
