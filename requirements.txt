@@ -8,3 +8,4 @@ openpyxl
 fpdf2
 selenium
 chromedriver-autoinstaller
+streamlit_folium
