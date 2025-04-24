@@ -171,23 +171,28 @@ for i, team_id in enumerate(sorted(st.session_state.new_assignments["team"].drop
             continue
 
 marker_cluster = MarkerCluster()
-for _, row in st.session_state.new_assignments.dropna(subset=["lat", "lon"]).iterrows():
-    # Adressdaten extrahieren
+
+# Für jedes Stop in der cleaned_addresses.csv, füge Marker mit Popups hinzu
+for _, row in addresses_df.dropna(subset=["lat", "lon"]).iterrows():
+    # Extrahiere die relevanten Spalten für das Popup
     wahlraum_b = row.get("Wahlraum-B", "Keine Wahlraum-B-Daten")
-    bezirke = row.get("Bezirk-Name", "Keine Bezirk-Daten")
+    wahlraum_a = row.get("Wahlraum-A", "Keine Wahlraum-A-Daten")
+    num_rooms = row.get("num_rooms", "Keine Raumanzahl")
+    bezirke = row.get("Wahlbezirke", "Keine Wahlbezirke")
 
-    # Falls die Bezirk-Daten als Zeichenketten mit Semikolon getrennt vorliegen
-    if isinstance(bezirke, str):
-        bezirke = "<br>".join([b[:3] + " " + " ".join(b.split()[1:]) for b in bezirke.split(";") if len(b.split()) > 1])
-    else:
-        bezirke = "Keine Bezirk-Daten"
-
-    # Popup-Text formatieren
-    popup = f"<b>{wahlraum_b}</b><br>{bezirke}"
+    # Popup-Inhalt formatieren
+    popup_content = f"""
+    <b>Wahlraum-A:</b> {wahlraum_a}<br>
+    <b>Wahlraum-B:</b> {wahlraum_b}<br>
+    <b>Anzahl Räume:</b> {num_rooms}<br>
+    """
     
-    # Marker mit Popup erstellen
-    marker = folium.Marker(location=[row["lat"], row["lon"]], popup=popup)
+    # Marker für jeden Stop erstellen und zum Marker-Cluster hinzufügen
+    marker = folium.Marker(location=[row["lat"], row["lon"]], popup=popup_content)
     marker.add_to(marker_cluster)
+
+# Füge das Marker Cluster zur Karte hinzu
+marker_cluster.add_to(m)
 
 # Füge Marker Cluster zur Karte hinzu
 marker_cluster.add_to(m)
