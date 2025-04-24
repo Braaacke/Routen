@@ -260,18 +260,17 @@ if st.session_state.show_map:
     for i,t in enumerate(sorted(dfm.team.dropna().unique())):
         rows=dfm[dfm.team==t]
         if 'tsp_order' in rows: rows=rows.sort_values('tsp_order')
-        cr=rows[['lat','lon']].values.tolist()
-        if len(cr)>1:
-            # compute nearest nodes with exception handling
-            nodes = []
-            for lat, lon in cr:
-                try:
-                    node = ox.distance.nearest_nodes(g, X=lon, Y=lat)
-                except Exception:
-                    node = None
-                nodes.append(node)
-            path=[]
-            for u,v in zip(nodes[:-1],nodes[1:]): path+=[(g.nodes[n]['y'],g.nodes[n]['x']) for n in nx.shortest_path(g,u,v,weight='length')]
+        # use precomputed node_ids instead of recomputing
+            nodes = rows['node_id'].tolist()
+            # build path segments
+            path = []
+            for u, v in zip(nodes[:-1], nodes[1:]):
+                if u is None or v is None:
+                    continue
+                # shortest path between nodes
+                segment = nx.shortest_path(g, u, v, weight='length')
+                path.extend([(g.nodes[n]['y'], g.nodes[n]['x']) for n in segment])
+            folium.PolyLine(path, color=cols[i%len(cols)], weight=6, opacity=0.8, tooltip=f'Route{t}').add_to(m) path+=[(g.nodes[n]['y'],g.nodes[n]['x']) for n in nx.shortest_path(g,u,v,weight='length')]
             folium.PolyLine(path,color=cols[i%len(cols)],weight=6,opacity=0.8,tooltip=f'Route{t}').add_to(m)
     mc=MarkerCluster()
     for _,r in dfm.dropna(subset=['lat','lon']).iterrows():
