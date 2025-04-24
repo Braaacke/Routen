@@ -98,6 +98,7 @@ with st.sidebar:
     else:
         selected_indices = []
         st.warning("Daten konnten nicht geladen werden oder 'Wahlraum-A' fehlt.")
+    # Bestehende Teams erst nach allen möglichen Änderungen ermitteln
     existing_teams = sorted([int(t) for t in st.session_state.new_assignments["team"].dropna().unique()])
     selected_team = st.selectbox("Ziel-Team auswählen", options=[None] + existing_teams)
 
