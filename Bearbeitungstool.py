@@ -2,16 +2,16 @@
 
 import streamlit as st
 import pandas as pd
+import leafmap.foliumap as leafmap
 import folium
 from folium.plugins import MarkerCluster
-import os
-import io
-from fpdf import FPDF
-import zipfile
-from selenium import webdriver
-import chromedriver_autoinstaller
-from pathlib import Path
+import networkx as nx
 import osmnx as ox
+import pickle
+from networkx.algorithms.approximation.traveling_salesman import greedy_tsp
+from urllib.parse import quote_plus
+from datetime import timedelta
+import io
 
 # Funktionen für TSP
 @st.cache_resource
@@ -142,8 +142,8 @@ with st.sidebar:
                 st.success(f"Team {new_team} wurde erstellt und die ausgewählten Stop(s) wurden zugewiesen.")
                 st.session_state.show_new_team_form = False
                 st.rerun()
-m = folium.Map(location=[addresses_df["lat"].mean(), addresses_df["lon"].mean()], zoom_start=12)
 
+m = leafmap.Map(center=[addresses_df["lat"].mean(), addresses_df["lon"].mean()], zoom=12)
 graph = get_graph()
 
 color_list = ["#FF00FF", "#00FFFF", "#00FF00", "#FF0000", "#FFA500", "#FFFF00", "#00CED1", "#DA70D6", "#FF69B4", "#8A2BE2"]
@@ -262,32 +262,3 @@ if st.button("Zuordnung exportieren"):
         file_name="routen_zuweisung_aktualisiert.xlsx",
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
-
-# Funktion zur TSP-Neuberechnung für ein einzelnes Team
-def reoptimize_team_route(team_id, graph):
-    df = st.session_state.new_assignments
-    team_rows = df[df["team"] == team_id]
-    if not team_rows.empty:
-        optimized_rows = tsp_solve_route(graph, team_rows)
-        st.session_state.new_assignments.loc[optimized_rows.index, "tsp_order"] = range(len(optimized_rows))
-
-# Funktion zur TSP-Neuberechnung für alle Teams
-def reoptimize_all_routes(graph):
-    for team_id in sorted(st.session_state.new_assignments["team"].dropna().unique()):
-        reoptimize_team_route(team_id, graph)
-
-# In der Sidebar
-with st.sidebar:
-    st.markdown("---")
-    st.subheader("🔁 Routen neu optimieren")
-    graph = get_graph()
-    team_options = sorted([int(t) for t in st.session_state.new_assignments["team"].dropna().unique()])
-    team_selection = st.selectbox("Team auswählen für Re-Optimierung", options=["Alle Teams"] + team_options)
-    if st.button("Route neu optimieren"):
-        if team_selection == "Alle Teams":
-            reoptimize_all_routes(graph)
-            st.success("Alle Routen wurden neu optimiert.")
-        else:
-            reoptimize_team_route(team_selection, graph)
-            st.success(f"Route von Team {team_selection} wurde neu optimiert.")
-        st.rerun()
