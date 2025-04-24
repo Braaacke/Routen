@@ -295,5 +295,3 @@ if st.button("Zuordnung exportieren"):
         file_name="routen_zuweisung_aktualisiert.xlsx",
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
-
-m.to_streamlit(height=700)
