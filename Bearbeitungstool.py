@@ -172,21 +172,25 @@ for i, team_id in enumerate(sorted(st.session_state.new_assignments["team"].drop
 
 marker_cluster = MarkerCluster()
 for _, row in st.session_state.new_assignments.dropna(subset=["lat", "lon"]).iterrows():
-    wahlraum_b = row.get("Wahlraum-B", "")
-    if isinstance(wahlraum_b, str):
-        wahlraum_b = wahlraum_b.split(",")[0]
-    else:
-        wahlraum_b = ""
-    bezirke = row.get("Bezirk-Name", "")
+    # Adressdaten extrahieren
+    wahlraum_b = row.get("Wahlraum-B", "Keine Wahlraum-B-Daten")
+    bezirke = row.get("Bezirk-Name", "Keine Bezirk-Daten")
+
+    # Falls die Bezirk-Daten als Zeichenketten mit Semikolon getrennt vorliegen
     if isinstance(bezirke, str):
         bezirke = "<br>".join([b[:3] + " " + " ".join(b.split()[1:]) for b in bezirke.split(";") if len(b.split()) > 1])
     else:
-        bezirke = ""
+        bezirke = "Keine Bezirk-Daten"
+
+    # Popup-Text formatieren
     popup = f"<b>{wahlraum_b}</b><br>{bezirke}"
+    
+    # Marker mit Popup erstellen
     marker = folium.Marker(location=[row["lat"], row["lon"]], popup=popup)
     marker.add_to(marker_cluster)
-marker_cluster.add_to(m)
 
+# Füge Marker Cluster zur Karte hinzu
+marker_cluster.add_to(m)
 m.to_streamlit(height=700)
 
 if st.button("Zuordnung exportieren"):
