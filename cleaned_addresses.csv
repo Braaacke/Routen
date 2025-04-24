@@ -1,104 +1,243 @@
-Wahlraum-A,rooms,num_rooms,latlong,lat,lon
-"Alt Angelmodde 15, 48167 Münster",['221 - Angelstraße'],1,"51.92308165,7.699121370363766",51.92308165,7.699121370363766
-"Alter Steinweg 11, 48143 Münster",['014 - Prinzipalmarkt'],1,"51.9629282,7.631154381245056",51.9629282,7.631154381245056
-"Am Wigbold 11, 48167 Münster",['211 - Kreuzbach' '214 - Wolbeck Zentrum' '215 - Hofkamp'],3,"51.9153201,7.729627892884797",51.9153201,7.729627892884797
-"An der Alten Kirche 161, 48165 Münster","['235 - Hünenburg' '236 - Böttcherstraße' '237 - Albertsheide'
- '238 - Wielandstraße' '255 - Theodor-Storm-Straße' '263 - Langestraße']",6,"51.903663449999996,7.626606101187082",51.903663449999996,7.626606101187082
-"An der Konradkirche 7, 48155 Münster",['174 - An der Konradkirche'],1,"51.96324975,7.677774215483531",51.96324975,7.677774215483531
-"An der Meerwiese 7, 48157 Münster",['162 - Königsberger Straße' '163 - An der Meerwiese'],2,"51.989158950000004,7.648910980987003",51.989158950000004,7.648910980987003
-"Antoniusstraße 32, 48151 Münster",['111 - Goebenstraße'],1,"51.952982899999995,7.621452075627948",51.952982899999995,7.621452075627948
-"Appelbreistiege 40, 48149 Münster",['322 - Gievenbecker Weg' '323 - Potstiege' '324 - Twenteweg'],3,"51.96779325,7.581247009083935",51.96779325,7.581247009083935
-"Auf dem Dorn 14, 48161 Münster",['293 - Altenroxeler Straße'],1,"51.955106400000005,7.530773881241168",51.955106400000005,7.530773881241168
-"Bismarckallee 55, 48151 Münster",['121 - Scharnhorststraße' '122 - Pluggendorf'],2,"51.95197455,7.609399799788202",51.95197455,7.609399799788202
-"Bohlweg 7, 48147 Münster",['044 - Landeshaus' '047 - Gartenstraße'],2,"51.9668954,7.638297652655629",51.9668954,7.638297652655629
-"Bonhoefferstraße 50, 48151 Münster",['123 - Goerdelerstraße' '124 - Bonhoefferstraße' '125 - Lange Ossenbeck'],3,"51.94163015,7.605145209437712",51.94163015,7.605145209437712
-"Bröderichweg 36, 48159 Münster",['153 - Bröderichweg' '156 - Coermühle'],2,"51.99257595,7.6162983710793535",51.99257595,7.6162983710793535
-"Coerdestraße 8, 48147 Münster",['033 - Siverdesstraße' '034 - Coerdestraße'],2,"51.9691151,7.6280025",51.9691151,7.6280025
-"Corrensstraße 25, 48149 Münster","['301 - Bentelerstraße' '302 - Wasserweg' '303 - Philippistraße'
- '305 - Von-Esmarch-Straße']",4,"51.9682696,7.595463298034186",51.9682696,7.595463298034186
-"Dachsleite 32-36, 48157 Münster",['161 - Dachsleite' '166 - Marderweg'],2,"51.9970641,7.6477306",51.9970641,7.6477306
-"Dahlweg 118, 48153 Münster",['114 - Weißenburgstraße' '132 - Grevingstraße'],2,"51.9394195,7.628834869047619",51.9394195,7.628834869047619
-"Dieckmannstraße 131, 48161 Münster",['314 - Dieckmannstraße' '315 - Heinrich-Ebel-Straße'],2,"51.965217749999994,7.5669587223733625",51.965217749999994,7.5669587223733625
-"Dingbängerweg 80, 48163 Münster","['281 - Hesselmann' '283 - Dingbängerweg' '284 - Am Dill'
- '285 - Rote Erde']",4,"51.932620549999996,7.580143024353202",51.932620549999996,7.580143024353202
-"Drostestraße 7, 48157 Münster",['182 - Handorfer Straße' '183 - Heriburgstraße' '184 - Ziegelhof'],3,"51.9901032,7.703648538461694",51.9901032,7.703648538461694
-"Echelmeyerstraße 19, 48163 Münster",['282 - Ossenkampstiege'],1,"51.9367046,7.592762937389198",51.9367046,7.592762937389198
-"Eichenaue 3, 48157 Münster",['181 - Hornheide'],1,"51.995582600000006,7.712675513581021",51.995582600000006,7.712675513581021
-"Eichendorffstraße 36, 48167 Münster",['222 - Theodor-Heuss-Straße' '223 - Bachstraße'],2,"51.9147512,7.695004957462609",51.9147512,7.695004957462609
-"Finkenstraße 76, 48147 Münster","['021 - Kapuzinerstraße' '022 - Gasselstiege' '023 - Marientalstraße'
- '031 - Finkenstraße']",4,"51.9737797,7.620670488251879",51.9737797,7.620670488251879
-"Friedrich-Ebert-Straße 46, 48153 Münster",['101 - Zumbroockstraße' '106 - Kronprinzenstraße' '107 - Herdingstraße'],3,"51.95038475,7.63116767430181",51.95038475,7.63116767430181
-"Friesenring 25, 48147 Münster",['051 - Salzmannstraße' '054 - Kinderhauser Straße' '055 - Koburger Weg'],3,"51.975365999999994,7.615509499999999",51.975365999999994,7.615509499999999
-"Gelmerheide 3, 48157 Münster",['171 - Gelmer'],1,"52.0297395,7.675133013988717",52.0297395,7.675133013988717
-"Glatzer Weg 9, 48151 Münster",['134 - Sternbusch' '135 - Kriegerweg' '136 - Clemenshospital'],3,"51.9331045,7.612316207538708",51.9331045,7.612316207538708
-"Gronowskistraße 70, 48161 Münster",['312 - Nünningweg' '313 - Ramertsweg'],2,"51.96836905,7.566242756578949",51.96836905,7.566242756578949
-"Grüne Gasse 38-40, 48143 Münster",['015 - Aegidii'],1,"51.9581485,7.6237268",51.9581485,7.6237268
-"Gut Insel 36, 48151 Münster",['116 - Oberschlesier Straße'],1,"51.93860585,7.61298881209431",51.93860585,7.61298881209431
-"Gutenbergstraße 14, 48145 Münster",['074 - Oststraße' '075 - Zumsandestraße'],2,"51.96006265,7.645207713023179",51.96006265,7.645207713023179
-"Hafenstraße 34, 48153 Münster",['091 - Bahnhofstraße'],1,"51.9536301,7.6314782850261444",51.9536301,7.6314782850261444
-"Hansaring 80, 48155 Münster",['083 - Lambertistraße' '084 - Hansaplatz'],2,"51.9547017,7.645539912017435",51.9547017,7.645539912017435
-"Heeremansweg 13, 48167 Münster",['205 - Heeremansweg'],1,"51.927623249999996,7.657646146522559",51.927623249999996,7.657646146522559
-"Hegerskamp 3, 48155 Münster",['193 - Stephanweg'],1,"51.9504953,7.6715697",51.9504953,7.6715697
-"Heinrich-Lersch-Weg 9, 48155 Münster",['194 - Damaschkeweg'],1,"51.953803,7.670894359758268",51.953803,7.670894359758268
-"Hogenbergstraße 160, 48153 Münster",['231 - Hogenbergstraße' '232 - Am Berg Fidel' '233 - Siemensstraße'],3,"51.9246017,7.616106575165615",51.9246017,7.616106575165615
-"Hohe Geist 8, 48163 Münster",['271 - Oberort' '273 - Albachtener Str./Steinkuhle' '274 - In der Weede'],3,"51.9227202,7.528324261355753",51.9227202,7.528324261355753
-"Höftestraße 4, 48167 Münster",['224 - Albersloher Weg' '226 - Heidestraße'],2,"51.9213159,7.6807536116322055",51.9213159,7.6807536116322055
-"Im Moorhock 71, 48159 Münster",['154 - Rektoratsweg'],1,"51.9893852,7.604524684580532",51.9893852,7.604524684580532
-"Immelmannstraße 37, 48157 Münster",['185 - Dorbaum'],1,"51.99904765,7.715916456448493",51.99904765,7.715916456448493
-"Josef-Beckmann-Straße 33, 48159 Münster",['145 - Fernholzstraße' '146 - Brüningheide'],2,"51.99691815,7.593705277551625",51.99691815,7.593705277551625
-"Jüdefelderstraße 10, 48143 Münster","['011 - Jüdefelderstraße' '012 - Spiekerhof' '016 - Überwasser'
- '026 - Wilhelmstraße']",4,"51.96409405,7.619764501707207",51.96409405,7.619764501707207
-"Kampstraße 15, 48147 Münster","['024 - Schulstraße' '032 - Tannenbergstraße' '035 - Hoyastraße'
- '036 - Gertrudenstraße']",4,"51.969471850000005,7.623725470020581",51.969471850000005,7.623725470020581
-"Kinderhauser Straße 112, 48147 Münster",['056 - Dreizehnerstraße'],1,"51.9815871,7.614148399880134",51.9815871,7.614148399880134
-"Kirmstraße 1, 48161 Münster","['332 - Sebastianstraße' '334 - Feldstiege' '335 - Von-Schonebeck-Ring'
- '336 - Stefan-Zweig-Straße']",4,"51.99614235,7.5594802679942985",51.99614235,7.5594802679942985
-"Kleibusch 10, 48163 Münster",['272 - Heroldstraße'],1,"51.919721949999996,7.575926144323704",51.919721949999996,7.575926144323704
-"Königsberger Straße 91, 48157 Münster",['164 - Görlitzer Straße' '165 - Breslauer Straße'],2,"51.99323095,7.645804421953839",51.99323095,7.645804421953839
-"Laerer Landweg 153, 48155 Münster",['191 - Haus-Kleve-Weg' '192 - Hegerskamp' '195 - Franz-Grillparzer-Weg'],3,"51.9541194,7.670787181325013",51.9541194,7.670787181325013
-"Lahnstraße 3, 48145 Münster",['175 - Saarstraße'],1,"51.9689185,7.657580547697081",51.9689185,7.657580547697081
-"Loddenweg 12, 48165 Münster",['241 - Ringstraße' '244 - Hülsheide' '245 - Am Roggenkamp'],3,"51.907630350000005,7.6658532443328555",51.907630350000005,7.6658532443328555
-"Loddenweg 8a, 48165 Münster",['242 - Rubensstraße'],1,"51.90685355,7.667563705195853",51.90685355,7.667563705195853
-"Ludgeriplatz 4, 48151 Münster",['094 - Josef' '096 - Engelenschanze'],2,"51.95502795,7.627151777945296",51.95502795,7.627151777945296
-"Manfred-von-Richthofen-Str. 46, 48145 Münster",['081 - Mauritz-Lindenweg' '082 - Mindener Straße'],2,"51.958032,7.65573444762099",51.958032,7.65573444762099
-"Margaretenstraße 6, 48145 Münster",['085 - Sophienstraße' '092 - Bremer Platz'],2,"51.956238549999995,7.644752314250903",51.956238549999995,7.644752314250903
-"Merschkamp 23, 48155 Münster",['173 - Maikottenweg'],1,"51.958244,7.665472903003269",51.958244,7.665472903003269
-"Metzer Straße 41, 48151 Münster",['131 - Elsässer Straße'],1,"51.9400423,7.620743128124999",51.9400423,7.620743128124999
-"Nieberdingstraße 30a, 48155 Münster",['093 - Bremer Straße' '102 - Hafen'],2,"51.9426636,7.641893159116444",51.9426636,7.641893159116444
-"Plantstaken 55, 48161 Münster",['331 - Häger'],1,"52.0229139,7.56608970890625",52.0229139,7.56608970890625
-"Prinz-Eugen-Straße 27, 48151 Münster",['104 - Scheibenstraße' '113 - Turmstraße'],2,"51.947191950000004,7.618812311468304",51.947191950000004,7.618812311468304
-"Pötterhoek 45, 48145 Münster",['062 - Pötterhoek'],1,"51.9736133,7.653737016012916",51.9736133,7.653737016012916
-"Robert-Koch-Straße 40, 48149 Münster",['025 - Schloss'],1,"51.95921025,7.604975700000001",51.95921025,7.604975700000001
-"Rudolf-Diesel-Straße 7, 48157 Münster",['172 - Dyckburgstraße'],1,"51.99176755,7.666422605438813",51.99176755,7.666422605438813
-"Rudolf-Steiner-Weg 11, 48161 Münster",['321 - Legdenweg' '325 - Gescherweg'],2,"51.9694248,7.581805346375804",51.9694248,7.581805346375804
-"Rösnerstraße 10, 48155 Münster",['201 - Lindberghweg'],1,"51.9401638,7.64394955",51.9401638,7.64394955
-"Sankt-Mauritz-Freiheit 25, 48145 Münster",['042 - Staufenstraße'],1,"51.963234150000005,7.648959437512636",51.963234150000005,7.648959437512636
-"Sentmaringer Weg 61, 48151 Münster",['115 - Grüner Grund'],1,"51.9442968,7.6154512",51.9442968,7.6154512
-"Sentruper Höhe 5, 48149 Münster",['304 - Sentruper Höhe' '306 - Redigerstraße'],2,"51.9553255,7.594873290090079",51.9553255,7.594873290090079
-"Sonnenstraße 18, 48143 Münster",['013 - Sonnenstraße'],1,"51.96307795,7.633580846191878",51.96307795,7.633580846191878
-"Spichernstraße 17, 48153 Münster",['103 - Alfred-Krupp-Weg' '105 - Dahlweg' '133 - Spichernstraße'],3,"51.935106399999995,7.624068471386618",51.935106399999995,7.624068471386618
-"Sprickmannplatz 1, 48159 Münster",['155 - Heidköttersweg'],1,"51.998737399999996,7.594974856015037",51.998737399999996,7.594974856015037
-"Sprickmannplatz 7, 48159 Münster",['147 - Killingstraße'],1,"51.99899595,7.594411513785913",51.99899595,7.594411513785913
-"Stiftsstraße 19, 48145 Münster",['043 - Overbergstraße' '072 - Dechaneistraße' '073 - Prozessionsweg'],3,"51.96376715,7.650289550752131",51.96376715,7.650289550752131
-"Stühmerweg 10, 48147 Münster",['045 - Zeppelinstraße' '046 - Kolpingstraße'],2,"51.9694873,7.635009555835926",51.9694873,7.635009555835926
-"Südlohnweg 1, 48161 Münster",['311 - Heekweg' '333 - Doornbeckeweg'],2,"51.973693499999996,7.560533384811269",51.973693499999996,7.560533384811269
-"Thomas-Morus-Weg 7, 48147 Münster","['041 - Holsteiner Straße' '061 - Hoppengarten'
- '064 - Mecklenburger Straße' '065 - Kösliner Straße' '066 - Rumphorstweg']",5,"51.97468825,7.644125496047033",51.97468825,7.644125496047033
-"Tilbecker Straße 24-26, 48161 Münster","['291 - Annette-von-Droste-Hülshoff-Straße' '292 - Havixbecker Straße'
- '294 - Stellmacherweg' '295 - Paul-Gerhardt-Straße'
- '296 - Schelmenstiege']",5,"51.9543838,7.5294497",51.9543838,7.5294497
-"Unckelstraße 19, 48165 Münster",['251 - Geistkamp' '252 - Hülsebrockstraße' '253 - Marktallee'],3,"51.9065353,7.646594849248558",51.9065353,7.646594849248558
-"Uppenkampstiege 17, 48147 Münster",['052 - Nevinghoff/Flandernstraße' '053 - Uppenkampstiege'],2,"51.9766616,7.625917591294643",51.9766616,7.625917591294643
-"Vennheideweg 100, 48165 Münster",['234 - Vennheideweg'],1,"51.920758899999996,7.613674901731838",51.920758899999996,7.613674901731838
-"Von-Holte-Straße 56, 48167 Münster",['212 - Zumbuschstraße' '213 - Am Berler Kamp'],2,"51.9146987,7.7202582",51.9146987,7.7202582
-"Von-Humboldt-Straße 14, 48159 Münster","['141 - Feldstiegenkamp' '142 - Kinderhaus Zentrum' '143 - Neuer Heidkamp'
- '144 - Helmholtzweg']",4,"51.99835155,7.604638020118084",51.99835155,7.604638020118084
-"Von-Kluck-Straße 22, 48151 Münster",['095 - Antoniuskirche' '112 - Hornstraße'],2,"51.9545184,7.6234543",51.9545184,7.6234543
-"Vörnste Esch 19, 48167 Münster",['202 - Delstrup' '203 - Kranichweg' '204 - Anton-Knubel-Weg'],3,"51.9323056,7.673866149953675",51.9323056,7.673866149953675
-"Weißdornweg 40, 48159 Münster",['151 - Sprakel' '152 - Sandruper Straße'],2,"52.036933149999996,7.6095313379943885",52.036933149999996,7.6095313379943885
-"Westfalenstraße 203, 48165 Münster",['243 - Am Klosterwald' '254 - Friedhofstraße' '262 - Hansestraße'],3,"51.9008006,7.641498432092007",51.9008006,7.641498432092007
-"Wiedaustraße 114, 48163 Münster",['261 - Loevelingloh'],1,"51.894243849999995,7.57817422018965",51.894243849999995,7.57817422018965
-"Wiener Straße 53, 48145 Münster",['063 - Ostmarkstraße' '071 - Kirchstraße'],2,"51.96880045,7.650988831189711",51.96880045,7.650988831189711
-"Zum Erlenbusch 15, 48167 Münster",['225 - Angelsachsenweg'],1,"51.9246104,7.673691163250751",51.9246104,7.673691163250751
-"Zum Häpper 10, 48163 Münster","['264 - Auf der Woort' '265 - Pater-Kolbe-Straße' '266 - Zur Windmühle'
- '267 - Emmerweg']",4,"51.88487405,7.605494331904568",51.88487405,7.605494331904568
+Wahlraum-A,rooms,num_rooms,latlong,lat,lon,Wahlraum-B
+"Alt Angelmodde 15, 48167 Münster",221 - Angelstraße,1,"51.92308165,7.699121370363766",51.92308165,7.699121370363766,ASB Gustav Dietrich Kita
+"Alter Steinweg 11, 48143 Münster",014 - Prinzipalmarkt,1,"51.9629282,7.631154381245056",51.9629282,7.631154381245056,Stadtbücherei Münster
+"Am Wigbold 11, 48167 Münster",211 - Kreuzbach 214 - Wolbeck Zentrum 215 - Hofkamp,3,"51.9153201,7.729627892884797",51.9153201,7.729627892884797,Nikolaischule Wolbeck
+"Am Wigbold 11, 48167 Münster",211 - Kreuzbach 214 - Wolbeck Zentrum 215 - Hofkamp,3,"51.9153201,7.729627892884797",51.9153201,7.729627892884797,Nikolaischule Wolbeck
+"Am Wigbold 11, 48167 Münster",211 - Kreuzbach 214 - Wolbeck Zentrum 215 - Hofkamp,3,"51.9153201,7.729627892884797",51.9153201,7.729627892884797,Nikolaischule Wolbeck
+"An der Alten Kirche 161, 48165 Münster","235 - Hünenburg 236 - Böttcherstraße 237 - Albertsheide
+ 238 - Wielandstraße 255 - Theodor-Storm-Straße 263 - Langestraße",6,"51.903663449999996,7.626606101187082",51.90366345,7.626606101187082,Ludgerusschule Hiltrup
+"An der Alten Kirche 161, 48165 Münster","235 - Hünenburg 236 - Böttcherstraße 237 - Albertsheide
+ 238 - Wielandstraße 255 - Theodor-Storm-Straße 263 - Langestraße",6,"51.903663449999996,7.626606101187082",51.90366345,7.626606101187082,Ludgerusschule Hiltrup
+"An der Alten Kirche 161, 48165 Münster","235 - Hünenburg 236 - Böttcherstraße 237 - Albertsheide
+ 238 - Wielandstraße 255 - Theodor-Storm-Straße 263 - Langestraße",6,"51.903663449999996,7.626606101187082",51.90366345,7.626606101187082,Ludgerusschule Hiltrup
+"An der Alten Kirche 161, 48165 Münster","235 - Hünenburg 236 - Böttcherstraße 237 - Albertsheide
+ 238 - Wielandstraße 255 - Theodor-Storm-Straße 263 - Langestraße",6,"51.903663449999996,7.626606101187082",51.90366345,7.626606101187082,Ludgerusschule Hiltrup
+"An der Alten Kirche 161, 48165 Münster","235 - Hünenburg 236 - Böttcherstraße 237 - Albertsheide
+ 238 - Wielandstraße 255 - Theodor-Storm-Straße 263 - Langestraße",6,"51.903663449999996,7.626606101187082",51.90366345,7.626606101187082,Ludgerusschule Hiltrup
+"An der Alten Kirche 161, 48165 Münster","235 - Hünenburg 236 - Böttcherstraße 237 - Albertsheide
+ 238 - Wielandstraße 255 - Theodor-Storm-Straße 263 - Langestraße",6,"51.903663449999996,7.626606101187082",51.90366345,7.626606101187082,Ludgerusschule Hiltrup
+"An der Konradkirche 7, 48155 Münster",174 - An der Konradkirche,1,"51.96324975,7.677774215483531",51.96324975,7.677774215483531,Pleisterschule
+"An der Meerwiese 7, 48157 Münster",162 - Königsberger Straße 163 - An der Meerwiese,2,"51.989158950000004,7.648910980987003",51.98915895,7.648910980987003,Norbert Grundschule
+"An der Meerwiese 7, 48157 Münster",162 - Königsberger Straße 163 - An der Meerwiese,2,"51.989158950000004,7.648910980987003",51.98915895,7.648910980987003,Norbert Grundschule
+"Antoniusstraße 32, 48151 Münster",111 - Goebenstraße,1,"51.952982899999995,7.621452075627948",51.9529829,7.621452075627948,Ev. Matthäusgemeinde
+"Appelbreistiege 40, 48149 Münster",322 - Gievenbecker Weg 323 - Potstiege 324 - Twenteweg,3,"51.96779325,7.581247009083935",51.96779325,7.581247009083935,Michaelschule
+"Appelbreistiege 40, 48149 Münster",322 - Gievenbecker Weg 323 - Potstiege 324 - Twenteweg,3,"51.96779325,7.581247009083935",51.96779325,7.581247009083935,Michaelschule
+"Appelbreistiege 40, 48149 Münster",322 - Gievenbecker Weg 323 - Potstiege 324 - Twenteweg,3,"51.96779325,7.581247009083935",51.96779325,7.581247009083935,Michaelschule
+"Auf dem Dorn 14, 48161 Münster",293 - Altenroxeler Straße,1,"51.955106400000005,7.530773881241168",51.955106400000005,7.530773881241168,Marienschule Roxel
+"Bismarckallee 55, 48151 Münster",121 - Scharnhorststraße 122 - Pluggendorf,2,"51.95197455,7.609399799788202",51.95197455,7.609399799788202,Erich-Klausener-Schule
+"Bismarckallee 55, 48151 Münster",121 - Scharnhorststraße 122 - Pluggendorf,2,"51.95197455,7.609399799788202",51.95197455,7.609399799788202,Erich-Klausener-Schule
+"Bohlweg 7, 48147 Münster",044 - Landeshaus 047 - Gartenstraße,2,"51.9668954,7.638297652655629",51.9668954,7.638297652655629,Ratsgymnasium Münster
+"Bohlweg 7, 48147 Münster",044 - Landeshaus 047 - Gartenstraße,2,"51.9668954,7.638297652655629",51.9668954,7.638297652655629,Ratsgymnasium Münster
+"Bonhoefferstraße 50, 48151 Münster",123 - Goerdelerstraße 124 - Bonhoefferstraße 125 - Lange Ossenbeck,3,"51.94163015,7.605145209437712",51.94163015,7.605145209437712,Dietrich-Bonhoeffer-Schule
+"Bonhoefferstraße 50, 48151 Münster",123 - Goerdelerstraße 124 - Bonhoefferstraße 125 - Lange Ossenbeck,3,"51.94163015,7.605145209437712",51.94163015,7.605145209437712,Dietrich-Bonhoeffer-Schule
+"Bonhoefferstraße 50, 48151 Münster",123 - Goerdelerstraße 124 - Bonhoefferstraße 125 - Lange Ossenbeck,3,"51.94163015,7.605145209437712",51.94163015,7.605145209437712,Dietrich-Bonhoeffer-Schule
+"Bröderichweg 36, 48159 Münster",153 - Bröderichweg 156 - Coermühle,2,"51.99257595,7.6162983710793535",51.99257595,7.6162983710793535,Kompass-Schule
+"Bröderichweg 36, 48159 Münster",153 - Bröderichweg 156 - Coermühle,2,"51.99257595,7.6162983710793535",51.99257595,7.6162983710793535,Kompass-Schule
+"Coerdestraße 8, 48147 Münster",033 - Siverdesstraße 034 - Coerdestraße,2,"51.9691151,7.6280025",51.9691151,7.6280025,Martin-Luther-Schule
+"Coerdestraße 8, 48147 Münster",033 - Siverdesstraße 034 - Coerdestraße,2,"51.9691151,7.6280025",51.9691151,7.6280025,Martin-Luther-Schule
+"Corrensstraße 25, 48149 Münster","301 - Bentelerstraße 302 - Wasserweg 303 - Philippistraße
+ 305 - Von-Esmarch-Straße",4,"51.9682696,7.595463298034186",51.9682696,7.595463298034186,Fachhochschulzentrum Münster
+"Corrensstraße 25, 48149 Münster","301 - Bentelerstraße 302 - Wasserweg 303 - Philippistraße
+ 305 - Von-Esmarch-Straße",4,"51.9682696,7.595463298034186",51.9682696,7.595463298034186,Fachhochschulzentrum Münster
+"Corrensstraße 25, 48149 Münster","301 - Bentelerstraße 302 - Wasserweg 303 - Philippistraße
+ 305 - Von-Esmarch-Straße",4,"51.9682696,7.595463298034186",51.9682696,7.595463298034186,Fachhochschulzentrum Münster
+"Corrensstraße 25, 48149 Münster","301 - Bentelerstraße 302 - Wasserweg 303 - Philippistraße
+ 305 - Von-Esmarch-Straße",4,"51.9682696,7.595463298034186",51.9682696,7.595463298034186,Fachhochschulzentrum Münster
+"Dachsleite 32-36, 48157 Münster",161 - Dachsleite 166 - Marderweg,2,"51.9970641,7.6477306",51.9970641,7.6477306,Hauptschule Coerde
+"Dachsleite 32-36, 48157 Münster",161 - Dachsleite 166 - Marderweg,2,"51.9970641,7.6477306",51.9970641,7.6477306,Hauptschule Coerde
+"Dahlweg 118, 48153 Münster",114 - Weißenburgstraße 132 - Grevingstraße,2,"51.9394195,7.628834869047619",51.9394195,7.628834869047619,ASB Julius-Moses-Kita
+"Dahlweg 118, 48153 Münster",114 - Weißenburgstraße 132 - Grevingstraße,2,"51.9394195,7.628834869047619",51.9394195,7.628834869047619,ASB Julius-Moses-Kita
+"Dieckmannstraße 131, 48161 Münster",314 - Dieckmannstraße 315 - Heinrich-Ebel-Straße,2,"51.965217749999994,7.5669587223733625",51.96521775,7.566958722373362,Mosaik-Schule Münster
+"Dieckmannstraße 131, 48161 Münster",314 - Dieckmannstraße 315 - Heinrich-Ebel-Straße,2,"51.965217749999994,7.5669587223733625",51.96521775,7.566958722373362,Mosaik-Schule Münster
+"Dingbängerweg 80, 48163 Münster","281 - Hesselmann 283 - Dingbängerweg 284 - Am Dill
+ 285 - Rote Erde",4,"51.932620549999996,7.580143024353202",51.93262055,7.580143024353202,Peter-Wust-Schule
+"Dingbängerweg 80, 48163 Münster","281 - Hesselmann 283 - Dingbängerweg 284 - Am Dill
+ 285 - Rote Erde",4,"51.932620549999996,7.580143024353202",51.93262055,7.580143024353202,Peter-Wust-Schule
+"Dingbängerweg 80, 48163 Münster","281 - Hesselmann 283 - Dingbängerweg 284 - Am Dill
+ 285 - Rote Erde",4,"51.932620549999996,7.580143024353202",51.93262055,7.580143024353202,Peter-Wust-Schule
+"Dingbängerweg 80, 48163 Münster","281 - Hesselmann 283 - Dingbängerweg 284 - Am Dill
+ 285 - Rote Erde",4,"51.932620549999996,7.580143024353202",51.93262055,7.580143024353202,Peter-Wust-Schule
+"Drostestraße 7, 48157 Münster",182 - Handorfer Straße 183 - Heriburgstraße 184 - Ziegelhof,3,"51.9901032,7.703648538461694",51.9901032,7.703648538461694,Matthias-Claudius-Schule Handorf
+"Drostestraße 7, 48157 Münster",182 - Handorfer Straße 183 - Heriburgstraße 184 - Ziegelhof,3,"51.9901032,7.703648538461694",51.9901032,7.703648538461694,Matthias-Claudius-Schule Handorf
+"Drostestraße 7, 48157 Münster",182 - Handorfer Straße 183 - Heriburgstraße 184 - Ziegelhof,3,"51.9901032,7.703648538461694",51.9901032,7.703648538461694,Matthias-Claudius-Schule Handorf
+"Echelmeyerstraße 19, 48163 Münster",282 - Ossenkampstiege,1,"51.9367046,7.592762937389198",51.9367046,7.592762937389198,Friedensschule Münster
+"Eichenaue 3, 48157 Münster",181 - Hornheide,1,"51.995582600000006,7.712675513581021",51.995582600000006,7.712675513581021,Städt. Kita Eichenaue
+"Eichendorffstraße 36, 48167 Münster",222 - Theodor-Heuss-Straße 223 - Bachstraße,2,"51.9147512,7.695004957462609",51.9147512,7.695004957462609,Eichendorffschule Angelmodde
+"Eichendorffstraße 36, 48167 Münster",222 - Theodor-Heuss-Straße 223 - Bachstraße,2,"51.9147512,7.695004957462609",51.9147512,7.695004957462609,Eichendorffschule Angelmodde
+"Finkenstraße 76, 48147 Münster","021 - Kapuzinerstraße 022 - Gasselstiege 023 - Marientalstraße
+ 031 - Finkenstraße",4,"51.9737797,7.620670488251879",51.9737797,7.620670488251879,Realschule im Kreuzviertel
+"Finkenstraße 76, 48147 Münster","021 - Kapuzinerstraße 022 - Gasselstiege 023 - Marientalstraße
+ 031 - Finkenstraße",4,"51.9737797,7.620670488251879",51.9737797,7.620670488251879,Realschule im Kreuzviertel
+"Finkenstraße 76, 48147 Münster","021 - Kapuzinerstraße 022 - Gasselstiege 023 - Marientalstraße
+ 031 - Finkenstraße",4,"51.9737797,7.620670488251879",51.9737797,7.620670488251879,Realschule im Kreuzviertel
+"Finkenstraße 76, 48147 Münster","021 - Kapuzinerstraße 022 - Gasselstiege 023 - Marientalstraße
+ 031 - Finkenstraße",4,"51.9737797,7.620670488251879",51.9737797,7.620670488251879,Realschule im Kreuzviertel
+"Friedrich-Ebert-Straße 46, 48153 Münster",101 - Zumbroockstraße 106 - Kronprinzenstraße 107 - Herdingstraße,3,"51.95038475,7.63116767430181",51.95038475,7.63116767430181,Finanzamt Münster-Außenstadt
+"Friedrich-Ebert-Straße 46, 48153 Münster",101 - Zumbroockstraße 106 - Kronprinzenstraße 107 - Herdingstraße,3,"51.95038475,7.63116767430181",51.95038475,7.63116767430181,Finanzamt Münster-Außenstadt
+"Friedrich-Ebert-Straße 46, 48153 Münster",101 - Zumbroockstraße 106 - Kronprinzenstraße 107 - Herdingstraße,3,"51.95038475,7.63116767430181",51.95038475,7.63116767430181,Finanzamt Münster-Außenstadt
+"Friesenring 25, 48147 Münster",051 - Salzmannstraße 054 - Kinderhauser Straße 055 - Koburger Weg,3,"51.975365999999994,7.615509499999999",51.975366,7.615509499999999,Dreifaltigkeitsschule
+"Friesenring 25, 48147 Münster",051 - Salzmannstraße 054 - Kinderhauser Straße 055 - Koburger Weg,3,"51.975365999999994,7.615509499999999",51.975366,7.615509499999999,Dreifaltigkeitsschule
+"Friesenring 25, 48147 Münster",051 - Salzmannstraße 054 - Kinderhauser Straße 055 - Koburger Weg,3,"51.975365999999994,7.615509499999999",51.975366,7.615509499999999,Dreifaltigkeitsschule
+"Gelmerheide 3, 48157 Münster",171 - Gelmer,1,"52.0297395,7.675133013988717",52.0297395,7.675133013988717,Astrid-Lindgren-Schule Gelmer
+"Glatzer Weg 9, 48151 Münster",134 - Sternbusch 135 - Kriegerweg 136 - Clemenshospital,3,"51.9331045,7.612316207538708",51.9331045,7.612316207538708,Gottfried-von-Cappenberg-Schule
+"Glatzer Weg 9, 48151 Münster",134 - Sternbusch 135 - Kriegerweg 136 - Clemenshospital,3,"51.9331045,7.612316207538708",51.9331045,7.612316207538708,Gottfried-von-Cappenberg-Schule
+"Glatzer Weg 9, 48151 Münster",134 - Sternbusch 135 - Kriegerweg 136 - Clemenshospital,3,"51.9331045,7.612316207538708",51.9331045,7.612316207538708,Gottfried-von-Cappenberg-Schule
+"Gronowskistraße 70, 48161 Münster",312 - Nünningweg 313 - Ramertsweg,2,"51.96836905,7.566242756578949",51.96836905,7.566242756578949,St. Michael Kindergarten III
+"Gronowskistraße 70, 48161 Münster",312 - Nünningweg 313 - Ramertsweg,2,"51.96836905,7.566242756578949",51.96836905,7.566242756578949,St. Michael Kindergarten III
+"Grüne Gasse 38-40, 48143 Münster",015 - Aegidii,1,"51.9581485,7.6237268",51.9581485,7.6237268,Annette von Droste Hülshoff Gymnasium
+"Gut Insel 36, 48151 Münster",116 - Oberschlesier Straße,1,"51.93860585,7.61298881209431",51.93860585,7.61298881209431,Matthias-Claudius-Schule Münster
+"Gutenbergstraße 14, 48145 Münster",074 - Oststraße 075 - Zumsandestraße,2,"51.96006265,7.645207713023179",51.96006265,7.645207713023179,Bodelschwinghschule Münster
+"Gutenbergstraße 14, 48145 Münster",074 - Oststraße 075 - Zumsandestraße,2,"51.96006265,7.645207713023179",51.96006265,7.645207713023179,Bodelschwinghschule Münster
+"Hafenstraße 34, 48153 Münster",091 - Bahnhofstraße,1,"51.9536301,7.6314782850261444",51.9536301,7.631478285026144,Gleis 22 (JIB)
+"Hansaring 80, 48155 Münster",083 - Lambertistraße 084 - Hansaplatz,2,"51.9547017,7.645539912017435",51.9547017,7.645539912017435,Hansa-Berufskolleg
+"Hansaring 80, 48155 Münster",083 - Lambertistraße 084 - Hansaplatz,2,"51.9547017,7.645539912017435",51.9547017,7.645539912017435,Hansa-Berufskolleg
+"Heeremansweg 13, 48167 Münster",205 - Heeremansweg,1,"51.927623249999996,7.657646146522559",51.92762325,7.657646146522559,Hotel Restaurant Münnich
+"Hegerskamp 3, 48155 Münster",193 - Stephanweg,1,"51.9504953,7.6715697",51.9504953,7.6715697,Pfarrheim an der Margaretakirche
+"Heinrich-Lersch-Weg 9, 48155 Münster",194 - Damaschkeweg,1,"51.953803,7.670894359758268",51.953803,7.670894359758268,Ev. Auferstehungs-Kirchengemeinde
+"Hogenbergstraße 160, 48153 Münster",231 - Hogenbergstraße 232 - Am Berg Fidel 233 - Siemensstraße,3,"51.9246017,7.616106575165615",51.9246017,7.616106575165615,PRIMUS Schule
+"Hogenbergstraße 160, 48153 Münster",231 - Hogenbergstraße 232 - Am Berg Fidel 233 - Siemensstraße,3,"51.9246017,7.616106575165615",51.9246017,7.616106575165615,PRIMUS Schule
+"Hogenbergstraße 160, 48153 Münster",231 - Hogenbergstraße 232 - Am Berg Fidel 233 - Siemensstraße,3,"51.9246017,7.616106575165615",51.9246017,7.616106575165615,PRIMUS Schule
+"Hohe Geist 8, 48163 Münster",271 - Oberort 273 - Albachtener Str./Steinkuhle 274 - In der Weede,3,"51.9227202,7.528324261355753",51.9227202,7.528324261355753,Haus der Begegnung Albachten
+"Hohe Geist 8, 48163 Münster",271 - Oberort 273 - Albachtener Str./Steinkuhle 274 - In der Weede,3,"51.9227202,7.528324261355753",51.9227202,7.528324261355753,Haus der Begegnung Albachten
+"Hohe Geist 8, 48163 Münster",271 - Oberort 273 - Albachtener Str./Steinkuhle 274 - In der Weede,3,"51.9227202,7.528324261355753",51.9227202,7.528324261355753,Haus der Begegnung Albachten
+"Höftestraße 4, 48167 Münster",224 - Albersloher Weg 226 - Heidestraße,2,"51.9213159,7.6807536116322055",51.9213159,7.680753611632205,Annette-von-Droste-Hülshoff-Grundschule
+"Höftestraße 4, 48167 Münster",224 - Albersloher Weg 226 - Heidestraße,2,"51.9213159,7.6807536116322055",51.9213159,7.680753611632205,Annette-von-Droste-Hülshoff-Grundschule
+"Im Moorhock 71, 48159 Münster",154 - Rektoratsweg,1,"51.9893852,7.604524684580532",51.9893852,7.604524684580532,Kita und Familienzentrum Im Moorhock
+"Immelmannstraße 37, 48157 Münster",185 - Dorbaum,1,"51.99904765,7.715916456448493",51.99904765,7.715916456448493,Dat Handorfer Huus
+"Josef-Beckmann-Straße 33, 48159 Münster",145 - Fernholzstraße 146 - Brüningheide,2,"51.99691815,7.593705277551625",51.99691815,7.593705277551625,Grundschule Kinderhaus-West
+"Josef-Beckmann-Straße 33, 48159 Münster",145 - Fernholzstraße 146 - Brüningheide,2,"51.99691815,7.593705277551625",51.99691815,7.593705277551625,Grundschule Kinderhaus-West
+"Jüdefelderstraße 10, 48143 Münster","011 - Jüdefelderstraße 012 - Spiekerhof 016 - Überwasser
+ 026 - Wilhelmstraße",4,"51.96409405,7.619764501707207",51.96409405,7.619764501707207,Gesamtschule Münster-Mitte
+"Jüdefelderstraße 10, 48143 Münster","011 - Jüdefelderstraße 012 - Spiekerhof 016 - Überwasser
+ 026 - Wilhelmstraße",4,"51.96409405,7.619764501707207",51.96409405,7.619764501707207,Gesamtschule Münster-Mitte
+"Jüdefelderstraße 10, 48143 Münster","011 - Jüdefelderstraße 012 - Spiekerhof 016 - Überwasser
+ 026 - Wilhelmstraße",4,"51.96409405,7.619764501707207",51.96409405,7.619764501707207,Gesamtschule Münster-Mitte
+"Jüdefelderstraße 10, 48143 Münster","011 - Jüdefelderstraße 012 - Spiekerhof 016 - Überwasser
+ 026 - Wilhelmstraße",4,"51.96409405,7.619764501707207",51.96409405,7.619764501707207,Gesamtschule Münster-Mitte
+"Kampstraße 15, 48147 Münster","024 - Schulstraße 032 - Tannenbergstraße 035 - Hoyastraße
+ 036 - Gertrudenstraße",4,"51.969471850000005,7.623725470020581",51.969471850000005,7.623725470020581,Kreuzschule Münster
+"Kampstraße 15, 48147 Münster","024 - Schulstraße 032 - Tannenbergstraße 035 - Hoyastraße
+ 036 - Gertrudenstraße",4,"51.969471850000005,7.623725470020581",51.969471850000005,7.623725470020581,Kreuzschule Münster
+"Kampstraße 15, 48147 Münster","024 - Schulstraße 032 - Tannenbergstraße 035 - Hoyastraße
+ 036 - Gertrudenstraße",4,"51.969471850000005,7.623725470020581",51.969471850000005,7.623725470020581,Kreuzschule Münster
+"Kampstraße 15, 48147 Münster","024 - Schulstraße 032 - Tannenbergstraße 035 - Hoyastraße
+ 036 - Gertrudenstraße",4,"51.969471850000005,7.623725470020581",51.969471850000005,7.623725470020581,Kreuzschule Münster
+"Kinderhauser Straße 112, 48147 Münster",056 - Dreizehnerstraße,1,"51.9815871,7.614148399880134",51.9815871,7.614148399880134,JAZ-Café
+"Kirmstraße 1, 48161 Münster","332 - Sebastianstraße 334 - Feldstiege 335 - Von-Schonebeck-Ring
+ 336 - Stefan-Zweig-Straße",4,"51.99614235,7.5594802679942985",51.99614235,7.559480267994298,Annette-von-Droste-Hülshoff-Grundschule
+"Kirmstraße 1, 48161 Münster","332 - Sebastianstraße 334 - Feldstiege 335 - Von-Schonebeck-Ring
+ 336 - Stefan-Zweig-Straße",4,"51.99614235,7.5594802679942985",51.99614235,7.559480267994298,Annette-von-Droste-Hülshoff-Grundschule
+"Kirmstraße 1, 48161 Münster","332 - Sebastianstraße 334 - Feldstiege 335 - Von-Schonebeck-Ring
+ 336 - Stefan-Zweig-Straße",4,"51.99614235,7.5594802679942985",51.99614235,7.559480267994298,Annette-von-Droste-Hülshoff-Grundschule
+"Kirmstraße 1, 48161 Münster","332 - Sebastianstraße 334 - Feldstiege 335 - Von-Schonebeck-Ring
+ 336 - Stefan-Zweig-Straße",4,"51.99614235,7.5594802679942985",51.99614235,7.559480267994298,Annette-von-Droste-Hülshoff-Grundschule
+"Kleibusch 10, 48163 Münster",272 - Heroldstraße,1,"51.919721949999996,7.575926144323704",51.91972195,7.575926144323704,Haus Benedikt
+"Königsberger Straße 91, 48157 Münster",164 - Görlitzer Straße 165 - Breslauer Straße,2,"51.99323095,7.645804421953839",51.99323095,7.645804421953839,Melanchthonschule Münster
+"Königsberger Straße 91, 48157 Münster",164 - Görlitzer Straße 165 - Breslauer Straße,2,"51.99323095,7.645804421953839",51.99323095,7.645804421953839,Melanchthonschule Münster
+"Laerer Landweg 153, 48155 Münster",191 - Haus-Kleve-Weg 192 - Hegerskamp 195 - Franz-Grillparzer-Weg,3,"51.9541194,7.670787181325013",51.9541194,7.670787181325013,Margaretenschule Münster
+"Laerer Landweg 153, 48155 Münster",191 - Haus-Kleve-Weg 192 - Hegerskamp 195 - Franz-Grillparzer-Weg,3,"51.9541194,7.670787181325013",51.9541194,7.670787181325013,Margaretenschule Münster
+"Laerer Landweg 153, 48155 Münster",191 - Haus-Kleve-Weg 192 - Hegerskamp 195 - Franz-Grillparzer-Weg,3,"51.9541194,7.670787181325013",51.9541194,7.670787181325013,Margaretenschule Münster
+"Lahnstraße 3, 48145 Münster",175 - Saarstraße,1,"51.9689185,7.657580547697081",51.9689185,7.657580547697081,Pfarrheim St. Pius
+"Loddenweg 12, 48165 Münster",241 - Ringstraße 244 - Hülsheide 245 - Am Roggenkamp,3,"51.907630350000005,7.6658532443328555",51.907630350000005,7.665853244332855,Marienschule Hiltrup
+"Loddenweg 12, 48165 Münster",241 - Ringstraße 244 - Hülsheide 245 - Am Roggenkamp,3,"51.907630350000005,7.6658532443328555",51.907630350000005,7.665853244332855,Marienschule Hiltrup
+"Loddenweg 12, 48165 Münster",241 - Ringstraße 244 - Hülsheide 245 - Am Roggenkamp,3,"51.907630350000005,7.6658532443328555",51.907630350000005,7.665853244332855,Marienschule Hiltrup
+"Loddenweg 8a, 48165 Münster",242 - Rubensstraße,1,"51.90685355,7.667563705195853",51.90685355,7.667563705195853,Ortsbüro St. Marien Hiltrup Ost
+"Ludgeriplatz 4, 48151 Münster",094 - Josef 096 - Engelenschanze,2,"51.95502795,7.627151777945296",51.95502795,7.627151777945296,Stadthaus 2
+"Ludgeriplatz 4, 48151 Münster",094 - Josef 096 - Engelenschanze,2,"51.95502795,7.627151777945296",51.95502795,7.627151777945296,Stadthaus 2
+"Manfred-von-Richthofen-Str. 46, 48145 Münster",081 - Mauritz-Lindenweg 082 - Mindener Straße,2,"51.958032,7.65573444762099",51.958032,7.65573444762099,Mathilde Anneke Gesamtschule
+"Manfred-von-Richthofen-Str. 46, 48145 Münster",081 - Mauritz-Lindenweg 082 - Mindener Straße,2,"51.958032,7.65573444762099",51.958032,7.65573444762099,Mathilde Anneke Gesamtschule
+"Margaretenstraße 6, 48145 Münster",085 - Sophienstraße 092 - Bremer Platz,2,"51.956238549999995,7.644752314250903",51.95623855,7.644752314250903,Overbergschule Münster
+"Margaretenstraße 6, 48145 Münster",085 - Sophienstraße 092 - Bremer Platz,2,"51.956238549999995,7.644752314250903",51.95623855,7.644752314250903,Overbergschule Münster
+"Merschkamp 23, 48155 Münster",173 - Maikottenweg,1,"51.958244,7.665472903003269",51.958244,7.665472903003269,CVJM Johannes-Busch-Haus
+"Metzer Straße 41, 48151 Münster",131 - Elsässer Straße,1,"51.9400423,7.620743128124999",51.9400423,7.620743128124999,Gemeindebüro Heilig Geist
+"Nieberdingstraße 30a, 48155 Münster",093 - Bremer Straße 102 - Hafen,2,"51.9426636,7.641893159116444",51.9426636,7.641893159116444,Gesundheits- und Veterinäramt
+"Nieberdingstraße 30a, 48155 Münster",093 - Bremer Straße 102 - Hafen,2,"51.9426636,7.641893159116444",51.9426636,7.641893159116444,Gesundheits- und Veterinäramt
+"Plantstaken 55, 48161 Münster",331 - Häger,1,"52.0229139,7.56608970890625",52.0229139,7.56608970890625,Gemeinschaftsraum St. Aloysius Häger
+"Prinz-Eugen-Straße 27, 48151 Münster",104 - Scheibenstraße 113 - Turmstraße,2,"51.947191950000004,7.618812311468304",51.94719195,7.618812311468304,Wilhelm-Hittorf-Gymnasium
+"Prinz-Eugen-Straße 27, 48151 Münster",104 - Scheibenstraße 113 - Turmstraße,2,"51.947191950000004,7.618812311468304",51.94719195,7.618812311468304,Wilhelm-Hittorf-Gymnasium
+"Pötterhoek 45, 48145 Münster",062 - Pötterhoek,1,"51.9736133,7.653737016012916",51.9736133,7.653737016012916,Erich-Kästner-Schule
+"Robert-Koch-Straße 40, 48149 Münster",025 - Schloss,1,"51.95921025,7.604975700000001",51.95921025,7.604975700000001,Servicebüro Familie
+"Rudolf-Diesel-Straße 7, 48157 Münster",172 - Dyckburgstraße,1,"51.99176755,7.666422605438813",51.99176755,7.666422605438813,KFZ-Zulassungsstelle
+"Rudolf-Steiner-Weg 11, 48161 Münster",321 - Legdenweg 325 - Gescherweg,2,"51.9694248,7.581805346375804",51.9694248,7.581805346375804,Freie Waldorfschule
+"Rudolf-Steiner-Weg 11, 48161 Münster",321 - Legdenweg 325 - Gescherweg,2,"51.9694248,7.581805346375804",51.9694248,7.581805346375804,Freie Waldorfschule
+"Rösnerstraße 10, 48155 Münster",201 - Lindberghweg,1,"51.9401638,7.64394955",51.9401638,7.64394955,Abfallwirtschaftsbetriebe Münster
+"Sankt-Mauritz-Freiheit 25, 48145 Münster",042 - Staufenstraße,1,"51.963234150000005,7.648959437512636",51.963234150000005,7.648959437512636,Pfarrheim St. Mauritz
+"Sentmaringer Weg 61, 48151 Münster",115 - Grüner Grund,1,"51.9442968,7.6154512",51.9442968,7.6154512,IHK Nord Westfalen
+"Sentruper Höhe 5, 48149 Münster",304 - Sentruper Höhe 306 - Redigerstraße,2,"51.9553255,7.594873290090079",51.9553255,7.594873290090079,Theresienschule
+"Sentruper Höhe 5, 48149 Münster",304 - Sentruper Höhe 306 - Redigerstraße,2,"51.9553255,7.594873290090079",51.9553255,7.594873290090079,Theresienschule
+"Sonnenstraße 18, 48143 Münster",013 - Sonnenstraße,1,"51.96307795,7.633580846191878",51.96307795,7.633580846191878,Johann-Conrad-Schlaun-Gymnasium
+"Spichernstraße 17, 48153 Münster",103 - Alfred-Krupp-Weg 105 - Dahlweg 133 - Spichernstraße,3,"51.935106399999995,7.624068471386618",51.9351064,7.624068471386618,Erna-de-Vries-Realschule
+"Spichernstraße 17, 48153 Münster",103 - Alfred-Krupp-Weg 105 - Dahlweg 133 - Spichernstraße,3,"51.935106399999995,7.624068471386618",51.9351064,7.624068471386618,Erna-de-Vries-Realschule
+"Spichernstraße 17, 48153 Münster",103 - Alfred-Krupp-Weg 105 - Dahlweg 133 - Spichernstraße,3,"51.935106399999995,7.624068471386618",51.9351064,7.624068471386618,Erna-de-Vries-Realschule
+"Sprickmannplatz 1, 48159 Münster",155 - Heidköttersweg,1,"51.998737399999996,7.594974856015037",51.9987374,7.594974856015037,Atrium Kulturverein
+"Sprickmannplatz 7, 48159 Münster",147 - Killingstraße,1,"51.99899595,7.594411513785913",51.99899595,7.594411513785913,Begegnungszentrum Kinderhaus
+"Stiftsstraße 19, 48145 Münster",043 - Overbergstraße 072 - Dechaneistraße 073 - Prozessionsweg,3,"51.96376715,7.650289550752131",51.96376715,7.650289550752131,Mauritzschule Münster
+"Stiftsstraße 19, 48145 Münster",043 - Overbergstraße 072 - Dechaneistraße 073 - Prozessionsweg,3,"51.96376715,7.650289550752131",51.96376715,7.650289550752131,Mauritzschule Münster
+"Stiftsstraße 19, 48145 Münster",043 - Overbergstraße 072 - Dechaneistraße 073 - Prozessionsweg,3,"51.96376715,7.650289550752131",51.96376715,7.650289550752131,Mauritzschule Münster
+"Stühmerweg 10, 48147 Münster",045 - Zeppelinstraße 046 - Kolpingstraße,2,"51.9694873,7.635009555835926",51.9694873,7.635009555835926,Studieninstitut für kommunale Verwaltung
+"Stühmerweg 10, 48147 Münster",045 - Zeppelinstraße 046 - Kolpingstraße,2,"51.9694873,7.635009555835926",51.9694873,7.635009555835926,Studieninstitut für kommunale Verwaltung
+"Südlohnweg 1, 48161 Münster",311 - Heekweg 333 - Doornbeckeweg,2,"51.973693499999996,7.560533384811269",51.9736935,7.560533384811269,Altenheim St. Elisabeth
+"Südlohnweg 1, 48161 Münster",311 - Heekweg 333 - Doornbeckeweg,2,"51.973693499999996,7.560533384811269",51.9736935,7.560533384811269,Altenheim St. Elisabeth
+"Thomas-Morus-Weg 7, 48147 Münster","041 - Holsteiner Straße 061 - Hoppengarten
+ 064 - Mecklenburger Straße 065 - Kösliner Straße 066 - Rumphorstweg",5,"51.97468825,7.644125496047033",51.97468825,7.644125496047033,Thomas-Morus-Schule
+"Thomas-Morus-Weg 7, 48147 Münster","041 - Holsteiner Straße 061 - Hoppengarten
+ 064 - Mecklenburger Straße 065 - Kösliner Straße 066 - Rumphorstweg",5,"51.97468825,7.644125496047033",51.97468825,7.644125496047033,Thomas-Morus-Schule
+"Thomas-Morus-Weg 7, 48147 Münster","041 - Holsteiner Straße 061 - Hoppengarten
+ 064 - Mecklenburger Straße 065 - Kösliner Straße 066 - Rumphorstweg",5,"51.97468825,7.644125496047033",51.97468825,7.644125496047033,Thomas-Morus-Schule
+"Thomas-Morus-Weg 7, 48147 Münster","041 - Holsteiner Straße 061 - Hoppengarten
+ 064 - Mecklenburger Straße 065 - Kösliner Straße 066 - Rumphorstweg",5,"51.97468825,7.644125496047033",51.97468825,7.644125496047033,Thomas-Morus-Schule
+"Thomas-Morus-Weg 7, 48147 Münster","041 - Holsteiner Straße 061 - Hoppengarten
+ 064 - Mecklenburger Straße 065 - Kösliner Straße 066 - Rumphorstweg",5,"51.97468825,7.644125496047033",51.97468825,7.644125496047033,Thomas-Morus-Schule
+"Tilbecker Straße 24-26, 48161 Münster","291 - Annette-von-Droste-Hülshoff-Straße 292 - Havixbecker Straße
+ 294 - Stellmacherweg 295 - Paul-Gerhardt-Straße
+ 296 - Schelmenstiege",5,"51.9543838,7.5294497",51.9543838,7.5294497,Gesamtschule Münster-West
+"Tilbecker Straße 24-26, 48161 Münster","291 - Annette-von-Droste-Hülshoff-Straße 292 - Havixbecker Straße
+ 294 - Stellmacherweg 295 - Paul-Gerhardt-Straße
+ 296 - Schelmenstiege",5,"51.9543838,7.5294497",51.9543838,7.5294497,Gesamtschule Münster-West
+"Tilbecker Straße 24-26, 48161 Münster","291 - Annette-von-Droste-Hülshoff-Straße 292 - Havixbecker Straße
+ 294 - Stellmacherweg 295 - Paul-Gerhardt-Straße
+ 296 - Schelmenstiege",5,"51.9543838,7.5294497",51.9543838,7.5294497,Gesamtschule Münster-West
+"Tilbecker Straße 24-26, 48161 Münster","291 - Annette-von-Droste-Hülshoff-Straße 292 - Havixbecker Straße
+ 294 - Stellmacherweg 295 - Paul-Gerhardt-Straße
+ 296 - Schelmenstiege",5,"51.9543838,7.5294497",51.9543838,7.5294497,Gesamtschule Münster-West
+"Tilbecker Straße 24-26, 48161 Münster","291 - Annette-von-Droste-Hülshoff-Straße 292 - Havixbecker Straße
+ 294 - Stellmacherweg 295 - Paul-Gerhardt-Straße
+ 296 - Schelmenstiege",5,"51.9543838,7.5294497",51.9543838,7.5294497,Gesamtschule Münster-West
+"Unckelstraße 19, 48165 Münster",251 - Geistkamp 252 - Hülsebrockstraße 253 - Marktallee,3,"51.9065353,7.646594849248558",51.9065353,7.646594849248558,Clemensschule Hiltrup
+"Unckelstraße 19, 48165 Münster",251 - Geistkamp 252 - Hülsebrockstraße 253 - Marktallee,3,"51.9065353,7.646594849248558",51.9065353,7.646594849248558,Clemensschule Hiltrup
+"Unckelstraße 19, 48165 Münster",251 - Geistkamp 252 - Hülsebrockstraße 253 - Marktallee,3,"51.9065353,7.646594849248558",51.9065353,7.646594849248558,Clemensschule Hiltrup
+"Uppenkampstiege 17, 48147 Münster",052 - Nevinghoff/Flandernstraße 053 - Uppenkampstiege,2,"51.9766616,7.625917591294643",51.9766616,7.625917591294643,Pascal-Gymnasium Münster
+"Uppenkampstiege 17, 48147 Münster",052 - Nevinghoff/Flandernstraße 053 - Uppenkampstiege,2,"51.9766616,7.625917591294643",51.9766616,7.625917591294643,Pascal-Gymnasium Münster
+"Vennheideweg 100, 48165 Münster",234 - Vennheideweg,1,"51.920758899999996,7.613674901731838",51.9207589,7.613674901731838,Kleingärtnerverein Grafschaft
+"Von-Holte-Straße 56, 48167 Münster",212 - Zumbuschstraße 213 - Am Berler Kamp,2,"51.9146987,7.7202582",51.9146987,7.7202582,Gymnasium Wolbeck
+"Von-Holte-Straße 56, 48167 Münster",212 - Zumbuschstraße 213 - Am Berler Kamp,2,"51.9146987,7.7202582",51.9146987,7.7202582,Gymnasium Wolbeck
+"Von-Humboldt-Straße 14, 48159 Münster","141 - Feldstiegenkamp 142 - Kinderhaus Zentrum 143 - Neuer Heidkamp
+ 144 - Helmholtzweg",4,"51.99835155,7.604638020118084",51.99835155,7.604638020118084,Geschwister-Scholl-Schulzentrum
+"Von-Humboldt-Straße 14, 48159 Münster","141 - Feldstiegenkamp 142 - Kinderhaus Zentrum 143 - Neuer Heidkamp
+ 144 - Helmholtzweg",4,"51.99835155,7.604638020118084",51.99835155,7.604638020118084,Geschwister-Scholl-Schulzentrum
+"Von-Humboldt-Straße 14, 48159 Münster","141 - Feldstiegenkamp 142 - Kinderhaus Zentrum 143 - Neuer Heidkamp
+ 144 - Helmholtzweg",4,"51.99835155,7.604638020118084",51.99835155,7.604638020118084,Geschwister-Scholl-Schulzentrum
+"Von-Humboldt-Straße 14, 48159 Münster","141 - Feldstiegenkamp 142 - Kinderhaus Zentrum 143 - Neuer Heidkamp
+ 144 - Helmholtzweg",4,"51.99835155,7.604638020118084",51.99835155,7.604638020118084,Geschwister-Scholl-Schulzentrum
+"Von-Kluck-Straße 22, 48151 Münster",095 - Antoniuskirche 112 - Hornstraße,2,"51.9545184,7.6234543",51.9545184,7.6234543,Marienschule (Aula)
+"Von-Kluck-Straße 22, 48151 Münster",095 - Antoniuskirche 112 - Hornstraße,2,"51.9545184,7.6234543",51.9545184,7.6234543,Marienschule (Aula)
+"Vörnste Esch 19, 48167 Münster",202 - Delstrup 203 - Kranichweg 204 - Anton-Knubel-Weg,3,"51.9323056,7.673866149953675",51.9323056,7.673866149953675,Idaschule
+"Vörnste Esch 19, 48167 Münster",202 - Delstrup 203 - Kranichweg 204 - Anton-Knubel-Weg,3,"51.9323056,7.673866149953675",51.9323056,7.673866149953675,Idaschule
+"Vörnste Esch 19, 48167 Münster",202 - Delstrup 203 - Kranichweg 204 - Anton-Knubel-Weg,3,"51.9323056,7.673866149953675",51.9323056,7.673866149953675,Idaschule
+"Weißdornweg 40, 48159 Münster",151 - Sprakel 152 - Sandruper Straße,2,"52.036933149999996,7.6095313379943885",52.03693315,7.609531337994388,Grundschule Sprakel
+"Weißdornweg 40, 48159 Münster",151 - Sprakel 152 - Sandruper Straße,2,"52.036933149999996,7.6095313379943885",52.03693315,7.609531337994388,Grundschule Sprakel
+"Westfalenstraße 203, 48165 Münster",243 - Am Klosterwald 254 - Friedhofstraße 262 - Hansestraße,3,"51.9008006,7.641498432092007",51.9008006,7.641498432092007,Immanuel-Kant-Gymnasium Hiltrup
+"Westfalenstraße 203, 48165 Münster",243 - Am Klosterwald 254 - Friedhofstraße 262 - Hansestraße,3,"51.9008006,7.641498432092007",51.9008006,7.641498432092007,Immanuel-Kant-Gymnasium Hiltrup
+"Westfalenstraße 203, 48165 Münster",243 - Am Klosterwald 254 - Friedhofstraße 262 - Hansestraße,3,"51.9008006,7.641498432092007",51.9008006,7.641498432092007,Immanuel-Kant-Gymnasium Hiltrup
+"Wiedaustraße 114, 48163 Münster",261 - Loevelingloh,1,"51.894243849999995,7.57817422018965",51.89424385,7.57817422018965,Grundschule Loevelingloh
+"Wiener Straße 53, 48145 Münster",063 - Ostmarkstraße 071 - Kirchstraße,2,"51.96880045,7.650988831189711",51.96880045,7.650988831189711,GenoKolleg
+"Wiener Straße 53, 48145 Münster",063 - Ostmarkstraße 071 - Kirchstraße,2,"51.96880045,7.650988831189711",51.96880045,7.650988831189711,GenoKolleg
+"Zum Erlenbusch 15, 48167 Münster",225 - Angelsachsenweg,1,"51.9246104,7.673691163250751",51.9246104,7.673691163250751,Ev. Friedens-Kirchengemeinde Münster
+"Zum Häpper 10, 48163 Münster","264 - Auf der Woort 265 - Pater-Kolbe-Straße 266 - Zur Windmühle
+ 267 - Emmerweg",4,"51.88487405,7.605494331904568",51.88487405,7.605494331904568,Davertschule Amelsbüren
+"Zum Häpper 10, 48163 Münster","264 - Auf der Woort 265 - Pater-Kolbe-Straße 266 - Zur Windmühle
+ 267 - Emmerweg",4,"51.88487405,7.605494331904568",51.88487405,7.605494331904568,Davertschule Amelsbüren
+"Zum Häpper 10, 48163 Münster","264 - Auf der Woort 265 - Pater-Kolbe-Straße 266 - Zur Windmühle
+ 267 - Emmerweg",4,"51.88487405,7.605494331904568",51.88487405,7.605494331904568,Davertschule Amelsbüren
+"Zum Häpper 10, 48163 Münster","264 - Auf der Woort 265 - Pater-Kolbe-Straße 266 - Zur Windmühle
+ 267 - Emmerweg",4,"51.88487405,7.605494331904568",51.88487405,7.605494331904568,Davertschule Amelsbüren
