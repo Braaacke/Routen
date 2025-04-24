@@ -41,7 +41,6 @@ st.set_page_config(layout="wide")
 with st.sidebar:
     st.title("Interaktives Tool zur Routenbearbeitung")
 
-    # Standardmäßiges Laden nur einmal beim Start (initialisieren, wenn nicht im Session State)
     if "base_addresses" not in st.session_state:
         base_addresses = pd.read_csv("cleaned_addresses.csv").reset_index(drop=True)
         team_df = pd.read_excel("routes_optimized.xlsx", sheet_name=None)
@@ -58,7 +57,6 @@ with st.sidebar:
 
     addresses_df = st.session_state.base_addresses.copy()
 
-    # Optionaler manueller Import zur Überschreibung der Zuordnung
     uploaded_file = st.file_uploader("Importiere alternative Zuweisung (Excel-Datei)", type=["xlsx"])
     if uploaded_file:
         imported_team_df = pd.read_excel(uploaded_file, sheet_name=None)
@@ -74,7 +72,6 @@ with st.sidebar:
         addresses_df = addresses_df.merge(assignments_df, on="Wahlraum-A", how="left")
         st.success("Import erfolgreich – aktuelle Zuweisung wurde überschrieben.")
 
-        # Routen nach Import neu berechnen
         graph = get_graph()
         for team_id in assignments_df["team"].dropna().unique():
             team_rows = addresses_df[addresses_df["team"] == team_id]
@@ -85,7 +82,6 @@ with st.sidebar:
         with st.expander("📋 Vorschau der importierten Zuweisung"):
             st.dataframe(assignments_df)
 
-    # Fallback falls addresses_df nicht definiert ist
     try:
         addresses_df = addresses_df.reset_index(drop=True)
     except Exception as e:
@@ -102,7 +98,6 @@ with st.sidebar:
     else:
         selected_indices = []
         st.warning("Daten konnten nicht geladen werden oder 'Wahlraum-A' fehlt.")
-    # Bestehende Teams erst nach allen möglichen Änderungen ermitteln
     existing_teams = sorted([int(t) for t in st.session_state.new_assignments["team"].dropna().unique()])
     selected_team = st.selectbox("Ziel-Team auswählen", options=[None] + existing_teams)
 
@@ -170,37 +165,24 @@ for i, team_id in enumerate(sorted(st.session_state.new_assignments["team"].drop
             st.warning(f"Routenaufbau für Team {team_id} fehlgeschlagen: {e}")
             continue
 
-# Marker Cluster hinzufügen
 marker_cluster = MarkerCluster()
-
-# Für jedes Stop in der cleaned_addresses.csv, füge Marker mit Popups hinzu
 for _, row in addresses_df.dropna(subset=["lat", "lon"]).iterrows():
-    # Extrahiere die relevanten Spalten für das Popup
     wahlraum_b = row.get("Wahlraum-B", "Keine Wahlraum-B-Daten")
     wahlraum_a = row.get("Wahlraum-A", "Keine Wahlraum-A-Daten")
     num_rooms = row.get("num_rooms", "Keine Raumanzahl")
-
-    # Popup-Inhalt formatieren
     popup_content = f"""
     <b>{wahlraum_b}</b><br>
     <b>{wahlraum_a}</b><br>
     <b>Anzahl Räume:</b> {num_rooms}
     """
-
-    # Erstelle ein HTML Popup mit max-width und max-height für die dynamische Größe
     popup_html = f"""
     <div style="max-width: 500px; max-height: 500px; overflow:auto;">
         {popup_content}
     </div>
-    """    
-    
-    # Marker für jeden Stop erstellen und zum Marker-Cluster hinzufügen
+    """
     marker = folium.Marker(location=[row["lat"], row["lon"]], popup=folium.Popup(popup_html, max_width=500))
     marker.add_to(marker_cluster)
-
-# Füge das Marker Cluster zur Karte hinzu
 marker_cluster.add_to(m)
-
 m.to_streamlit(height=700)
 
 if st.button("Zuordnung exportieren"):
@@ -237,10 +219,10 @@ if st.button("Zuordnung exportieren"):
             "Google-Link": gmaps_link
         })
         rows = []
-        for i, row in stops.iterrows():
+        for idx, (_, row) in enumerate(stops.iterrows(), start=1):
             address_coords = f"{row['lat']},{row['lon']}"
             rows.append({
-                "Reihenfolge": i,
+                "Reihenfolge": idx,
                 "Adresse": row["Wahlraum-A"],
                 "Stimmbezirke": row["rooms"],
                 "Anzahl Stimmbezirke": row["num_rooms"],
