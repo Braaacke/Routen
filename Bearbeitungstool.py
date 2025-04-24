@@ -6,7 +6,7 @@ from folium.plugins import MarkerCluster
 import networkx as nx
 import osmnx as ox
 import pickle
-from networkx.algorithms.approximation.traveling_salesman import greedy_tsp, traveling_salesman_christofides
+from networkx.algorithms.approximation import greedy_tsp, traveling_salesman_christofides
 import random
 import math
 from datetime import timedelta
