@@ -93,6 +93,7 @@ for i, team_id in enumerate(sorted(st.session_state.new_assignments["team"].drop
     if "tsp_order" in team_rows.columns:
         team_rows = team_rows.sort_values("tsp_order")
     coords = team_rows[["lat", "lon"]].values.tolist()
+    st.write(f"Team {team_id}: {len(coords)} Koordinaten")
     if len(coords) > 1:
         route_coords = []
         try:
