@@ -115,11 +115,7 @@ def optimize_routes(algo, target, selected_team=None):
 st.set_page_config(layout="wide")
 with st.sidebar:
     st.title("Interaktives Tool zur Routenbearbeitung")
-    # Log-Ausgabe
-    st.subheader("Aktionen-Log")
-    for entry in st.session_state.action_log:
-        st.write(f"- {entry}")
-
+   
     # Basisdaten laden
     if "base_addresses" not in st.session_state:
         base_addresses = pd.read_csv("cleaned_addresses.csv").reset_index(drop=True)
@@ -175,6 +171,11 @@ with st.sidebar:
                 st.session_state.action_log.append(f"Team {max_team} erstellt mit {len(stops)} Stop(s).")
                 st.session_state.show_new_team_form = False
                 st.rerun()
+
+ # Log-Ausgabe
+    st.subheader("Aktionen-Log")
+    for entry in st.session_state.action_log:
+        st.write(f"- {entry}")
 
 # Karte mit farbigen Routen bleibt unverändert
 addresses_df = st.session_state.new_assignments
