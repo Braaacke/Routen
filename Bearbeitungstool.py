@@ -42,17 +42,22 @@ st.set_page_config(layout="wide")
 with st.sidebar:
     st.title("Interaktives Tool zur Routenbearbeitung")
 
-    # Standardmäßiges Laden der originalen Zuordnung aus Datei
-    addresses_df = pd.read_csv("cleaned_addresses.csv").reset_index(drop=True)
-    team_df = pd.read_excel("routes_optimized.xlsx", sheet_name=None)
-    temp_assignments = []
-    for sheet, df in team_df.items():
-        if sheet != "Übersicht" and "Adresse" in df.columns:
-            team = int(sheet.split("_")[1])
-            for addr in df["Adresse"]:
-                temp_assignments.append((addr, team))
-    assignments_df = pd.DataFrame(temp_assignments, columns=["Wahlraum-A", "team"])
-    addresses_df = addresses_df.merge(assignments_df, on="Wahlraum-A", how="left")
+    # Standardmäßiges Laden nur einmal beim Start (initialisieren, wenn nicht im Session State)
+    if "base_addresses" not in st.session_state:
+        base_addresses = pd.read_csv("cleaned_addresses.csv").reset_index(drop=True)
+        team_df = pd.read_excel("routes_optimized.xlsx", sheet_name=None)
+        temp_assignments = []
+        for sheet, df in team_df.items():
+            if sheet != "Übersicht" and "Adresse" in df.columns:
+                team = int(sheet.split("_")[1])
+                for addr in df["Adresse"]:
+                    temp_assignments.append((addr, team))
+        assignments_df = pd.DataFrame(temp_assignments, columns=["Wahlraum-A", "team"])
+        base_addresses = base_addresses.merge(assignments_df, on="Wahlraum-A", how="left")
+        st.session_state.base_addresses = base_addresses.copy()
+        st.session_state.new_assignments = base_addresses.copy()
+
+    addresses_df = st.session_state.base_addresses.copy()
 
     # Optionaler manueller Import zur Überschreibung der Zuordnung
     uploaded_file = st.file_uploader("Importiere alternative Zuweisung (Excel-Datei)", type=["xlsx"])
