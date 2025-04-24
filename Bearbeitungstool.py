@@ -136,6 +136,18 @@ def tsp_solve_route(graph, stops_df, method="Greedy"):
 def optimize_routes(algo, target, selected_team=None):
     graph = get_graph()
     df = st.session_state.new_assignments
+    # Ensure node_id column exists
+    if 'node_id' not in df.columns:
+        g = get_graph()
+        node_list = []
+        for _, row in df.iterrows():
+            try:
+                nid = ox.distance.nearest_nodes(g, X=row['lon'], Y=row['lat'])
+            except:
+                nid = None
+            node_list.append(nid)
+        df['node_id'] = node_list
+        st.session_state.new_assignments = df.copy()
     teams = ([selected_team] if target == 'Ausgewähltes Team' and selected_team else
              df['team'].dropna().unique())
     for t in teams:
