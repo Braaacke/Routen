@@ -34,13 +34,12 @@ if 'new_assignments' not in st.session_state:
     routes = pd.read_excel('routes_optimized.xlsx', sheet_name=None)
     assigns = []
     for sheet_name, df0 in routes.items():
-        if sheet_name == 'Übersicht':
+        # Skip summary sheet and ensure 'Adresse' column exists
+        if sheet_name == 'Übersicht' or 'Adresse' not in df0.columns:
             continue
-        if 'Adresse' not in df0.columns:
-            continue
+        # Extract team ID and extend assigns list
         team_id = int(sheet_name.split('_')[1])
-        for addr in df0['Adresse']:
-            assigns.append((addr, team_id))
+        assigns.extend([(addr, team_id) for addr in df0['Adresse']])
     df_full = base_addresses.merge(
         pd.DataFrame(assigns, columns=['Wahlraum-A','team']),
         on='Wahlraum-A', how='left'
