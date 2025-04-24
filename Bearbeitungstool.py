@@ -13,6 +13,10 @@ from datetime import timedelta
 from urllib.parse import quote_plus
 import io
 
+# Initialisiere Log im Session State
+if "action_log" not in st.session_state:
+    st.session_state.action_log = []
+
 # Laden des Graphen für TSP-Routing
 @st.cache_resource
 def get_graph():
@@ -103,22 +107,18 @@ def optimize_routes(algo, target, selected_team=None):
         stops = df[df.team == team]
         optimized = tsp_solve_route(graph, stops, method=algo)
         st.session_state.new_assignments.loc[optimized.index, "tsp_order"] = range(len(optimized))
-    st.success(f"Routen für {target.lower()} mit '{algo}' optimiert.")
-    st.session_state.message = f"Routen optimiert mit '{algo}' für {target}."
+    # Log Eintrag
+    st.session_state.action_log.append(f"Routen optimiert mit '{algo}' für {target}.")
     st.rerun()
-
-# Initialisiere Sidebar-Nachrichten
-if "message" not in st.session_state:
-    st.session_state.message = ""
 
 # Streamlit UI
 st.set_page_config(layout="wide")
 with st.sidebar:
-    # Zeige letzte Aktion
-    if st.session_state.message:
-        st.info(st.session_state.message)
-
     st.title("Interaktives Tool zur Routenbearbeitung")
+    # Log-Ausgabe
+    st.subheader("Aktionen-Log")
+    for entry in st.session_state.action_log:
+        st.write(f"- {entry}")
 
     # Basisdaten laden
     if "base_addresses" not in st.session_state:
@@ -137,7 +137,7 @@ with st.sidebar:
 
     addresses_df = st.session_state.new_assignments.reset_index(drop=True)
 
-    # Auswahl und Zuweisung
+    # Auswahl & Zuweisung
     selected_indices = st.multiselect("Stops auswählen (nach Adresse)", options=addresses_df['Wahlraum-A'].tolist())
     existing_teams = sorted([int(t) for t in addresses_df.team.dropna().unique()])
     selected_team = st.selectbox("Ziel-Team auswählen", options=[None] + existing_teams)
@@ -154,7 +154,7 @@ with st.sidebar:
         for addr in selected_indices:
             idx = addresses_df[addresses_df['Wahlraum-A'] == addr].index[0]
             st.session_state.new_assignments.at[idx, 'team'] = selected_team
-        st.sidebar.info(f"Zuweisung übernommen: {len(selected_indices)} Stop(s) → Team {selected_team}.")
+        st.session_state.action_log.append(f"Zuweisung übernommen: {len(selected_indices)} Stop(s) → Team {selected_team}.")
         for team_id in set([selected_team]):
             rows = st.session_state.new_assignments[st.session_state.new_assignments.team == team_id]
             opt = tsp_solve_route(graph, rows)
@@ -172,7 +172,7 @@ with st.sidebar:
                 for addr in stops:
                     idx = addresses_df[addresses_df['Wahlraum-A'] == addr].index[0]
                     st.session_state.new_assignments.at[idx, 'team'] = max_team
-                st.sidebar.info(f"Team {max_team} erstellt mit {len(stops)} Stop(s).")
+                st.session_state.action_log.append(f"Team {max_team} erstellt mit {len(stops)} Stop(s).")
                 st.session_state.show_new_team_form = False
                 st.rerun()
 
@@ -183,7 +183,7 @@ color_list = ["#FF0000", "#00FF00", "#0000FF", "#FFA500", "#800080", "#008080", 
 for i, team_id in enumerate(sorted(addresses_df.team.dropna().unique())):
     team_rows = addresses_df[addresses_df.team == team_id]
     if 'tsp_order' in team_rows.columns:
-        team_rows = team_rows.sort_values('tsp_order')
+        team_rows = team_rows.sort
     coords = team_rows[['lat', 'lon']].values.tolist()
     if len(coords) > 1:
         nodes = [ox.distance.nearest_nodes(get_graph(), X=lon, Y=lat) for lat, lon in coords]
