@@ -181,8 +181,8 @@ for _, row in addresses_df.dropna(subset=["lat", "lon"]).iterrows():
 
     # Popup-Inhalt formatieren
     popup_content = f"""
-    <b>Wahlraum-A:</b> {wahlraum_a}<br>
-    <b>Wahlraum-B:</b> {wahlraum_b}<br>
+    {wahlraum_b}<br>
+    {wahlraum_a}<br>
     <b>Anzahl Räume:</b> {num_rooms}<br>
     """
     
