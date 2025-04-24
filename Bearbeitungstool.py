@@ -53,7 +53,8 @@ with st.sidebar:
                 for addr in df["Adresse"]:
                     imported_assignments.append((addr, team))
         assignments_df = pd.DataFrame(imported_assignments, columns=["Wahlraum-A", "team"])
-        addresses_df = addresses_df.drop(columns="team", errors="ignore")
+        if "team" in addresses_df.columns:
+            addresses_df = addresses_df.drop(columns="team")
         addresses_df = addresses_df.merge(assignments_df, on="Wahlraum-A", how="left")
         st.success("Import erfolgreich – aktuelle Zuweisung wurde geladen.")
 
