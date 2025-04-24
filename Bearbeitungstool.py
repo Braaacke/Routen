@@ -57,7 +57,6 @@ def simulated_annealing(G, weight='weight', initial_temp=10000, cooling_rate=0.9
         if i == j:
             continue
         new_tour = current_tour.copy()
-        # Korrigiere In-Place-Reverse zu List-Reversal für Konsistenz
         new_tour[i:j] = list(reversed(new_tour[i:j]))
         new_len = tour_length(new_tour)
         delta = new_len - current_len
@@ -108,15 +107,15 @@ def optimize_routes(algo, target, selected_team=None):
         stops = df[df.team == team]
         optimized = tsp_solve_route(graph, stops, method=algo)
         st.session_state.new_assignments.loc[optimized.index, "tsp_order"] = range(len(optimized))
-    # Log Eintrag
     st.session_state.action_log.append(f"Routen optimiert mit '{algo}' für {target}.")
     st.rerun()
 
 # Streamlit UI
 st.set_page_config(layout="wide")
+
 with st.sidebar:
     st.title("Interaktives Tool zur Routenbearbeitung")
-   
+
     # Basisdaten laden
     if "base_addresses" not in st.session_state:
         base_addresses = pd.read_csv("cleaned_addresses.csv").reset_index(drop=True)
@@ -173,7 +172,6 @@ with st.sidebar:
                 st.session_state.show_new_team_form = False
                 st.rerun()
 
-        # Export und Download in einem Button
 # Funktion zur Generierung des Excels als Bytes
 
 def _generate_excel_bytes():
@@ -184,7 +182,7 @@ def _generate_excel_bytes():
         stops = st.session_state.new_assignments[st.session_state.new_assignments["team"] == team]
         if "tsp_order" in stops.columns:
             stops = stops.sort_values("tsp_order")
-        rooms = stops.get("num_rooms", _pd.Series()).sum()
+        rooms = stops.get("num_rooms", pd.Series()).sum()
         travel_km = 0
         travel_min = 0
         coords = stops[["lat", "lon"]].values.tolist()
@@ -199,61 +197,4 @@ def _generate_excel_bytes():
                     pass
         service_min = int(rooms * 10)
         time_total = service_min + travel_min
-        gmaps_link = "https://www.google.com/maps/dir/" + "/".join([f"{lat},{lon}" for lat, lon in coords])
-        overview.append({
-            "Kontrollbezirk": team,
-            "Anzahl Wahllokale": len(stops),
-            "Anzahl Stimmbezirke": int(rooms),
-            "Wegstrecke (km)": round(travel_km, 1),
-            "Fahrtzeit (min)": int(travel_min),
-            "Kontrollzeit (min)": service_min,
-            "Gesamtzeit": str(timedelta(minutes=int(time_total))),
-            "Google-Link": gmaps_link
-        })
-        rows = []
-        for idx, row in stops.iterrows():
-            coord_str = f"{row['lat']},{row['lon']}"
-            rows.append({
-                "Reihenfolge": idx,
-                "Adresse": row["Wahlraum-A"],
-                "Stimmbezirke": row.get('rooms', ''),
-                "Anzahl Stimmbezirke": row.get('num_rooms', ''),
-                "Google-Link": f"https://www.google.com/maps/search/?api=1&query={quote_plus(coord_str)}"
-            })
-        team_sheets[f"Team_{team}"] = _pd.DataFrame(rows)
-    overview_df = _pd.DataFrame(overview)
-    buf = io.BytesIO()
-    with _pd.ExcelWriter(buf, engine="openpyxl") as writer:
-        overview_df.to_excel(writer, sheet_name="Übersicht", index=False)
-        # Auto-adjust column widths
-        from openpyxl.utils import get_column_letter
-        ws_over = writer.sheets["Übersicht"]
-        for i, col in enumerate(overview_df.columns, 1):
-            max_len = max(overview_df[col].astype(str).map(len).max(), len(col))
-            ws_over.column_dimensions[get_column_letter(i)].width = max_len + 2
-        for sheet_name, df in team_sheets.items():
-            df.to_excel(writer, sheet_name=sheet_name, index=False)
-            ws = writer.sheets[sheet_name]
-            for i, col in enumerate(df.columns, 1):
-                max_len = max(df[col].astype(str).map(len).max(), len(col))
-                ws.column_dimensions[get_column_letter(i)].width = max_len + 2
-    buf.seek(0)
-    return buf.getvalue()
-
-# Einziger Button für Export und Download
-data = _generate_excel_bytes()
-st.download_button(
-    label="📥 Export & Download Excel",
-    data=data,
-    file_name="routen_zuweisung_aktualisiert.xlsx",
-    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-)
-
-# Log-Ausgabe
-st.subheader("Aktionen-Log")
-for entry in st.session_state.action_log:
-    st.write(f"- {entry}")
-
-# Karte mit farbigen Routen bleibt unverändert
-addresses_df = st.session_state.new_assignments
-m = leafmap.Map(center=[addresses_df['lat'].mean(), addresses_df['lon'].mean()], zoom=12)(height=1000)
+        gmaps_link = "https://www.google.com/maps/dir/" + "/".join([f"{lat
