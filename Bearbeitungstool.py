@@ -132,6 +132,7 @@ with st.sidebar:
                 st.rerun()
 
 # Interaktive Karte vorbereiten
+graph = get_graph() 
 m = folium.Map(
     location=[addresses_df["lat"].mean(), addresses_df["lon"].mean()],
     zoom_start=12  # <-- korrekt statt 'zoom'
