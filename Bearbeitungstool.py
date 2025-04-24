@@ -58,9 +58,11 @@ with st.sidebar:
         addresses_df = addresses_df.merge(assignments_df, on="Wahlraum-A", how="left")
         st.success("Import erfolgreich – aktuelle Zuweisung wurde geladen.")
 
-    if not isinstance(addresses_df, pd.DataFrame):
-        st.error("Fehler: addresses_df konnte nicht erstellt werden.")
-    else:
+    # Fallback falls addresses_df nicht definiert ist
+    try:
+        addresses_df = addresses_df.reset_index(drop=True)
+    except Exception as e:
+        st.error(f"Fehler beim Zurücksetzen des Index von addresses_df: {e}")
         addresses_df = addresses_df.reset_index(drop=True)
 
     if "new_assignments" not in st.session_state:
