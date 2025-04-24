@@ -123,7 +123,24 @@ def _generate_excel_bytes():
         rooms = stops.get('num_rooms', pd.Series()).sum()
         travel_km = travel_min = 0
         coords = stops[['lat','lon']].values.tolist()
-        for u, v in zip(nodes:= [ox.distance.nearest_nodes(graph, X=lon, Y=lat) for lat,lon in coords][:-1], nodes[1:]):
+        # compute nearest nodes once for performance
+        nodes = []
+        for lat, lon in coords:
+            try:
+                node = ox.distance.nearest_nodes(graph, X=lon, Y=lat)
+            except Exception:
+                node = None
+            nodes.append(node)
+        # sum up travel distances
+        for u, v in zip(nodes[:-1], nodes[1:]):
+            if u is None or v is None:
+                continue
+            try:
+                length = nx.shortest_path_length(graph, u, v, weight='length')
+                travel_km += length / 1000
+                travel_min += length / 1000 * 2
+            except Exception:
+                pass
             try:
                 length = nx.shortest_path_length(graph, u, v, weight='length')
                 travel_km += length/1000
