@@ -174,7 +174,7 @@ with st.sidebar:
                 st.rerun()
 
     # Export-Funktion mit Sidebar-Meldung
-if st.button("Zuordnung exportieren"):
+    if st.button("Zuordnung exportieren"):
     # Graph einmal laden
     graph = get_graph()
     overview = []
