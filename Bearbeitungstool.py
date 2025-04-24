@@ -46,7 +46,7 @@ with st.sidebar:
         base_addresses = pd.read_csv("cleaned_addresses.csv").reset_index(drop=True)
         team_df = pd.read_excel("routes_optimized.xlsx", sheet_name=None)
         temp_assignments = []
-                for sheet, df in team_df.items():
+        for sheet, df in team_df.items():
             if sheet != "Übersicht" and "Adresse" in df.columns:
                 team = int(sheet.split("_")[1])
                 for addr in df["Adresse"]:
