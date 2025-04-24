@@ -41,6 +41,7 @@ st.set_page_config(layout="wide")
 with st.sidebar:
     st.title("Interaktives Tool zur Routenbearbeitung")
 
+    # Standardmäßiges Laden nur einmal beim Start
     if "base_addresses" not in st.session_state:
         base_addresses = pd.read_csv("cleaned_addresses.csv").reset_index(drop=True)
         team_df = pd.read_excel("routes_optimized.xlsx", sheet_name=None)
@@ -57,6 +58,7 @@ with st.sidebar:
 
     addresses_df = st.session_state.base_addresses.copy()
 
+    # Optionaler manueller Import zur Überschreibung der Zuweisung
     uploaded_file = st.file_uploader("Importiere alternative Zuweisung (Excel-Datei)", type=["xlsx"])
     if uploaded_file:
         imported_team_df = pd.read_excel(uploaded_file, sheet_name=None)
@@ -72,6 +74,7 @@ with st.sidebar:
         addresses_df = addresses_df.merge(assignments_df, on="Wahlraum-A", how="left")
         st.success("Import erfolgreich – aktuelle Zuweisung wurde überschrieben.")
 
+        # Routen nach Import neu berechnen
         graph = get_graph()
         for team_id in assignments_df["team"].dropna().unique():
             team_rows = addresses_df[addresses_df["team"] == team_id]
@@ -82,6 +85,7 @@ with st.sidebar:
         with st.expander("📋 Vorschau der importierten Zuweisung"):
             st.dataframe(assignments_df)
 
+    # Fallback falls addresses_df nicht definiert ist
     try:
         addresses_df = addresses_df.reset_index(drop=True)
     except Exception as e:
@@ -98,12 +102,11 @@ with st.sidebar:
     else:
         selected_indices = []
         st.warning("Daten konnten nicht geladen werden oder 'Wahlraum-A' fehlt.")
+    # Bestehende Teams erst nach allen möglichen Änderungen ermitteln
     existing_teams = sorted([int(t) for t in st.session_state.new_assignments["team"].dropna().unique()])
     selected_team = st.selectbox("Ziel-Team auswählen", options=[None] + existing_teams)
 
     if st.button("Zuweisung übernehmen") and selected_team is not None and selected_indices:
-        graph = get_graph()
-
         for addr in selected_indices:
             current_team = st.session_state.new_assignments.loc[st.session_state.new_assignments["Wahlraum-A"] == addr, "team"].values[0]
             idx = st.session_state.new_assignments[st.session_state.new_assignments["Wahlraum-A"] == addr].index[0]
@@ -165,7 +168,10 @@ for i, team_id in enumerate(sorted(st.session_state.new_assignments["team"].drop
             st.warning(f"Routenaufbau für Team {team_id} fehlgeschlagen: {e}")
             continue
 
+# Marker Cluster hinzufügen
 marker_cluster = MarkerCluster()
+
+# Für jedes Stop in der cleaned_addresses.csv, füge Marker mit Popups hinzu
 for _, row in addresses_df.dropna(subset=["lat", "lon"]).iterrows():
     wahlraum_b = row.get("Wahlraum-B", "Keine Wahlraum-B-Daten")
     wahlraum_a = row.get("Wahlraum-A", "Keine Wahlraum-A-Daten")
@@ -179,16 +185,18 @@ for _, row in addresses_df.dropna(subset=["lat", "lon"]).iterrows():
     <div style="max-width: 500px; max-height: 500px; overflow:auto;">
         {popup_content}
     </div>
-    """
+    """    
     marker = folium.Marker(location=[row["lat"], row["lon"]], popup=folium.Popup(popup_html, max_width=500))
     marker.add_to(marker_cluster)
 marker_cluster.add_to(m)
+
 m.to_streamlit(height=700)
 
 if st.button("Zuordnung exportieren"):
     overview = []
     team_sheets = {}
-    for team in sorted(st.session_state.new_assignments["team"].dropna().unique()):
+    unique_teams = sorted(st.session_state.new_assignments["team"].dropna().unique())
+    for idx, team in enumerate(unique_teams, start=1):
         stops = st.session_state.new_assignments[st.session_state.new_assignments["team"] == team]
         if "tsp_order" in stops.columns:
             stops = stops.sort_values("tsp_order")
@@ -209,7 +217,7 @@ if st.button("Zuordnung exportieren"):
         time_total = service_min + travel_min
         gmaps_link = "https://www.google.com/maps/dir/" + "/".join([f"{lat},{lon}" for lat, lon in coords])
         overview.append({
-            "Kontrollbezirk": team,
+            "Kontrollbezirk": idx,
             "Anzahl Wahllokale": len(stops),
             "Anzahl Stimmbezirke": rooms,
             "Wegstrecke (km)": round(travel_km, 1),
@@ -219,16 +227,16 @@ if st.button("Zuordnung exportieren"):
             "Google-Link": gmaps_link
         })
         rows = []
-        for idx, (_, row) in enumerate(stops.iterrows(), start=1):
+        for j, (_, row) in enumerate(stops.iterrows(), start=1):
             address_coords = f"{row['lat']},{row['lon']}"
             rows.append({
-                "Reihenfolge": idx,
+                "Bezirk": j,
                 "Adresse": row["Wahlraum-A"],
                 "Stimmbezirke": row["rooms"],
                 "Anzahl Stimmbezirke": row["num_rooms"],
                 "Google-Link": f"https://www.google.com/maps/search/?api=1&query={quote_plus(address_coords)}"
             })
-        team_sheets[f"Team_{team}"] = pd.DataFrame(rows)
+        team_sheets[f"Bezirk_{idx}"] = pd.DataFrame(rows)
 
     overview_df = pd.DataFrame(overview)
     output = io.BytesIO()
