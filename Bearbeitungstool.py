@@ -219,7 +219,7 @@ for _, row in addresses_df.dropna(subset=['lat', 'lon']).iterrows():
     ).add_to(marker_cluster)
 marker_cluster.add_to(m)
 
-m.to_streamlit(height=700)
+m.to_streamlit(height=1000)
 
 # Export-Funktion mit Sidebar-Meldung
 if st.button("Zuordnung exportieren"):
