@@ -119,7 +119,20 @@ with st.sidebar:
     if st.button("Neues Team erstellen"):
         max_team = max(existing_teams) if existing_teams else 0
         new_team = max_team + 1
-        st.success(f"Neues Team {new_team} erstellt. Bitte Stop(s) auswählen und zuweisen.")
+        with st.form(key="neues_team_form", clear_on_submit=True):
+            st.markdown(f"### Stop(s) für Team {new_team} auswählen")
+            new_team_stops = st.multiselect("Stop(s) auswählen", options=addresses_df["Wahlraum-A"].dropna().tolist())
+            submitted = st.form_submit_button("Stop(s) zuweisen und Team erstellen")
+            if submitted and new_team_stops:
+                for addr in new_team_stops:
+                    idx = st.session_state.new_assignments[st.session_state.new_assignments["Wahlraum-A"] == addr].index[0]
+                    st.session_state.new_assignments.at[idx, "team"] = new_team
+
+                team_rows = st.session_state.new_assignments[st.session_state.new_assignments["team"] == new_team]
+                optimized_rows = tsp_solve_route(get_graph(), team_rows)
+                st.session_state.new_assignments.loc[optimized_rows.index, "tsp_order"] = range(len(optimized_rows))
+                st.success(f"Team {new_team} wurde erstellt und die ausgewählten Stop(s) wurden zugewiesen.")
+                st.rerun()
 
 m = leafmap.Map(center=[addresses_df["lat"].mean(), addresses_df["lon"].mean()], zoom=12)
 graph = get_graph()
