@@ -1,7 +1,4 @@
-streamlit
+streamlit>=1.20
 pandas
-folium
-osmnx
-networkx
-openpyxl
-git+https://github.com/andfanilo/streamlit-leaflet.git
+pydeck>=0.8.0
+numpy
