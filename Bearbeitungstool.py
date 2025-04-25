@@ -193,6 +193,7 @@ with st.sidebar:
     if not st.session_state.get('show_new', False):
         if st.button('Neuen Kontrollbezirk erstellen', key='show_new_cb'):
             st.session_state.show_new = True
+            st.experimental_rerun()
     else:
         max_t = int(st.session_state.new_assignments['team'].max(skipna=True) or 0) + 1
         with st.form(key='new_district_form'):
