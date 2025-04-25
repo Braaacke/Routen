@@ -56,6 +56,9 @@ if "base_addresses" not in st.session_state:
 
 # Arbeitsdaten kopieren
 df_assign = st.session_state.new_assignments.copy()
+# Falls 'latlong' Spalte vorhanden, extrahiere lat und lon daraus
+if 'latlong' in df_assign.columns and ('lat' not in df_assign.columns or 'lon' not in df_assign.columns):
+    df_assign[['lat', 'lon']] = df_assign['latlong'].str.split(',', expand=True).astype(float)
 
 # Excel-Export vorbereiten
 output = io.BytesIO()
