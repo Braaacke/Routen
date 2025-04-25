@@ -177,38 +177,40 @@ with st.sidebar:
             st.session_state.new_assignments.loc[opt.index,'tsp_order'] = range(len(opt))
         st.success('Zuweisung gesetzt.')
 
-    # Neuen Kontrollbezirk erstellen
+        # Neuen Kontrollbezirk erstellen
     if not st.session_state.get('show_new', False):
         if st.button('Neuen Kontrollbezirk erstellen', key='show_new_cb'):
             st.session_state.show_new = True
-    elif st.session_state.show_new:
+    else:
         max_t = int(st.session_state.new_assignments['team'].max(skipna=True) or 0) + 1
-        st.markdown(f"### Neuen Kontrollbezirk {max_t} erstellen")
-        sel2 = st.multiselect(
-            f"Stops für Kontrollbezirk {max_t}",
-            options=addrs_assign,
-            placeholder='Auswählen',
-            key='new_team_sel'
-        )
-        if st.button('Erstellen und zuweisen', key='create_new'):
-            if sel2:
-                graph = get_graph()
-                for label in sel2:
-                    addr = label.split(' - ',1)[1]
-                    idx = st.session_state.new_assignments.index[
-                        st.session_state.new_assignments['Wahlraum-A']==addr
-                    ][0]
-                    st.session_state.new_assignments.at[idx,'team'] = max_t
-                # TSP neu berechnen
-                df_nt = st.session_state.new_assignments[
-                    st.session_state.new_assignments['team']==max_t
-                ]
-                opt2 = tsp_solve_route(graph, df_nt)
-                st.session_state.new_assignments.loc[opt2.index,'tsp_order'] = range(len(opt2))
-                st.success(f'Kontrollbezirk {max_t} erstellt.')
-                st.session_state.show_new = False
-            else:
-                st.warning('Bitte mindestens ein Wahllokal auswählen.')
+        with st.form(key='new_district_form'):
+            st.markdown(f"### Neuen Kontrollbezirk {max_t} erstellen")
+            sel2 = st.multiselect(
+                f"Stops für Kontrollbezirk {max_t}",
+                options=addrs_assign,
+                placeholder='Auswählen',
+                key='new_team_sel'
+            )
+            submitted = st.form_submit_button('Erstellen und zuweisen')
+            if submitted:
+                if sel2:
+                    graph = get_graph()
+                    for label in sel2:
+                        addr = label.split(' - ',1)[1]
+                        idx = st.session_state.new_assignments.index[
+                            st.session_state.new_assignments['Wahlraum-A']==addr
+                        ][0]
+                        st.session_state.new_assignments.at[idx,'team'] = max_t
+                    # TSP neu berechnen
+                    df_nt = st.session_state.new_assignments[
+                        st.session_state.new_assignments['team']==max_t
+                    ]
+                    opt2 = tsp_solve_route(graph, df_nt)
+                    st.session_state.new_assignments.loc[opt2.index,'tsp_order'] = range(len(opt2))
+                    st.success(f'Kontrollbezirk {max_t} erstellt.')
+                    st.session_state.show_new = False
+                else:
+                    st.warning('Bitte mindestens ein Wahllokal auswählen.')
 
     # Routenberechnung neu
     if st.button('Routen berechnen', key='recalc_routes'):
