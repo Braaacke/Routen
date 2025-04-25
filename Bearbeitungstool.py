@@ -54,7 +54,8 @@ if "base_addresses" not in st.session_state:
     st.session_state.new_assignments = base_addresses.copy()
 
 # Arbeits-Daten (immer aktuell)
-addresses_df = st.session_state.new_assignments.copy()
+# Nutze session_state.new_assignments für alle Views
+df_assign = st.session_state.new_assignments.copy()
 
 # Sidebar
 with st.sidebar:
@@ -79,11 +80,12 @@ with st.sidebar:
         )
         st.session_state.new_assignments = merged.copy()
         st.success("Import erfolgreich – Karte wird aktualisiert.")
+        st.experimental_rerun()
 
     # Manuelle Zuweisung
-    stops = addresses_df["Wahlraum-A"].dropna().tolist()
+    stops = df_assign["Wahlraum-A"].dropna().tolist()
     selected = st.multiselect("Stops auswählen", options=stops)
-    teams = sorted([int(t) for t in addresses_df["team"].dropna().unique()])
+    teams = sorted([int(t) for t in df_assign["team"].dropna().unique()])
     target = st.selectbox("Ziel-Team auswählen", options=[None] + teams)
     if st.button("Zuweisung übernehmen") and target and selected:
         for addr in selected:
@@ -94,16 +96,17 @@ with st.sidebar:
         opt = tsp_solve_route(get_graph(), rows)
         st.session_state.new_assignments.loc[opt.index, "tsp_order"] = range(len(opt))
         st.success("Zuweisung übernommen – Karte wird aktualisiert.")
+        st.experimental_rerun()
 
     # Neues Team erstellen
     if st.button("Neues Team erstellen"):
         st.session_state.show_new_team_form = True
     if st.session_state.get("show_new_team_form"):
-        max_team = int(addresses_df["team"].max()) if addresses_df["team"].notnull().any() else 0
+        max_team = int(df_assign["team"].max()) if df_assign["team"].notnull().any() else 0
         new_team = max_team + 1
         with st.form(key="new_team_form", clear_on_submit=True):
             st.markdown(f"### Stop(s) für Team {new_team} auswählen")
-            sel = st.multiselect("Stop(s) auswählen", options=addresses_df["Wahlraum-A"].dropna().tolist())
+            sel = st.multiselect("Stop(s) auswählen", options=df_assign["Wahlraum-A"].dropna().tolist())
             if st.form_submit_button("Zuweisen und Team erstellen") and sel:
                 for addr in sel:
                     idx = st.session_state.new_assignments[st.session_state.new_assignments["Wahlraum-A"] == addr].index[0]
@@ -112,15 +115,16 @@ with st.sidebar:
                 st.session_state.new_assignments.loc[opt.index, "tsp_order"] = range(len(opt))
                 st.session_state.show_new_team_form = False
                 st.success(f"Team {new_team} erstellt – Karte wird aktualisiert.")
+                st.experimental_rerun()
 
-# Karte zeichnen
-m = leafmap.Map(center=[addresses_df["lat"].mean(), addresses_df["lon"].mean()], zoom=12)
+# Karte zeichnen aus session_state.new_assignments
+m = leafmap.Map(center=[df_assign["lat"].mean(), df_assign["lon"].mean()], zoom=12)
 
 # Routenlinien
 graph = get_graph()
 color_list = ["#FF00FF","#00FFFF","#00FF00","#FF0000","#FFA500","#FFFF00","#00CED1","#DA70D6","#FF69B4","#8A2BE2"]
-for i, tid in enumerate(sorted(addresses_df["team"].dropna().unique())):
-    df_team = addresses_df[addresses_df["team"] == tid]
+for i, tid in enumerate(sorted(st.session_state.new_assignments["team"].dropna().unique())):
+    df_team = st.session_state.new_assignments[st.session_state.new_assignments["team"] == tid]
     if "tsp_order" in df_team.columns:
         df_team = df_team.sort_values("tsp_order")
     coords = df_team[["lat","lon"]].values.tolist()
@@ -138,9 +142,9 @@ for i, tid in enumerate(sorted(addresses_df["team"].dropna().unique())):
 
 # Marker Cluster
 marker_cluster = MarkerCluster()
-for _, row in addresses_df.dropna(subset=["lat","lon"]).iterrows():
+for _, row in st.session_state.new_assignments.dropna(subset=["lat","lon"]).iterrows():
     team_id = row.get("team")
-    color = color_list[sorted(addresses_df["team"].dropna().unique()).index(team_id)%len(color_list)] if pd.notnull(team_id) else "#000000"
+    color = color_list[sorted(st.session_state.new_assignments["team"].dropna().unique()).index(team_id)%len(color_list)] if pd.notnull(team_id) else "#000000"
     popup_html = f"<div style='max-width:500px; max-height:500px; overflow:auto;'><b>Team:</b> {int(team_id) if pd.notnull(team_id) else 'n/a'}<br>"
     popup_html += f"<b>{row.get('Wahlraum-B','')}</b><br><b>{row.get('Wahlraum-A','')}</b><br>"
     popup_html += f"<b>Anzahl Räume:</b> {row.get('num_rooms','')}</div>"
@@ -153,8 +157,8 @@ m.to_streamlit(height=700)
 if st.button("Zuordnung exportieren"):
     overview=[]
     team_sheets={}
-    for idx, tid in enumerate(sorted(addresses_df["team"].dropna().unique()),start=1):
-        df_team = addresses_df[addresses_df["team"] == tid]
+    for idx, tid in enumerate(sorted(st.session_state.new_assignments["team"].dropna().unique()),start=1):
+        df_team = st.session_state.new_assignments[st.session_state.new_assignments["team"] == tid]
         if "tsp_order" in df_team.columns:
             df_team = df_team.sort_values("tsp_order")
         rooms=df_team["num_rooms"].sum()
