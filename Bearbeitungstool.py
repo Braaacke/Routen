@@ -279,9 +279,7 @@ def draw_map(df_assign):
             f"<div style='white-space: nowrap;'>"
             f"<b>{r['Wahlraum-B']}</b><br>{r['Wahlraum-A']}<br>Anzahl Räume: {r['num_rooms']}"
             "</div>"
-        )
-            f"{r['Wahlraum-B']}<br>{r['Wahlraum-A']}<br>Anzahl Räume: {r['num_rooms']}"
-            "</div>"
+              
         )
         popup = folium.Popup(popup_html, max_width=300)
         marker = folium.Marker(location=[r['lat'], r['lon']], popup=popup)
