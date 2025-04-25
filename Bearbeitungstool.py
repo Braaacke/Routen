@@ -177,26 +177,8 @@ with st.sidebar:
     )
 
 # Karte
-# Initialisiere Graph für Routing
-graph = get_graph()
-
-# Bestimme Karteinstellungen je nach Suchauswahl
-if search_selection:
-    # Extrahiere Adresse (Wahlraum-A) aus Label
-    addr = search_selection.split(" - ", 1)[1] if " - " in search_selection else search_selection
-    row = df_assign[df_assign["Wahlraum-A"] == addr]
-    if not row.empty:
-        center = [row.iloc[0]["lat"], row.iloc[0]["lon"]]
-        zoom_level = 17
-    else:
-        center = [df_assign["lat"].mean(), df_assign["lon"].mean()]
-        zoom_level = 10
-else:
-    center = [df_assign["lat"].mean(), df_assign["lon"].mean()]
-    zoom_level = 10
-
-# Erstelle Map
-m = leafmap.Map(center=center, zoom=zoom_level)
+# Erstelle Map mit Standard View (Full Extent)
+m = leafmap.Map(center=[df_assign["lat"].mean(), df_assign["lon"].mean()], zoom=10)
 
 # Linien zeichnen
 col = ["#FF00FF","#00FFFF","#00FF00","#FF0000","#FFA500","#FFFF00","#00CED1","#DA70D6","#FF69B4","#8A2BE2"]
@@ -226,9 +208,19 @@ for _, r in df_assign.dropna(subset=["lat","lon"]).iterrows():
     mc.add_child(folium.Marker(location=[r['lat'], r['lon']], popup=html))
 mc.add_to(m)
 
-# Wenn keine spezifische Suche, passe Bounds an
-if not search_selection:
-    m.fit_bounds(df_assign[['lat','lon']].values.tolist())
+# Zoom-Verhalten: bei Suche nahe ran, sonst Gesamtansicht
+if search_selection:
+    addr = search_selection.split(" - ", 1)[1] if " - " in search_selection else search_selection
+    row = df_assign[df_assign["Wahlraum-A"] == addr]
+    if not row.empty:
+        lat0, lon0 = row.iloc[0][["lat","lon"]]
+        pad = 0.001  # kleiner Bereich zum Heranzoomen
+        m.fit_bounds([[lat0 - pad, lon0 - pad], [lat0 + pad, lon0 + pad]])
+    else:
+        m.fit_bounds(df_assign[["lat","lon"]].values.tolist())
+else:
+    m.fit_bounds(df_assign[["lat","lon"]].values.tolist())
 
 # Map anzeigen
+m.to_streamlit(use_container_width=True, height=700)
 m.to_streamlit(use_container_width=True, height=700)
