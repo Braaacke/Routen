@@ -136,7 +136,8 @@ with st.sidebar:
     tgt = st.selectbox(
         "Kontrollbezirk wählen",
         options=[None] + teams,
-        format_func=lambda x: "Auswählen" if x is None else str(x),
+        placeholder="Auswählen",
+    ),
     )
     if st.button("Zuweisung übernehmen") and tgt and sel:
         for a in sel:
