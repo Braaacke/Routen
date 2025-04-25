@@ -184,11 +184,13 @@ for i, t in enumerate(sorted(df_assign["team"].dropna().unique())):
                 pass
         folium.PolyLine(path, color=col[i % len(col)], weight=6, opacity=0.8, tooltip=f"Team {int(t)}").add_to(m)
 # Nutzerdefinierte MarkerCluster mit disableClusteringAtZoom für frühere Sichtbarkeit
-mc = MarkerCluster(disableClusteringAtZoom=12)
+mc = MarkerCluster(disableClusteringAtZoom=13)
 for _, r in df_assign.dropna(subset=["lat","lon"]).iterrows():
     html = f"<div style='max-width:200px'><b>Team:</b> {int(r['team']) if pd.notnull(r['team']) else 'n/a'}<br>"
     html += f"{r['Wahlraum-B']}<br>{r['Wahlraum-A']}<br>Anzahl Räume: {r['num_rooms']}</div>"
     mc.add_child(folium.Marker(location=[r['lat'], r['lon']], popup=html))
 mc.add_to(m)
+# Karte an alle Standorte anpassen
+m.fit_bounds(df_assign[['lat','lon']].values.tolist())
 
 m.to_streamlit(height=700)
