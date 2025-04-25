@@ -136,10 +136,10 @@ with st.sidebar:
     tgt = st.selectbox(
         "Kontrollbezirk wählen",
         options=[None] + teams,
-        placeholder="Auswählen",
-    ),
+        placeholder="Auswählen"
     )
-    if st.button("Zuweisung übernehmen") and tgt and sel:
+    # Zuweisung übernehmen Button
+    if st.button("Zuweisung übernehmen") and tgt is not None and sel:
         for a in sel:
             idx = st.session_state.new_assignments.index[st.session_state.new_assignments["Wahlraum-A"] == a][0]
             st.session_state.new_assignments.at[idx, "team"] = tgt
@@ -148,7 +148,8 @@ with st.sidebar:
         st.session_state.new_assignments.loc[opt.index, "tsp_order"] = range(len(opt))
         st.success("Zuweisung gesetzt.")
         st.experimental_rerun()
-    # Neues Team
+
+    # Neues Team erstellen
     if st.button("Neuen Kontrollbezirk erstellen"):
         max_t = int(st.session_state.new_assignments["team"].max(skipna=True) or 0) + 1
         sel2 = st.multiselect(f"Stops für Team {max_t}", options=addrs, key="new_team_sel", placeholder="Auswählen")
@@ -161,7 +162,14 @@ with st.sidebar:
             st.session_state.new_assignments.loc[opt2.index, "tsp_order"] = range(len(opt2))
             st.success(f"Team {max_t} erstellt.")
             st.experimental_rerun()
+
     # Export
+    st.download_button(
+        label="Kontrollbezirke herunterladen",
+        data=output,
+        file_name="routen_zuweisung.xlsx",
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
     st.download_button(
         label="Kontrollbezirke herunterladen",
         data=output,
