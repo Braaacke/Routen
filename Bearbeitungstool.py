@@ -177,10 +177,12 @@ with st.sidebar:
             st.session_state.new_assignments.loc[opt.index,'tsp_order'] = range(len(opt))
         st.success('Zuweisung gesetzt.')
 
-            # Neuen Kontrollbezirk erstellen Button
-    if st.button('Neuen Kontrollbezirk erstellen'):
-        st.session_state.show_new = True
-    if st.session_state.get('show_new'):
+                # Neuen Kontrollbezirk erstellen Button
+    if not st.session_state.get('show_new', False):
+        if st.button('Neuen Kontrollbezirk erstellen', key='show_new_cb'):
+            st.session_state.show_new = True
+    # Formular für neuen Kontrollbezirk
+    if st.session_state.get('show_new', False):
         max_t = int(st.session_state.new_assignments['team'].max(skipna=True) or 0) + 1
         st.markdown(f"### Neuen Kontrollbezirk {max_t} erstellen")
         sel2 = st.multiselect(
