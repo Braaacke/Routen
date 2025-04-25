@@ -4,7 +4,7 @@ import streamlit as st
 import pandas as pd
 import leafmap.foliumap as leafmap
 import folium
-from folium.plugins import MarkerCluster
+from folium.plugins import MarkerCluster, Search
 import networkx as nx
 import osmnx as ox
 import pickle
@@ -192,5 +192,13 @@ for _,r in df_assign.dropna(subset=["lat","lon"]).iterrows():
     html=f"<div style='max-width:200px'><b>Team:</b> {int(r['team']) if pd.notnull(r['team']) else 'n/a'}<br>{r['Wahlraum-B']}<br>{r['Wahlraum-A']}<br>Anzahl Räume: {r['num_rooms']}</div>"
     mc.add_child(folium.Marker(location=[r['lat'],r['lon']],popup=html))
 mc.add_to(m)
+# Suchfeld für Marker
+Search(
+    layer=mc,
+    search_label='popup',
+    placeholder='Suchen...',
+    collapsed=False,
+    position='topleft'
+).add_to(m)
 m.fit_bounds(df_assign[['lat','lon']].values.tolist())
 m.to_streamlit(use_container_width=True,height=700)
