@@ -124,7 +124,7 @@ with st.sidebar:
             .merge(assigns, on="Wahlraum-A", how="left")
         )
         st.success("Import erfolgreich.")
-        st.experimental_rerun()
+        
     df_opts = st.session_state.new_assignments.dropna(subset=["Wahlraum-B","Wahlraum-A"])
     addrs = df_opts.apply(lambda r: f"{r['Wahlraum-B']} - {r['Wahlraum-A']}", axis=1).tolist()
     sel = st.multiselect("Wahllokal wählen", options=addrs, placeholder="Auswählen")
@@ -139,7 +139,7 @@ with st.sidebar:
         opt = tsp_solve_route(get_graph(), df_t)
         st.session_state.new_assignments.loc[opt.index,"tsp_order"] = range(len(opt))
         st.success("Zuweisung gesetzt.")
-        st.experimental_rerun()
+        
     if st.button("Neuen Kontrollbezirk erstellen"):
         max_t = int(st.session_state.new_assignments["team"].max(skipna=True) or 0)+1
         sel2 = st.multiselect(f"Stops für Team {max_t}", options=addrs, placeholder="Auswählen", key="new_team_sel")
@@ -151,7 +151,7 @@ with st.sidebar:
             opt2 = tsp_solve_route(get_graph(), df_nt)
             st.session_state.new_assignments.loc[opt2.index,"tsp_order"]=range(len(opt2))
             st.success(f"Kontrollbezirk {max_t} erstellt.")
-            st.experimental_rerun()
+            
     if st.button("Routen berechnen"):
         graph = get_graph()
         for tid in sorted(st.session_state.new_assignments["team"].dropna().unique()):
@@ -159,7 +159,7 @@ with st.sidebar:
             opt = tsp_solve_route(graph, team_rows)
             st.session_state.new_assignments.loc[opt.index,"tsp_order"]=range(len(opt))
         st.success("Routen neu berechnet.")
-        st.experimental_rerun()
+        
     st.download_button(
         label="Kontrollbezirke herunterladen",
         data=output,
