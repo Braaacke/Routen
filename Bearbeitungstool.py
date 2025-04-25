@@ -125,16 +125,11 @@ for i, t in enumerate(sorted(df_assign["team"].dropna().unique())):
         folium.PolyLine(path, color=col[i % len(col)], weight=6, opacity=0.8, tooltip=f"Team {int(t)}").add_to(m)
 # Marker
 mc = MarkerCluster()
-teams_list = sorted(df_assign["team"].dropna().unique())
 for _, r in df_assign.dropna(subset=["lat","lon"]).iterrows():
-    team = r.get("team")
-    if pd.notnull(team):
-        idx = teams_list.index(team)
-        color = col[idx % len(col)]
-    else:
-        color = "#000"
-    html = f"<b>Team:</b> {int(team) if pd.notnull(team) else 'n/a'}<br>{r['Wahlraum-B']}<br>{r['Wahlraum-A']}<br>Anzahl Räume: {r['num_rooms']}"
-    mc.add_child(folium.CircleMarker(location=[r['lat'],r['lon']], radius=5, color=color, fill=True, fill_opacity=0.7, popup=html))
+    html = f"<div style='max-width:200px'><b>Team:</b> {int(r['team']) if pd.notnull(r['team']) else 'n/a'}<br>"
+    html += f"{r['Wahlraum-B']}<br>{r['Wahlraum-A']}<br>Anzahl Räume: {r['num_rooms']}</div>"
+    marker = folium.Marker(location=[r['lat'], r['lon']], popup=html)
+    mc.add_child(marker)
 mc.add_to(m)
 
 m.to_streamlit(height=700)
@@ -157,15 +152,26 @@ if st.button("Zuordnung exportieren"):
                 except:
                     pass
         service = int(rooms*10); total = service+mn
-        overview.append({"Kontrollbezirk":idx, "Anzahl Wahllokale":len(df_t), "Anzahl Stimmbezirke":rooms,
-                         "Wegstrecke (km)":round(km,1), "Fahrtzeit (min)":int(mn), "Kontrollzeit (min)":service,
-                         "Gesamtzeit":str(timedelta(minutes=int(total))),
-                         "Google-Link":"https://www.google.com/maps/dir/"+"/".join([f"{lat},{lon}" for lat, lon in pts])})
+        overview.append({
+            "Kontrollbezirk":idx,
+            "Anzahl Wahllokale":len(df_t),
+            "Anzahl Stimmbezirke":rooms,
+            "Wegstrecke (km)":round(km,1),
+            "Fahrtzeit (min)":int(mn),
+            "Kontrollzeit (min)":service,
+            "Gesamtzeit":str(timedelta(minutes=int(total))),
+            "Google-Link":"https://www.google.com/maps/dir/"+"/".join([f"{lat},{lon}" for lat, lon in pts])
+        })
         rows=[]
         for j,(_,r2) in enumerate(df_t.iterrows(), start=1):
             cr = f"{r2['lat']},{r2['lon']}"
-            rows.append({"Bezirk":j, "Adresse":r2['Wahlraum-A'], "Stimmbezirke":r2['rooms'], "Anzahl Stimmbezirke":r2['num_rooms'],
-                         "Google-Link":f"https://www.google.com/maps/search/?api=1&query={quote_plus(cr)}"})
+            rows.append({
+                "Bezirk":j,
+                "Adresse":r2['Wahlraum-А'],
+                "Stimmbezirke":r2['rooms'],
+                "Anzahl Stimmbezirke":r2['num_rooms'],
+                "Google-Link":f"https://www.google.com/maps/search/?api=1&query={quote_plus(cr)}"
+            })
         sheets[f"Bezirk_{idx}"] = pd.DataFrame(rows)
     out = io.BytesIO()
     with pd.ExcelWriter(out, engine="openpyxl") as w:
