@@ -115,11 +115,12 @@ with st.sidebar:
     # Suchfeld mit Autovervollständigung
     df_opts = st.session_state.new_assignments.dropna(subset=["Wahlraum-B","Wahlraum-A"])
     addrs = df_opts.apply(lambda r: f"{r['Wahlraum-B']} - {r['Wahlraum-A']}", axis=1).tolist()
-    search_selection = st.selectbox(
+    st.selectbox(
         "Wahllokal oder Adresse suchen",
         options=[""] + addrs,
         index=0,
         format_func=lambda x: "Wahllokal oder Adresse suchen" if x == "" else x,
+        key="search_selection"
     )
     uploaded = st.file_uploader("Alternative Zuweisung importieren", type=["xlsx"])
     if uploaded:
@@ -184,6 +185,7 @@ with st.sidebar:
 graph = get_graph()
 
 # Map initialisieren basierend auf Suchauswahl
+search_selection = st.session_state.get("search_selection", "")
 if search_selection:
     addr = search_selection.split(" - ", 1)[1] if " - " in search_selection else search_selection
     row = df_assign[df_assign["Wahlraum-A"] == addr]
