@@ -275,7 +275,8 @@ def draw_map(df_assign):
                             tooltip=f"Kontrollbezirk {int(t)}").add_to(m)
     cluster = MarkerCluster(disableClusteringAtZoom=13)
     for _,r in df_assign.dropna(subset=['lat','lon']).iterrows():
-        popup = folium.Popup(f"<b>Kontrollbezirk:</b> {int(r['team'])}<br>{r['Wahlraum-B']}<br>{r['Wahlraum-A']}<br>Anzahl Räume: {r['num_rooms']}")
+        popup_html = f"<div style='white-space: nowrap;'>{f'<b>Kontrollbezirk:</b> {int(r['team'])}<br>{r['Wahlraum-B']}<br>{r['Wahlraum-A']}<br>Anzahl Räume: {r['num_rooms']}'}</div>"
+popup = folium.Popup(popup_html, max_width=300)}<br>{r['Wahlraum-B']}<br>{r['Wahlraum-A']}<br>Anzahl Räume: {r['num_rooms']}")
         cluster.add_child(folium.Marker(location=[r['lat'],r['lon']],popup=popup))
     cluster.add_to(m)
     if not st.session_state.get('search_selection',''):
