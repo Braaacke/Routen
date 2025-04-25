@@ -133,12 +133,8 @@ with st.sidebar:
     addrs = st.session_state.new_assignments["Wahlraum-A"].dropna().tolist()
     sel = st.multiselect("Wahllokal wählen", options=addrs, placeholder="Auswählen")
     teams = sorted(st.session_state.new_assignments["team"].dropna().astype(int).unique())
-    tgt = st.selectbox(
-        "Kontrollbezirk wählen",
-        options=[None] + teams,
-        placeholder="Auswählen"
-    )
-    if st.button("Zuweisung übernehmen") and tgt is not None and sel:
+    tgt = st.selectbox("Kontrollbezirk wählen", options=teams, placeholder="Auswählen")
+    if st.button("Zuweisung übernehmen") and tgt and sel:
         for a in sel:
             idx = st.session_state.new_assignments.index[st.session_state.new_assignments["Wahlraum-A"] == a][0]
             st.session_state.new_assignments.at[idx, "team"] = tgt
@@ -147,7 +143,7 @@ with st.sidebar:
         st.session_state.new_assignments.loc[opt.index, "tsp_order"] = range(len(opt))
         st.success("Zuweisung gesetzt.")
         st.experimental_rerun()
-    # Neuen Kontrollbezirk erstellen
+    # Neues Team
     if st.button("Neuen Kontrollbezirk erstellen"):
         max_t = int(st.session_state.new_assignments["team"].max(skipna=True) or 0) + 1
         sel2 = st.multiselect(f"Stops für Team {max_t}", options=addrs, key="new_team_sel", placeholder="Auswählen")
@@ -182,21 +178,19 @@ for i, t in enumerate(sorted(df_assign["team"].dropna().unique())):
         nodes = [ox.distance.nearest_nodes(get_graph(), X=lon, Y=lat) for lat, lon in pts]
         for u, v in zip(nodes[:-1], nodes[1:]):
             try:
-                p = nx.shortest_path(graph, u, v, weight="length")
-                path.extend([(graph.nodes[n]["y"], graph.nodes[n]["x"]) for n in p])
+                p = nx.shortest_path(get_graph(), u, v, weight="length")
+                path.extend([(get_graph().nodes[n]["y"], get_graph().nodes[n]["x"]) for n in p])
             except:
-                continue
+                pass
         folium.PolyLine(path, color=col[i % len(col)], weight=6, opacity=0.8, tooltip=f"Team {int(t)}").add_to(m)
-# Marker-Cluster mit frühzeitiger Auflösung
+# Nutzerdefinierte MarkerCluster mit disableClusteringAtZoom für frühere Sichtbarkeit
 mc = MarkerCluster(disableClusteringAtZoom=13)
 for _, r in df_assign.dropna(subset=["lat","lon"]).iterrows():
-    html = (
-        f"<div style='max-width:200px'><b>Team:</b> {int(r['team']) if pd.notnull(r['team']) else 'n/a'}<br>"
-        f"{r['Wahlraum-B']}<br>{r['Wahlraum-A']}<br>Anzahl Räume: {r['num_rooms']}</div>"
-    )
+    html = f"<div style='max-width:200px'><b>Team:</b> {int(r['team']) if pd.notnull(r['team']) else 'n/a'}<br>"
+    html += f"{r['Wahlraum-B']}<br>{r['Wahlraum-A']}<br>Anzahl Räume: {r['num_rooms']}</div>"
     mc.add_child(folium.Marker(location=[r['lat'], r['lon']], popup=html))
 mc.add_to(m)
 # Karte an alle Standorte anpassen
 m.fit_bounds(df_assign[['lat','lon']].values.tolist())
-# Karte anzeigen
+
 m.to_streamlit(height=700)
