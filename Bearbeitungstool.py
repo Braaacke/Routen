@@ -54,10 +54,65 @@ if "base_addresses" not in st.session_state:
     st.session_state.base_addresses = merged.copy()
     st.session_state.new_assignments = merged.copy()
 
-# Sidebar für Zuweisungen
+# Arbeitsdaten kopieren
+df_assign = st.session_state.new_assignments.copy()
+
+# Excel-Export vorbereiten
+output = io.BytesIO()
+overview = []
+sheets = {}
+for idx, t in enumerate(sorted(df_assign["team"].dropna().unique()), start=1):
+    df_t = df_assign[df_assign["team"] == t]
+    if "tsp_order" in df_t.columns:
+        df_t = df_t.sort_values("tsp_order")
+    # Übersicht
+    rooms = df_t["num_rooms"].sum()
+    km = mn = 0
+    pts = df_t[["lat","lon"]].values.tolist()
+    if len(pts) > 1:
+        nodes = [ox.distance.nearest_nodes(get_graph(), X=lon, Y=lat) for lat, lon in pts]
+        for u, v in zip(nodes[:-1], nodes[1:]):
+            try:
+                l = nx.shortest_path_length(get_graph(), u, v, weight="length")
+                km += l / 1000
+                mn += l / 1000 * 2
+            except:
+                pass
+    svc = int(rooms * 10)
+    total = svc + mn
+    overview.append({
+        "Kontrollbezirk": idx,
+        "Anzahl Wahllokale": len(df_t),
+        "Anzahl Stimmbezirke": rooms,
+        "Wegstrecke (km)": round(km, 1),
+        "Fahrtzeit (min)": int(mn),
+        "Kontrollzeit (min)": svc,
+        "Gesamtzeit": str(timedelta(minutes=int(total))),
+        "Google-Link": "https://www.google.com/maps/dir/" + "/".join([f"{lat},{lon}" for lat, lon in pts])
+    })
+    # Detailblatt
+    detail = []
+    for j, (_, r) in enumerate(df_t.iterrows(), start=1):
+        coord = f"{r['lat']},{r['lon']}"
+        detail.append({
+            "Bezirk": j,
+            "Adresse": r['Wahlraum-A'],
+            "Stimmbezirke": r.get('rooms', ''),
+            "Anzahl Stimmbezirke": r.get('num_rooms', ''),
+            "Google-Link": f"https://www.google.com/maps/search/?api=1&query={quote_plus(coord)}"
+        })
+    sheets[f"Bezirk_{idx}"] = pd.DataFrame(detail)
+# Excel schreiben
+with pd.ExcelWriter(output, engine="openpyxl") as writer:
+    pd.DataFrame(overview).to_excel(writer, sheet_name="Übersicht", index=False)
+    for name, df_s in sheets.items():
+        df_s.to_excel(writer, sheet_name=name, index=False)
+output.seek(0)
+
+# Sidebar für Controls + Export
 with st.sidebar:
     st.title("Routenbearbeitung")
-
+    # Import
     uploaded = st.file_uploader("Alternative Zuweisung importieren", type=["xlsx"])
     if uploaded:
         imp = pd.read_excel(uploaded, sheet_name=None)
@@ -73,7 +128,7 @@ with st.sidebar:
             .merge(assigns, on="Wahlraum-A", how="left")
         )
         st.success("Import erfolgreich.")
-
+        st.experimental_rerun()
     # Manuelle Zuweisung
     addrs = st.session_state.new_assignments["Wahlraum-A"].dropna().tolist()
     sel = st.multiselect("Stops wählen", options=addrs)
@@ -87,7 +142,7 @@ with st.sidebar:
         opt = tsp_solve_route(get_graph(), df_t)
         st.session_state.new_assignments.loc[opt.index, "tsp_order"] = range(len(opt))
         st.success("Zuweisung gesetzt.")
-
+        st.experimental_rerun()
     # Neues Team
     if st.button("Neues Team erstellen"):
         max_t = int(st.session_state.new_assignments["team"].max(skipna=True) or 0) + 1
@@ -100,13 +155,18 @@ with st.sidebar:
             opt2 = tsp_solve_route(get_graph(), df_nt)
             st.session_state.new_assignments.loc[opt2.index, "tsp_order"] = range(len(opt2))
             st.success(f"Team {max_t} erstellt.")
+            st.experimental_rerun()
+    # Export
+    st.download_button(
+        label="📥 Zuordnung herunterladen",
+        data=output,
+        file_name="routen_zuweisung.xlsx",
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
 
-# Arbeits-Daten setzen für Map und Export
-df_assign = st.session_state.new_assignments.copy()
-
-# Karte darstellen
-m = leafmap.Map(center=[df_assign["lat"].mean(), df_assign["lon"].mean()], zoom=12)
-# Routen
+# Karte darstellen mit früher sichtbaren Markern
+m = leafmap.Map(center=[df_assign["lat"].mean(), df_assign["lon"].mean()], zoom=10)
+# Linien zeichnen
 col = ["#FF00FF","#00FFFF","#00FF00","#FF0000","#FFA500","#FFFF00","#00CED1","#DA70D6","#FF69B4","#8A2BE2"]
 for i, t in enumerate(sorted(df_assign["team"].dropna().unique())):
     df_t = df_assign[df_assign["team"] == t]
@@ -116,66 +176,19 @@ for i, t in enumerate(sorted(df_assign["team"].dropna().unique())):
     if len(pts) > 1:
         path = []
         nodes = [ox.distance.nearest_nodes(get_graph(), X=lon, Y=lat) for lat, lon in pts]
-        for u,v in zip(nodes[:-1], nodes[1:]):
+        for u, v in zip(nodes[:-1], nodes[1:]):
             try:
                 p = nx.shortest_path(get_graph(), u, v, weight="length")
                 path.extend([(get_graph().nodes[n]["y"], get_graph().nodes[n]["x"]) for n in p])
             except:
                 pass
         folium.PolyLine(path, color=col[i % len(col)], weight=6, opacity=0.8, tooltip=f"Team {int(t)}").add_to(m)
-# Marker
-mc = MarkerCluster()
+# Nutzerdefinierte MarkerCluster mit disableClusteringAtZoom für frühere Sichtbarkeit
+mc = MarkerCluster(disableClusteringAtZoom=11)
 for _, r in df_assign.dropna(subset=["lat","lon"]).iterrows():
     html = f"<div style='max-width:200px'><b>Team:</b> {int(r['team']) if pd.notnull(r['team']) else 'n/a'}<br>"
     html += f"{r['Wahlraum-B']}<br>{r['Wahlraum-A']}<br>Anzahl Räume: {r['num_rooms']}</div>"
-    marker = folium.Marker(location=[r['lat'], r['lon']], popup=html)
-    mc.add_child(marker)
+    mc.add_child(folium.Marker(location=[r['lat'], r['lon']], popup=html))
 mc.add_to(m)
 
 m.to_streamlit(height=700)
-
-# Export als Excel
-if st.button("Zuordnung exportieren"):
-    overview=[]; sheets={}
-    for idx, t in enumerate(sorted(df_assign["team"].dropna().unique()), start=1):
-        df_t = df_assign[df_assign["team"] == t]
-        df_t = df_t.sort_values("tsp_order") if "tsp_order" in df_t else df_t
-        rooms = df_t["num_rooms"].sum()
-        km = mn = 0
-        pts = df_t[["lat","lon"]].values.tolist()
-        if len(pts)>1:
-            nodes = [ox.distance.nearest_nodes(get_graph(), X=lon, Y=lat) for lat, lon in pts]
-            for u,v in zip(nodes[:-1], nodes[1:]):
-                try:
-                    l = nx.shortest_path_length(get_graph(), u, v, weight="length")
-                    km += l/1000; mn += l/1000*2
-                except:
-                    pass
-        service = int(rooms*10); total = service+mn
-        overview.append({
-            "Kontrollbezirk":idx,
-            "Anzahl Wahllokale":len(df_t),
-            "Anzahl Stimmbezirke":rooms,
-            "Wegstrecke (km)":round(km,1),
-            "Fahrtzeit (min)":int(mn),
-            "Kontrollzeit (min)":service,
-            "Gesamtzeit":str(timedelta(minutes=int(total))),
-            "Google-Link":"https://www.google.com/maps/dir/"+"/".join([f"{lat},{lon}" for lat, lon in pts])
-        })
-        rows=[]
-        for j,(_,r2) in enumerate(df_t.iterrows(), start=1):
-            cr = f"{r2['lat']},{r2['lon']}"
-            rows.append({
-                "Bezirk":j,
-                "Adresse":r2['Wahlraum-А'],
-                "Stimmbezirke":r2['rooms'],
-                "Anzahl Stimmbezirke":r2['num_rooms'],
-                "Google-Link":f"https://www.google.com/maps/search/?api=1&query={quote_plus(cr)}"
-            })
-        sheets[f"Bezirk_{idx}"] = pd.DataFrame(rows)
-    out = io.BytesIO()
-    with pd.ExcelWriter(out, engine="openpyxl") as w:
-        pd.DataFrame(overview).to_excel(w, sheet_name="Übersicht", index=False)
-        for name, df_s in sheets.items(): df_s.to_excel(w, sheet_name=name, index=False)
-    out.seek(0)
-    st.download_button("📥 Excel herunterladen", data=out, file_name="routen_zuweisung.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
