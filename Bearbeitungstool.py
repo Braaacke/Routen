@@ -108,6 +108,11 @@ def make_export(df_assign):
 st.set_page_config(layout='wide')
 
 # Basisdaten laden
+# Initialisiere Control-Form-Flag
+if 'show_new' not in st.session_state:
+    st.session_state.show_new = False
+
+# Basisdaten laden
 if 'base_addresses' not in st.session_state:
     base = pd.read_csv('cleaned_addresses.csv').reset_index(drop=True)
     initial = pd.read_excel('routes_optimized.xlsx', sheet_name=None)
