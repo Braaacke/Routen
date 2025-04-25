@@ -168,6 +168,8 @@ with st.sidebar:
     )
 
 # Karte
+# Lade Graph für Routing
+graph = get_graph()
 m = leafmap.Map(center=[df_assign["lat"].mean(),df_assign["lon"].mean()], zoom=10)
 col = ["#FF00FF","#00FFFF","#00FF00","#FF0000","#FFA500","#FFFF00","#00CED1","#DA70D6","#FF69B4","#8A2BE2"]
 for i,t in enumerate(sorted(df_assign["team"].dropna().unique())):
