@@ -70,28 +70,28 @@ for idx, t in enumerate(sorted(df_assign["team"].dropna().unique()), start=1):
     if "tsp_order" in df_t.columns:
         df_t = df_t.sort_values("tsp_order")
     rooms = df_t["num_rooms"].sum()
-    travel_km = travel_min = 0.0
-    pts = df_t[["lat","lon"]].values.tolist()
-    if len(pts) > 1:
-        nodes = [ox.distance.nearest_nodes(export_graph, X=lon, Y=lat) for lat, lon in pts]
+    travel_km, travel_min = 0.0, 0.0
+    coords = df_t[["lat","lon"]].values.tolist()
+    if len(coords) > 1:
+        nodes = [ox.distance.nearest_nodes(export_graph, X=lon, Y=lat) for lat, lon in coords]
         for u, v in zip(nodes[:-1], nodes[1:]):
             try:
-                length = nx.shortest_path_length(export_graph, u, v, weight="length")
-                travel_km += length / 1000
-                travel_min += length / 1000 * 2
+                length = nx.shortest_path_length(export_graph, u, v, weight='length')
+                travel_km += length / 1000.0
+                travel_min += (length / 1000.0) * 2.0
             except:
                 pass
-    svc = int(rooms * 10)
-    total = svc + travel_min
+    ctrl_time = int(rooms * 10)
+    total_time = travel_min + ctrl_time
     overview.append({
         "Kontrollbezirk": idx,
         "Anzahl Wahllokale": len(df_t),
         "Anzahl Stimmbezirke": rooms,
         "Wegstrecke (km)": round(travel_km, 1),
         "Fahrtzeit (min)": int(travel_min),
-        "Kontrollzeit (min)": svc,
-        "Gesamtzeit": str(timedelta(minutes=int(total))),
-        "Google-Link": "https://www.google.com/maps/dir/" + "/".join([f"{lat},{lon}" for lat, lon in pts])
+        "Kontrollzeit (min)": ctrl_time,
+        "Gesamtzeit": str(timedelta(minutes=int(total_time))),
+        "Google-Link": "https://www.google.com/maps/dir/" + "/".join([f"{lat},{lon}" for lat, lon in coords])
     })
     detail = []
     for j, (_, r) in enumerate(df_t.iterrows(), start=1):
@@ -105,82 +105,73 @@ for idx, t in enumerate(sorted(df_assign["team"].dropna().unique()), start=1):
         })
     sheets[f"Bezirk_{idx}"] = pd.DataFrame(detail)
 # Excel schreiben und Spaltenbreiten anpassen
-with pd.ExcelWriter(output, engine="openpyxl") as writer:
-    pd.DataFrame(overview).to_excel(writer, sheet_name="Übersicht", index=False)
+with pd.ExcelWriter(output, engine='openpyxl') as writer:
+    pd.DataFrame(overview).to_excel(writer, sheet_name='Übersicht', index=False)
     for name, df_s in sheets.items():
         df_s.to_excel(writer, sheet_name=name, index=False)
-    for sheet_name, worksheet in writer.sheets.items():
-        for col_cells in worksheet.columns:
-            length = max(len(str(cell.value)) for cell in col_cells)
-            letter = get_column_letter(col_cells[0].column)
-            worksheet.column_dimensions[letter].width = length + 2
+    for ws in writer.sheets.values():
+        for col_cells in ws.columns:
+            max_length = max(len(str(cell.value)) if cell.value is not None else 0 for cell in col_cells)
+            col_letter = get_column_letter(col_cells[0].column)
+            ws.column_dimensions[col_letter].width = max_length + 2
 output.seek(0)
 
 # Sidebar Controls + Export
 with st.sidebar:
-    st.title("Bearbeitung Kontrollbezirke")
-    df_opts = df_assign.dropna(subset=["Wahlraum-B", "Wahlraum-A"])
-    addrs = df_opts.apply(lambda r: f"{r['Wahlraum-B']} - {r['Wahlraum-A']}", axis=1).tolist()
+    st.title('Bearbeitung Kontrollbezirke')
+    # Suchfeld
+    opts = df_assign.dropna(subset=['Wahlraum-B','Wahlraum-A'])
+    addrs = opts.apply(lambda r: f"{r['Wahlraum-B']} - {r['Wahlraum-A']}", axis=1).tolist()
     st.selectbox(
-        "Wahllokal oder Adresse suchen",
-        options=[""] + addrs,
+        'Wahllokal oder Adresse suchen',
+        options=[''] + addrs,
         index=0,
-        format_func=lambda x: "Wahllokal oder Adresse suchen" if x == "" else x,
-        key="search_selection"
+        format_func=lambda x: 'Wahllokal oder Adresse suchen' if x == '' else x,
+        key='search_selection'
     )
-    uploaded = st.file_uploader("Alternative Zuweisung importieren", type=["xlsx"])
-    # (Upload- und Zuweisungs-Logik unverändert)
+    # Datei-Upload und Zuweisungs-Logik bleibt unverändert...
     st.download_button(
-        label="Kontrollbezirke herunterladen",
+        label='Kontrollbezirke herunterladen',
         data=output,
-        file_name="routen_zuweisung.xlsx",
-        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        file_name='routen_zuweisung.xlsx',
+        mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
     )
 
 # Map initialisieren und anzeigen
-search_selection = st.session_state.get("search_selection", "")
-graph = export_graph
-if search_selection:
-    addr = search_selection.split(" - ", 1)[1]
-    row = df_assign[df_assign["Wahlraum-A"] == addr]
-    if not row.empty:
-        center = [row.iloc[0]["lat"], row.iloc[0]["lon"]]
-        zoom = 17
-    else:
-        center = [df_assign["lat"].mean(), df_assign["lon"].mean()]
-        zoom = 10
+search_sel = st.session_state.get('search_selection', '')
+if search_sel:
+    addr = search_sel.split(' - ',1)[1]
+    row = df_assign[df_assign['Wahlraum-A']==addr]
+    center = [row.iloc[0]['lat'], row.iloc[0]['lon']] if not row.empty else [df_assign['lat'].mean(), df_assign['lon'].mean()]
+    zoom = 17
 else:
-    center = [df_assign["lat"].mean(), df_assign["lon"].mean()]
+    center = [df_assign['lat'].mean(), df_assign['lon'].mean()]
     zoom = 10
 m = leafmap.Map(center=center, zoom=zoom)
 # Routenlinien
-detail_color = ["#FF00FF", "#00FFFF", "#00FF00", "#FF0000", "#FFA500", "#FFFF00", "#00CED1", "#DA70D6", "#FF69B4", "#8A2BE2"]
-for i, t in enumerate(sorted(df_assign["team"].dropna().unique())):
-    df_t = df_assign[df_assign["team"] == t]
-    if "tsp_order" in df_t.columns:
-        df_t = df_t.sort_values("tsp_order")
-    pts = df_t[["lat", "lon"]].values.tolist()
-    if len(pts) > 1:
-        path = []
-        nodes = [ox.distance.nearest_nodes(graph, X=lon, Y=lat) for lat, lon in pts]
-        for u, v in zip(nodes[:-1], nodes[1:]):
+colors = ['#FF00FF','#00FFFF','#00FF00','#FF0000','#FFA500','#FFFF00','#00CED1','#DA70D6','#FF69B4','#8A2BE2']
+for i, t in enumerate(sorted(df_assign['team'].dropna().unique())):
+    df_t = df_assign[df_assign['team']==t]
+    if 'tsp_order' in df_t.columns:
+        df_t = df_t.sort_values('tsp_order')
+    pts = df_t[['lat','lon']].values.tolist()
+    if len(pts)>1:
+        path=[]
+        nodes=[ox.distance.nearest_nodes(export_graph,X=lon,Y=lat) for lat,lon in pts]
+        for u,v in zip(nodes[:-1],nodes[1:]):
             try:
-                p = nx.shortest_path(graph, u, v, weight="length")
-                path.extend([(graph.nodes[n]["y"], graph.nodes[n]["x"]) for n in p])
+                p=nx.shortest_path(export_graph,u,v,weight='length')
+                path.extend([(export_graph.nodes[n]['y'],export_graph.nodes[n]['x']) for n in p])
             except:
                 pass
-        folium.PolyLine(path, color=detail_color[i % len(detail_color)], weight=6, opacity=0.8,
-                        tooltip=f"Kontrollbezirk {int(t)}").add_to(m)
-# MarkerCluster\ nmc = MarkerCluster(disableClusteringAtZoom=13)
-for _, r in df_assign.dropna(subset=["lat", "lon"]).iterrows():
-    html = (
-        f"<div style='max-width:200px'><b>Kontrollbezirk:</b> {int(r['team'])}<br>"
-        f"{r['Wahlraum-B']}<br>{r['Wahlraum-A']}<br>Anzahl Räume: {r['num_rooms']}" + "</div>"
-    )
-    nmc.add_child(folium.Marker(location=[r['lat'], r['lon']], popup=html))
-nmc.add_to(m)
-# Full extent if no search
-if not search_selection:
+        folium.PolyLine(path,color=colors[i%len(colors)],weight=6,opacity=0.8,tooltip=f"Kontrollbezirk {int(t)}").add_to(m)
+# MarkerCluster
+cluster = MarkerCluster(disableClusteringAtZoom=13)
+for _,r in df_assign.dropna(subset=['lat','lon']).iterrows():
+    popup = folium.Popup(html=f"<b>Kontrollbezirk:</b> {int(r['team'])}<br>{r['Wahlraum-B']}<br>{r['Wahlraum-A']}<br>Anzahl Räume: {r['num_rooms']}")
+    cluster.add_child(folium.Marker(location=[r['lat'],r['lon']],popup=popup))
+cluster.add_to(m)
+# Full extent bei keiner Suche\ nif not search_sel:
     m.fit_bounds(df_assign[['lat','lon']].values.tolist())
-# Display map
+# Karte anzeigen
 m.to_streamlit(use_container_width=True, height=700)
