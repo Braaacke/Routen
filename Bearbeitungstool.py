@@ -195,5 +195,5 @@ for _,r in df_assign.dropna(subset=["lat","lon"]).iterrows():
     mc.add_child(folium.Marker(location=[r['lat'],r['lon']],popup=html))
 mc.add_to(m)
 # Karte anzeigen ohne m.add_search
-m.fit_bounds(df_assign[['lat','lon']].values.tolist())(df_assign[['lat','lon']].values.tolist())
+m.fit_bounds(df_assign[['lat','lon']].values.tolist())
 m.to_streamlit(use_container_width=True,height=700)
