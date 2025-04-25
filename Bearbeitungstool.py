@@ -51,7 +51,14 @@ def make_export(df_assign):
     graph = get_graph()
     overview = []
     sheets = {}
-    for idx, t in enumerate(sorted(df_assign['team'].dropna().unique()), start=1):
+    # Sortiere Kontrollbezirke geografisch (Nordwest nach Südost)
+    teams = df_assign['team'].dropna().astype(int).unique()
+    # Berechne Mittelpunkte
+    centers = {t: (df_assign[df_assign['team']==t]['lat'].mean(), df_assign[df_assign['team']==t]['lon'].mean()) for t in teams}
+    # Sortiere: erst nach Lat absteigend (Nord), dann Lon aufsteigend (West->Ost)
+    sorted_teams = sorted(centers.keys(), key=lambda t: (-centers[t][0], centers[t][1]))
+    # Iteriere in dieser Reihenfolge
+    for idx, t in enumerate(sorted_teams, start=1):
         df_t = df_assign[df_assign['team'] == t]
         if 'tsp_order' in df_t.columns:
             df_t = df_t.sort_values('tsp_order')
