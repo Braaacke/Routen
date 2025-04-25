@@ -71,7 +71,8 @@ if 'latlong' in df_assign.columns and ('lat' not in df_assign.columns or 'lon' n
 # Excel-Export vorbereiten
 output = io.BytesIO()
 
-# Prefer Haversine distances for export calculations
+# Compute routes using graph distances for export
+export_graph = get_graph()
 overview = []
 sheets = {}
 for idx, t in enumerate(sorted(df_assign["team"].dropna().unique()), start=1):
