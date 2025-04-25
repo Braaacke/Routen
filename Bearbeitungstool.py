@@ -138,7 +138,6 @@ with st.sidebar:
     tgt = st.selectbox("Kontrollbezirk wählen", options=teams, placeholder="Auswählen")
     if st.button("Zuweisung übernehmen") and tgt and sel:
         for label in sel:
-            # Extrahiere die Adresse (Wahlraum-A) aus dem Label
             addr = label.split(" - ", 1)[1]
             idx = st.session_state.new_assignments.index[st.session_state.new_assignments["Wahlraum-A"] == addr][0]
             st.session_state.new_assignments.at[idx, "team"] = tgt
@@ -160,7 +159,7 @@ with st.sidebar:
             st.session_state.new_assignments.loc[opt2.index, "tsp_order"] = range(len(opt2))
             st.success(f"Team {max_t} erstellt.")
             st.experimental_rerun()
-        # Routen neu berechnen
+    # Routen neu berechnen
     if st.button("Routen berechnen"):
         graph = get_graph()
         for tid in sorted(st.session_state.new_assignments["team"].dropna().unique()):
@@ -169,9 +168,9 @@ with st.sidebar:
             st.session_state.new_assignments.loc[optimized.index, "tsp_order"] = range(len(optimized))
         st.success("Routen wurden neu berechnet.")
         st.experimental_rerun()
-
-    # Export(
-        label="Kontrollbezirk herunterladen",
+    # Export
+    st.download_button(
+        label="Kontrollbezirke herunterladen",
         data=output,
         file_name="routen_zuweisung.xlsx",
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
