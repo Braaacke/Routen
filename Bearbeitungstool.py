@@ -13,6 +13,14 @@ from urllib.parse import quote_plus
 from datetime import timedelta
 import io
 from openpyxl.utils import get_column_letter
+from math import radians, sin, cos, sqrt, asin
+
+def haversine(lon1, lat1, lon2, lat2):
+    # Haversine distance in meters
+    dlon = radians(lon2 - lon1)
+    dlat = radians(lat2 - lat1)
+    a = sin(dlat/2)**2 + cos(radians(lat1)) * cos(radians(lat2)) * sin(dlon/2)**2
+    return 2 * 6371000 * asin(sqrt(a))
 
 # Funktionen für TSP
 @st.cache_resource
@@ -73,14 +81,15 @@ for idx, t in enumerate(sorted(df_assign["team"].dropna().unique()), start=1):
     travel_km, travel_min = 0.0, 0.0
     coords = df_t[["lat","lon"]].values.tolist()
     if len(coords) > 1:
-        nodes = [ox.distance.nearest_nodes(export_graph, X=lon, Y=lat) for lat, lon in coords]
-        for u, v in zip(nodes[:-1], nodes[1:]):
+        for (lat1, lon1), (lat2, lon2) in zip(coords[:-1], coords[1:]):
             try:
-                length = nx.shortest_path_length(export_graph, u, v, weight='length')
-                travel_km += length / 1000.0
-                travel_min += (length / 1000.0) * 2.0
+                n1 = ox.distance.nearest_nodes(export_graph, X=lon1, Y=lat1)
+                n2 = ox.distance.nearest_nodes(export_graph, X=lon2, Y=lat2)
+                length = nx.shortest_path_length(export_graph, n1, n2, weight='length')
             except:
-                pass
+                length = haversine(lon1, lat1, lon2, lat2)
+            travel_km += length / 1000.0
+            travel_min += (length / 1000.0) * 2.0
     ctrl_time = int(rooms * 10)
     total_time = travel_min + ctrl_time
     overview.append({
