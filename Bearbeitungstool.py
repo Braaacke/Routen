@@ -177,51 +177,10 @@ with st.sidebar:
     )
 
 # Karte
-# Erstelle Map mit Standard View (Full Extent)
-m = leafmap.Map(center=[df_assign["lat"].mean(), df_assign["lon"].mean()], zoom=10)
+# Routing-Graph laden
+graph = get_graph()
 
-# Linien zeichnen
-col = ["#FF00FF","#00FFFF","#00FF00","#FF0000","#FFA500","#FFFF00","#00CED1","#DA70D6","#FF69B4","#8A2BE2"]
-for i, t in enumerate(sorted(df_assign["team"].dropna().unique())):
-    df_t = df_assign[df_assign["team"] == t]
-    if "tsp_order" in df_t.columns:
-        df_t = df_t.sort_values("tsp_order")
-    pts = df_t[["lat","lon"]].values.tolist()
-    if len(pts) > 1:
-        path = []
-        nodes = [ox.distance.nearest_nodes(graph, X=lon, Y=lat) for lat, lon in pts]
-        for u, v in zip(nodes[:-1], nodes[1:]):
-            try:
-                p = nx.shortest_path(graph, u, v, weight="length")
-                path.extend([(graph.nodes[n]["y"], graph.nodes[n]["x"]) for n in p])
-            except:
-                pass
-        folium.PolyLine(path, color=col[i % len(col)], weight=6, opacity=0.8, tooltip=f"Kontrollbezirk {int(t)}").add_to(m)
-
-# MarkerCluster initialisieren
-mc = MarkerCluster(disableClusteringAtZoom=13)
-for _, r in df_assign.dropna(subset=["lat","lon"]).iterrows():
-    html = (
-        f"<div style='max-width:200px'><b>Kontrollbezirk:</b> {int(r['team']) if pd.notnull(r['team']) else 'n/a'}<br>"
-        f"{r['Wahlraum-B']}<br>{r['Wahlraum-A']}<br>Anzahl Räume: {r['num_rooms']}</div>"
-    )
-    mc.add_child(folium.Marker(location=[r['lat'], r['lon']], popup=html))
-mc.add_to(m)
-
-# Zoom-Verhalten: bei Suche nahe ran, sonst Gesamtansicht
-if search_selection:
-    addr = search_selection.split(" - ", 1)[1] if " - " in search_selection else search_selection
-    row = df_assign[df_assign["Wahlraum-A"] == addr]
-    if not row.empty:
-        lat0, lon0 = row.iloc[0][["lat","lon"]]
-        pad = 0.001  # kleiner Bereich zum Heranzoomen
-        m.fit_bounds([[lat0 - pad, lon0 - pad], [lat0 + pad, lon0 + pad]])
-    else:
-        m.fit_bounds(df_assign[["lat","lon"]].values.tolist())
-else:
-    m.fit_bounds(df_assign[["lat","lon"]].values.tolist())
-
-# Karte initialisieren basierend auf Suchauswahl
+# Map initialisieren basierend auf Suchauswahl
 if search_selection:
     addr = search_selection.split(" - ", 1)[1] if " - " in search_selection else search_selection
     row = df_assign[df_assign["Wahlraum-A"] == addr]
@@ -235,9 +194,10 @@ else:
     center = [df_assign["lat"].mean(), df_assign["lon"].mean()]
     zoom = 10
 
+# Karte erstellen
 m = leafmap.Map(center=center, zoom=zoom)
 
-# Linien zeichnen
+# Routenlinien zeichnen
 col = ["#FF00FF","#00FFFF","#00FF00","#FF0000","#FFA500","#FFFF00","#00CED1","#DA70D6","#FF69B4","#8A2BE2"]
 for i, t in enumerate(sorted(df_assign["team"].dropna().unique())):
     df_t = df_assign[df_assign["team"] == t]
@@ -256,7 +216,7 @@ for i, t in enumerate(sorted(df_assign["team"].dropna().unique())):
         folium.PolyLine(path, color=col[i % len(col)], weight=6, opacity=0.8,
                         tooltip=f"Kontrollbezirk {int(t)}").add_to(m)
 
-# MarkerCluster
+# Marker-Cluster
 mc = MarkerCluster(disableClusteringAtZoom=13)
 for _, r in df_assign.dropna(subset=["lat","lon"]).iterrows():
     html = (
@@ -266,7 +226,7 @@ for _, r in df_assign.dropna(subset=["lat","lon"]).iterrows():
     mc.add_child(folium.Marker(location=[r['lat'], r['lon']], popup=html))
 mc.add_to(m)
 
-# Vollbildansicht, wenn keine Suche aktiv ist
+# Full-Extent, wenn keine Suche aktiv ist
 if not search_selection:
     m.fit_bounds(df_assign[['lat','lon']].values.tolist())
 
