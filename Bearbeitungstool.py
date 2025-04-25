@@ -83,7 +83,6 @@ with st.sidebar:
         for a in sel:
             idx = st.session_state.new_assignments.index[st.session_state.new_assignments["Wahlraum-A"] == a][0]
             st.session_state.new_assignments.at[idx, "team"] = tgt
-        # TSP neu berechnen
         df_t = st.session_state.new_assignments.loc[st.session_state.new_assignments["team"] == tgt]
         opt = tsp_solve_route(get_graph(), df_t)
         st.session_state.new_assignments.loc[opt.index, "tsp_order"] = range(len(opt))
@@ -126,9 +125,14 @@ for i, t in enumerate(sorted(df_assign["team"].dropna().unique())):
         folium.PolyLine(path, color=col[i % len(col)], weight=6, opacity=0.8, tooltip=f"Team {int(t)}").add_to(m)
 # Marker
 mc = MarkerCluster()
+teams_list = sorted(df_assign["team"].dropna().unique())
 for _, r in df_assign.dropna(subset=["lat","lon"]).iterrows():
     team = r.get("team")
-    color = col[sorted(df_assign["team"].dropna().unique()).tolist().index(team) % len(col)] if pd.notnull(team) else "#000"
+    if pd.notnull(team):
+        idx = teams_list.index(team)
+        color = col[idx % len(col)]
+    else:
+        color = "#000"
     html = f"<b>Team:</b> {int(team) if pd.notnull(team) else 'n/a'}<br>{r['Wahlraum-B']}<br>{r['Wahlraum-A']}<br>Anzahl Räume: {r['num_rooms']}"
     mc.add_child(folium.CircleMarker(location=[r['lat'],r['lon']], radius=5, color=color, fill=True, fill_opacity=0.7, popup=html))
 mc.add_to(m)
