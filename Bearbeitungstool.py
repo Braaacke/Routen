@@ -273,11 +273,17 @@ def draw_map(df_assign):
                     pass
             folium.PolyLine(path,color=colors[i%len(colors)],weight=6,opacity=0.8,
                             tooltip=f"Kontrollbezirk {int(t)}").add_to(m)
-    cluster = MarkerCluster(disableClusteringAtZoom=13)
-    for _,r in df_assign.dropna(subset=['lat','lon']).iterrows():
-        popup_html = f"<div style='white-space: nowrap;'>{f'<b>Kontrollbezirk:</b> {int(r['team'])}<br>{r['Wahlraum-B']}<br>{r['Wahlraum-A']}<br>Anzahl Räume: {r['num_rooms']}'}</div>"
-popup = folium.Popup(popup_html, max_width=300)}<br>{r['Wahlraum-B']}<br>{r['Wahlraum-A']}<br>Anzahl Räume: {r['num_rooms']}")
-        cluster.add_child(folium.Marker(location=[r['lat'],r['lon']],popup=popup))
+        cluster = MarkerCluster(disableClusteringAtZoom=13)
+    for _, r in df_assign.dropna(subset=['lat','lon']).iterrows():
+        popup_html = (
+            f"<div style='white-space: nowrap;'>"
+            f"<b>Kontrollbezirk:</b> {int(r['team']) if pd.notnull(r['team']) else 'n/a'}<br>"
+            f"{r['Wahlraum-B']}<br>{r['Wahlraum-A']}<br>Anzahl Räume: {r['num_rooms']}"
+            "</div>"
+        )
+        popup = folium.Popup(popup_html, max_width=300)
+        marker = folium.Marker(location=[r['lat'], r['lon']], popup=popup)
+        cluster.add_child(marker)
     cluster.add_to(m)
     if not st.session_state.get('search_selection',''):
         m.fit_bounds(df_assign[['lat','lon']].values.tolist())
