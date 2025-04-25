@@ -177,42 +177,58 @@ with st.sidebar:
     )
 
 # Karte
-# Suche über Auswahl und Zoom
+# Initialisiere Graph für Routing
+graph = get_graph()
+
+# Bestimme Karteinstellungen je nach Suchauswahl
 if search_selection:
     # Extrahiere Adresse (Wahlraum-A) aus Label
-    addr = search_selection.split(" - ",1)[1] if " - " in search_selection else search_selection
+    addr = search_selection.split(" - ", 1)[1] if " - " in search_selection else search_selection
     row = df_assign[df_assign["Wahlraum-A"] == addr]
     if not row.empty:
-        lat0, lon0 = row.iloc[0][["lat","lon"]]
-        m = leafmap.Map(center=[lat0, lon0], zoom=14)
+        center = [row.iloc[0]["lat"], row.iloc[0]["lon"]]
+        zoom_level = 17
     else:
-        m = leafmap.Map(center=[df_assign["lat"].mean(),df_assign["lon"].mean()], zoom=10)
+        center = [df_assign["lat"].mean(), df_assign["lon"].mean()]
+        zoom_level = 10
 else:
-    m = leafmap.Map(center=[df_assign["lat"].mean(),df_assign["lon"].mean()], zoom=10)
-# Lade Graph für Routing
-graph = get_graph()
-m = leafmap.Map(center=[df_assign["lat"].mean(),df_assign["lon"].mean()], zoom=10)
+    center = [df_assign["lat"].mean(), df_assign["lon"].mean()]
+    zoom_level = 10
+
+# Erstelle Map
+m = leafmap.Map(center=center, zoom=zoom_level)
+
+# Linien zeichnen
 col = ["#FF00FF","#00FFFF","#00FF00","#FF0000","#FFA500","#FFFF00","#00CED1","#DA70D6","#FF69B4","#8A2BE2"]
-for i,t in enumerate(sorted(df_assign["team"].dropna().unique())):
-    df_t = df_assign[df_assign["team"]==t]
+for i, t in enumerate(sorted(df_assign["team"].dropna().unique())):
+    df_t = df_assign[df_assign["team"] == t]
     if "tsp_order" in df_t.columns:
-        df_t=df_t.sort_values("tsp_order")
+        df_t = df_t.sort_values("tsp_order")
     pts = df_t[["lat","lon"]].values.tolist()
-    if len(pts)>1:
-        path=[]
-        nodes=[ox.distance.nearest_nodes(graph,X=lon,Y=lat) for lat,lon in pts]
-        for u,v in zip(nodes[:-1],nodes[1:]):
+    if len(pts) > 1:
+        path = []
+        nodes = [ox.distance.nearest_nodes(graph, X=lon, Y=lat) for lat, lon in pts]
+        for u, v in zip(nodes[:-1], nodes[1:]):
             try:
-                p=nx.shortest_path(graph,u,v,weight="length")
-                path.extend([(graph.nodes[n]["y"],graph.nodes[n]["x"]) for n in p])
+                p = nx.shortest_path(graph, u, v, weight="length")
+                path.extend([(graph.nodes[n]["y"], graph.nodes[n]["x"]) for n in p])
             except:
                 pass
-        folium.PolyLine(path,color=col[i%len(col)],weight=6,opacity=0.8,tooltip=f"Team {int(t)}").add_to(m)
+        folium.PolyLine(path, color=col[i % len(col)], weight=6, opacity=0.8, tooltip=f"Kontrollbezirk {int(t)}").add_to(m)
+
+# MarkerCluster initialisieren
 mc = MarkerCluster(disableClusteringAtZoom=13)
-for _,r in df_assign.dropna(subset=["lat","lon"]).iterrows():
-    html=f"<div style='max-width:200px'><b>Team:</b> {int(r['team']) if pd.notnull(r['team']) else 'n/a'}<br>{r['Wahlraum-B']}<br>{r['Wahlraum-A']}<br>Anzahl Räume: {r['num_rooms']}</div>"
-    mc.add_child(folium.Marker(location=[r['lat'],r['lon']],popup=html))
+for _, r in df_assign.dropna(subset=["lat","lon"]).iterrows():
+    html = (
+        f"<div style='max-width:200px'><b>Kontrollbezirk:</b> {int(r['team']) if pd.notnull(r['team']) else 'n/a'}<br>"
+        f"{r['Wahlraum-B']}<br>{r['Wahlraum-A']}<br>Anzahl Räume: {r['num_rooms']}</div>"
+    )
+    mc.add_child(folium.Marker(location=[r['lat'], r['lon']], popup=html))
 mc.add_to(m)
-# Karte anzeigen ohne m.add_search
-m.fit_bounds(df_assign[['lat','lon']].values.tolist())
-m.to_streamlit(use_container_width=True,height=700)
+
+# Wenn keine spezifische Suche, passe Bounds an
+if not search_selection:
+    m.fit_bounds(df_assign[['lat','lon']].values.tolist())
+
+# Map anzeigen
+m.to_streamlit(use_container_width=True, height=700)
