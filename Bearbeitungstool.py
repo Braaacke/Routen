@@ -141,7 +141,7 @@ with st.sidebar:
         key='search_selection'
     )
 
-    # Datei-Upload für alternative Zuweisung
+        # Datei-Upload für alternative Zuweisung
     uploaded = st.file_uploader('Alternative Zuweisung importieren', type=['xlsx'])
     if uploaded:
         imp = pd.read_excel(uploaded, sheet_name=None)
@@ -177,12 +177,11 @@ with st.sidebar:
             st.session_state.new_assignments.loc[opt.index,'tsp_order'] = range(len(opt))
         st.success('Zuweisung gesetzt.')
 
-                # Neuen Kontrollbezirk erstellen Button
+    # Neuen Kontrollbezirk erstellen
     if not st.session_state.get('show_new', False):
         if st.button('Neuen Kontrollbezirk erstellen', key='show_new_cb'):
             st.session_state.show_new = True
-    # Formular für neuen Kontrollbezirk
-    if st.session_state.get('show_new', False):
+    elif st.session_state.show_new:
         max_t = int(st.session_state.new_assignments['team'].max(skipna=True) or 0) + 1
         st.markdown(f"### Neuen Kontrollbezirk {max_t} erstellen")
         sel2 = st.multiselect(
