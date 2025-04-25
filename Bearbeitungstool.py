@@ -70,26 +70,23 @@ if 'latlong' in df_assign.columns and ('lat' not in df_assign.columns or 'lon' n
 
 # Excel-Export vorbereiten
 output = io.BytesIO()
-export_graph = get_graph()
+
+# Prefer Haversine distances for export calculations
 overview = []
 sheets = {}
 for idx, t in enumerate(sorted(df_assign["team"].dropna().unique()), start=1):
     df_t = df_assign[df_assign["team"] == t]
     if "tsp_order" in df_t.columns:
         df_t = df_t.sort_values("tsp_order")
-    rooms = df_t["num_rooms"].sum()
-    travel_km, travel_min = 0.0, 0.0
+    rooms = df_t.get("num_rooms", pd.Series()).sum()
+    travel_km = 0.0
+    travel_min = 0.0
     coords = df_t[["lat","lon"]].values.tolist()
     if len(coords) > 1:
         for (lat1, lon1), (lat2, lon2) in zip(coords[:-1], coords[1:]):
-            try:
-                n1 = ox.distance.nearest_nodes(export_graph, X=lon1, Y=lat1)
-                n2 = ox.distance.nearest_nodes(export_graph, X=lon2, Y=lat2)
-                length = nx.shortest_path_length(export_graph, n1, n2, weight='length')
-            except:
-                length = haversine(lon1, lat1, lon2, lat2)
-            travel_km += length / 1000.0
-            travel_min += (length / 1000.0) * 2.0
+            d = haversine(lon1, lat1, lon2, lat2)  # meters
+            travel_km += d / 1000.0
+            travel_min += (d / 1000.0) * 2.0
     ctrl_time = int(rooms * 10)
     total_time = travel_min + ctrl_time
     overview.append({
@@ -113,7 +110,8 @@ for idx, t in enumerate(sorted(df_assign["team"].dropna().unique()), start=1):
             "Google-Link": f"https://www.google.com/maps/search/?api=1&query={quote_plus(coord)}"
         })
     sheets[f"Bezirk_{idx}"] = pd.DataFrame(detail)
-# Excel schreiben und Spaltenbreiten anpassen
+
+# Schreibe Excel und auto-adjust Spaltenbreiten
 with pd.ExcelWriter(output, engine='openpyxl') as writer:
     pd.DataFrame(overview).to_excel(writer, sheet_name='Übersicht', index=False)
     for name, df_s in sheets.items():
