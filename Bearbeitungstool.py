@@ -169,23 +169,34 @@ with st.sidebar:
     )
 
 # Karte darstellen mit früher sichtbaren Markern
+m = leafmap.Map(center=[df_assign["lat"].mean(), df_assign["lon"].mean()], zoom=10)
+# Linien zeichnen
+col = ["#FF00FF","#00FFFF","#00FF00","#FF0000","#FFA500","#FFFF00","#00CED1","#DA70D6","#FF69B4","#8A2BE2"]
+for i, t in enumerate(sorted(df_assign["team"].dropna().unique())):
+    df_t = df_assign[df_assign["team"] == t]
+    if "tsp_order" in df_t.columns:
+        df_t = df_t.sort_values("tsp_order")
+    pts = df_t[["lat","lon"]].values.tolist()
+    if len(pts) > 1:
+        path = []
+        nodes = [ox.distance.nearest_nodes(get_graph(), X=lon, Y=lat) for lat, lon in pts]
+        for u, v in zip(nodes[:-1], nodes[1:]):
+            try:
+                p = nx.shortest_path(graph, u, v, weight="length")
+                path.extend([(graph.nodes[n]["y"], graph.nodes[n]["x"]) for n in p])
+            except:
+                continue
+        folium.PolyLine(path, color=col[i % len(col)], weight=6, opacity=0.8, tooltip=f"Team {int(t)}").add_to(m)
+# Marker-Cluster mit frühzeitiger Auflösung
 mc = MarkerCluster(disableClusteringAtZoom=13)
 for _, r in df_assign.dropna(subset=["lat","lon"]).iterrows():
-    html = f"<div style='max-width:200px'><b>Team:</b> {int(r['team']) if pd.notnull(r['team']) else 'n/a'}<br>"
-    html += f"{r['Wahlraum-B']}<br>{r['Wahlraum-A']}<br>Anzahl Räume: {r['num_rooms']}</div>"
+    html = (
+        f"<div style='max-width:200px'><b>Team:</b> {int(r['team']) if pd.notnull(r['team']) else 'n/a'}<br>"
+        f"{r['Wahlraum-B']}<br>{r['Wahlraum-A']}<br>Anzahl Räume: {r['num_rooms']}</div>"
+    )
     mc.add_child(folium.Marker(location=[r['lat'], r['lon']], popup=html))
 mc.add_to(m)
 # Karte an alle Standorte anpassen
 m.fit_bounds(df_assign[['lat','lon']].values.tolist())
-
-m.to_streamlit(height=700)
-mc = MarkerCluster(disableClusteringAtZoom=13)
-for _, r in df_assign.dropna(subset=["lat","lon"]).iterrows():
-    html = f"<div style='max-width:200px'><b>Team:</b> {int(r['team']) if pd.notnull(r['team']) else 'n/a'}<br>"
-    html += f"{r['Wahlraum-B']}<br>{r['Wahlraum-A']}<br>Anzahl Räume: {r['num_rooms']}</div>"
-    mc.add_child(folium.Marker(location=[r['lat'], r['lon']], popup=html))
-mc.add_to(m)
-# Karte an alle Standorte anpassen
-m.fit_bounds(df_assign[['lat','lon']].values.tolist())
-
+# Karte anzeigen
 m.to_streamlit(height=700)
