@@ -160,8 +160,17 @@ with st.sidebar:
             st.session_state.new_assignments.loc[opt2.index, "tsp_order"] = range(len(opt2))
             st.success(f"Team {max_t} erstellt.")
             st.experimental_rerun()
-    # Export
-    st.download_button(
+        # Routen neu berechnen
+    if st.button("Routen berechnen"):
+        graph = get_graph()
+        for tid in sorted(st.session_state.new_assignments["team"].dropna().unique()):
+            team_rows = st.session_state.new_assignments[st.session_state.new_assignments["team"] == tid]
+            optimized = tsp_solve_route(graph, team_rows)
+            st.session_state.new_assignments.loc[optimized.index, "tsp_order"] = range(len(optimized))
+        st.success("Routen wurden neu berechnet.")
+        st.experimental_rerun()
+
+    # Export(
         label="Kontrollbezirk herunterladen",
         data=output,
         file_name="routen_zuweisung.xlsx",
