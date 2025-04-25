@@ -199,4 +199,4 @@ mc.add_to(m)
 # Karte an alle Standorte anpassen
 m.fit_bounds(df_assign[['lat','lon']].values.tolist())
 
-m.to_streamlit(width="100%", height=700)
+m.to_streamlit(height=700, use_container_width=True)
