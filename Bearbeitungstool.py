@@ -110,7 +110,7 @@ output.seek(0)
 with st.sidebar:
     st.title("Bearbeitung Kontrollbezirke")
     # Suchfeld
-    search_query = st.text_input("Suchen", placeholder="Wahlraum-B oder Wahlraum-A eingeben")
+    search_query = st.text_input("Suchen", placeholder="Wahllokal oder Adresse suchen")
     uploaded = st.file_uploader("Alternative Zuweisung importieren", type=["xlsx"])
     if uploaded:
         imp = pd.read_excel(uploaded, sheet_name=None)
@@ -194,13 +194,6 @@ for _,r in df_assign.dropna(subset=["lat","lon"]).iterrows():
     html=f"<div style='max-width:200px'><b>Team:</b> {int(r['team']) if pd.notnull(r['team']) else 'n/a'}<br>{r['Wahlraum-B']}<br>{r['Wahlraum-A']}<br>Anzahl Räume: {r['num_rooms']}</div>"
     mc.add_child(folium.Marker(location=[r['lat'],r['lon']],popup=html))
 mc.add_to(m)
-# Suchfeld für Marker
-m.add_search(
-    layer=mc,
-    search_label="Wahlraum-A",
-    placeholder="Suchen...",
-    collapsed=False,
-    position="topleft"
-)
-m.fit_bounds(df_assign[['lat','lon']].values.tolist())
+# Karte anzeigen ohne m.add_search
+m.fit_bounds(df_assign[['lat','lon']].values.tolist())(df_assign[['lat','lon']].values.tolist())
 m.to_streamlit(use_container_width=True,height=700)
