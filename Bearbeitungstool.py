@@ -122,6 +122,12 @@ with st.sidebar:
         format_func=lambda x: "Wahllokal oder Adresse suchen" if x == "" else x,
         key="search_selection"
     )
+# Zoomstufe basierend auf Suchauswahl definieren
+search_selection = st.session_state.get("search_selection", "")
+if search_selection:
+    zoom_level = 17
+else:
+    zoom_level = 10
     uploaded = st.file_uploader("Alternative Zuweisung importieren", type=["xlsx"])
     if uploaded:
         imp = pd.read_excel(uploaded, sheet_name=None)
