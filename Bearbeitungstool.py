@@ -133,7 +133,11 @@ with st.sidebar:
     addrs = st.session_state.new_assignments["Wahlraum-A"].dropna().tolist()
     sel = st.multiselect("Wahllokal wählen", options=addrs, placeholder="Auswählen")
     teams = sorted(st.session_state.new_assignments["team"].dropna().astype(int).unique())
-    tgt = st.selectbox("Kontrollbezirk wählen", options=teams, placeholder="Auswählen")
+    tgt = st.selectbox(
+        "Kontrollbezirk wählen",
+        options=[None] + teams,
+        format_func=lambda x: "Auswählen" if x is None else str(x),
+    )
     if st.button("Zuweisung übernehmen") and tgt and sel:
         for a in sel:
             idx = st.session_state.new_assignments.index[st.session_state.new_assignments["Wahlraum-A"] == a][0]
