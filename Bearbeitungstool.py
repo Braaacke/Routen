@@ -109,6 +109,8 @@ output.seek(0)
 # Sidebar Controls + Export
 with st.sidebar:
     st.title("Bearbeitung Kontrollbezirke")
+    # Suchfeld
+    search_query = st.text_input("Suchen", placeholder="Wahlraum-B oder Wahlraum-A eingeben")
     uploaded = st.file_uploader("Alternative Zuweisung importieren", type=["xlsx"])
     if uploaded:
         imp = pd.read_excel(uploaded, sheet_name=None)
