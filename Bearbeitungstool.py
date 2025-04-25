@@ -163,25 +163,13 @@ with st.sidebar:
             st.success(f"Team {max_t} erstellt.")
             st.experimental_rerun()
 
-    # Export
+        # Export
     st.download_button(
         label="Kontrollbezirke herunterladen",
         data=output,
         file_name="routen_zuweisung.xlsx",
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-    )
-    st.download_button(
-        label="Kontrollbezirke herunterladen",
-        data=output,
-        file_name="routen_zuweisung.xlsx",
-        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-    )
-
-# Karte darstellen mit früher sichtbaren Markern
-m = leafmap.Map(center=[df_assign["lat"].mean(), df_assign["lon"].mean()], zoom=10)
-# Linien zeichnen
-col = ["#FF00FF","#00FFFF","#00FF00","#FF0000","#FFA500","#FFFF00","#00CED1","#DA70D6","#FF69B4","#8A2BE2"]
-for i, t in enumerate(sorted(df_assign["team"].dropna().unique())):
+    )):
     df_t = df_assign[df_assign["team"] == t]
     if "tsp_order" in df_t.columns:
         df_t = df_t.sort_values("tsp_order")
