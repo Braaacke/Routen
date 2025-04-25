@@ -131,9 +131,9 @@ with st.sidebar:
         st.experimental_rerun()
     # Manuelle Zuweisung
     addrs = st.session_state.new_assignments["Wahlraum-A"].dropna().tolist()
-    sel = st.multiselect("Wahllokal wählen", options=addrs)
+    sel = st.multiselect("Wahllokal wählen", options=addrs, placeholder="Auswählen")
     teams = sorted(st.session_state.new_assignments["team"].dropna().astype(int).unique())
-    tgt = st.selectbox("Kontrollbezirk wählen", options=[None] + teams)
+    tgt = st.selectbox("Kontrollbezirk wählen", options=[None] + teams, format_func=lambda x: "Auswählen" if x is None else str(x))
     if st.button("Zuweisung übernehmen") and tgt and sel:
         for a in sel:
             idx = st.session_state.new_assignments.index[st.session_state.new_assignments["Wahlraum-A"] == a][0]
@@ -146,7 +146,7 @@ with st.sidebar:
     # Neues Team
     if st.button("Neuen Kontrollbezirk erstellen"):
         max_t = int(st.session_state.new_assignments["team"].max(skipna=True) or 0) + 1
-        sel2 = st.multiselect(f"Stops für Team {max_t}", options=addrs, key="new_team_sel")
+        sel2 = st.multiselect(f"Stops für Team {max_t}", options=addrs, key="new_team_sel", placeholder="Auswählen")
         if st.button("Erstellen und zuweisen") and sel2:
             for a in sel2:
                 idx = st.session_state.new_assignments.index[st.session_state.new_assignments["Wahlraum-A"] == a][0]
