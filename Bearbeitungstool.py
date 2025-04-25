@@ -277,7 +277,6 @@ def draw_map(df_assign):
     for _, r in df_assign.dropna(subset=['lat','lon']).iterrows():
         popup_html = (
             f"<div style='white-space: nowrap;'>"
-            f"<b>Kontrollbezirk:</b> {int(r['team']) if pd.notnull(r['team']) else 'n/a'}<br>"
             f"{r['Wahlraum-B']}<br>{r['Wahlraum-A']}<br>Anzahl Räume: {r['num_rooms']}"
             "</div>"
         )
