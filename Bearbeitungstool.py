@@ -177,6 +177,18 @@ with st.sidebar:
     )
 
 # Karte
+# Suche über Auswahl und Zoom
+if search_selection:
+    # Extrahiere Adresse (Wahlraum-A) aus Label
+    addr = search_selection.split(" - ",1)[1] if " - " in search_selection else search_selection
+    row = df_assign[df_assign["Wahlraum-A"] == addr]
+    if not row.empty:
+        lat0, lon0 = row.iloc[0][["lat","lon"]]
+        m = leafmap.Map(center=[lat0, lon0], zoom=14)
+    else:
+        m = leafmap.Map(center=[df_assign["lat"].mean(),df_assign["lon"].mean()], zoom=10)
+else:
+    m = leafmap.Map(center=[df_assign["lat"].mean(),df_assign["lon"].mean()], zoom=10)
 # Lade Graph für Routing
 graph = get_graph()
 m = leafmap.Map(center=[df_assign["lat"].mean(),df_assign["lon"].mean()], zoom=10)
