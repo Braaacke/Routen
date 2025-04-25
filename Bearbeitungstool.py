@@ -109,8 +109,15 @@ output.seek(0)
 # Sidebar Controls + Export
 with st.sidebar:
     st.title("Bearbeitung Kontrollbezirke")
-    # Suchfeld
-    search_query = st.text_input("Suchen", placeholder="Wahllokal oder Adresse suchen")
+    # Suchfeld mit Autovervollständigung
+    df_opts = st.session_state.new_assignments.dropna(subset=["Wahlraum-B","Wahlraum-A"])
+    addrs = df_opts.apply(lambda r: f"{r['Wahlraum-B']} - {r['Wahlraum-A']}", axis=1).tolist()
+    search_selection = st.selectbox(
+        "Wahllokal oder Adresse suchen",
+        options=[""] + addrs,
+        index=0,
+        format_func=lambda x: "Wahllokal oder Adresse suchen" if x == "" else x,
+    )
     uploaded = st.file_uploader("Alternative Zuweisung importieren", type=["xlsx"])
     if uploaded:
         imp = pd.read_excel(uploaded, sheet_name=None)
