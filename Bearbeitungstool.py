@@ -116,7 +116,13 @@ def make_export(df_assign):
             ws.merge_cells(start_row=row_cursor, start_column=start_col, end_row=row_cursor, end_column=end_col)
             cell = ws.cell(row=row_cursor, column=1, value=f"Kontrollbezirk {kb}")
             cell.font = cell.font.copy(bold=True)
-cell.fill = PatternFill(fill_type='solid', start_color='DDDDDD')
+            cell.fill = PatternFill(fill_type='solid', start_color='DDDDDD')
+            row_cursor += 1
+            # Spaltenüberschriften
+            for col_idx, col in enumerate(df_s.columns, start=1):
+                hdr = ws.cell(row=row_cursor, column=col_idx, value=col)
+                hdr.font = hdr.font.copy(bold=True)
+                hdr.fill = PatternFill(fill_type='solid', start_color='EEEEEE')
             row_cursor += 1
             # Spaltenüberschriften
             for col_idx, col in enumerate(df_s.columns, start=1):
