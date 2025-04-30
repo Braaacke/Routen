@@ -13,6 +13,7 @@ from urllib.parse import quote_plus
 from datetime import timedelta
 import io
 from openpyxl.utils import get_column_letter
+from openpyxl.styles import PatternFill, Border, Side
 from openpyxl.styles import PatternFill
 from math import radians, sin, cos, sqrt, asin
 
@@ -109,16 +110,45 @@ def make_export(df_assign):
         row_cursor = 1
         # Anzahl Spalten anhand eines Sheets ermitteln
         num_cols = len(next(iter(sheets.values())).columns)
+        # Stil-Definitionen
+        header_fill = PatternFill(fill_type='solid', start_color='DDDDDD')
+        subheader_fill = PatternFill(fill_type='solid', start_color='EEEEEE')
+        data_fill = PatternFill(fill_type='solid', start_color='F2F2F2')
+        thick = Side(style='thick')
         for kb, df_s in sheets.items():
             # Titelzeile
             ws.merge_cells(start_row=row_cursor, start_column=1,
                            end_row=row_cursor, end_column=num_cols)
             cell = ws.cell(row=row_cursor, column=1, value=f"Kontrollbezirk {kb}")
             cell.font = cell.font.copy(bold=True)
-            cell.fill = PatternFill(fill_type='solid', start_color='DDDDDD')
+            cell.fill = header_fill
+            cell.border = Border(top=thick, left=thick, right=thick)
             row_cursor += 1
-            # Spaltenüberschriften
+            # Spaltenüberschriften rechts neben Titel
             for col_idx, col in enumerate(df_s.columns, start=1):
+                hdr = ws.cell(row=row_cursor, column=col_idx, value=col)
+                hdr.font = hdr.font.copy(bold=True)
+                hdr.fill = subheader_fill
+                # dünner Rahmen zwischen Spalten
+                hdr.border = Border(left=Side(style='thin'), right=Side(style='thin'))
+            row_cursor += 1
+            # Datenzeilen mit Hintergrund
+            start_data_row = row_cursor
+            for _, r in df_s.iterrows():
+                for col_idx, val in enumerate(r, start=1):
+                    c = ws.cell(row=row_cursor, column=col_idx, value=val)
+                    c.fill = data_fill
+                    # dünner Rahmen
+                    c.border = Border(left=Side(style='thin'), right=Side(style='thin'))
+                row_cursor += 1
+            # Außenrand unten
+            last_row = row_cursor - 1
+            for col_idx in range(1, num_cols+1):
+                c = ws.cell(row=last_row, column=col_idx)
+                c.border = Border(bottom=thick,
+                                  left=thick if col_idx==1 else Side(style='thin'),
+                                  right=thick if col_idx==num_cols else Side(style='thin'))
+            row_cursor += 1  # Leerzeile
                 hdr = ws.cell(row=row_cursor, column=col_idx, value=col)
                 hdr.font = hdr.font.copy(bold=True)
                 hdr.fill = PatternFill(fill_type='solid', start_color='EEEEEE')
