@@ -87,6 +87,20 @@ def make_export(df_assign):
             'Gesamtzeit': str(timedelta(minutes=int(total_time))),
             'Google-Link': 'https://www.google.com/maps/dir/' + '/'.join([f"{lat},{lon}" for lat, lon in coords])
         })
+
+        gesamt_list = []
+    for sheet_name, df_s in sheets.items():
+        # sheet_name hat das Format "Bezirk_1", "Bezirk_2", ...
+        parts = sheet_name.split("_")
+        kb = int(parts[1]) if len(parts) > 1 and parts[1].isdigit() else sheet_name
+        df_temp = df_s.copy()
+        # Füge vorne die Spalte 'Kontrollbezirk' ein
+        df_temp.insert(0, 'Kontrollbezirk', kb)
+        gesamt_list.append(df_temp)
+    gesamt_df = pd.concat(gesamt_list, ignore_index=True)
+    # Gesamtübersicht in die Excel schreiben
+    gesamt_df.to_excel(writer, sheet_name='Gesamtübersicht', index=False)
+        
         detail = []
         for j, (_, r) in enumerate(df_t.iterrows(), start=1):
             coord = f"{r['lat']},{r['lon']}"
