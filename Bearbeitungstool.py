@@ -53,11 +53,10 @@ def make_export(df_assign):
     sheets = {}
     # Sortiere Kontrollbezirke geografisch (Nordwest nach Südost)
     teams = df_assign['team'].dropna().astype(int).unique()
-    # Berechne Mittelpunkte
-    centers = {t: (df_assign[df_assign['team']==t]['lat'].mean(), df_assign[df_assign['team']==t]['lon'].mean()) for t in teams}
-    # Sortiere: erst nach Lat absteigend (Nord), dann Lon aufsteigend (West->Ost)
+    centers = {t: (df_assign[df_assign['team']==t]['lat'].mean(),
+                   df_assign[df_assign['team']==t]['lon'].mean())
+               for t in teams}
     sorted_teams = sorted(centers.keys(), key=lambda t: (-centers[t][0], centers[t][1]))
-    # Iteriere in dieser Reihenfolge
     for idx, t in enumerate(sorted_teams, start=1):
         df_t = df_assign[df_assign['team'] == t]
         if 'tsp_order' in df_t.columns:
@@ -87,20 +86,6 @@ def make_export(df_assign):
             'Gesamtzeit': str(timedelta(minutes=int(total_time))),
             'Google-Link': 'https://www.google.com/maps/dir/' + '/'.join([f"{lat},{lon}" for lat, lon in coords])
         })
-
-        gesamt_list = []
-    for sheet_name, df_s in sheets.items():
-        # sheet_name hat das Format "Bezirk_1", "Bezirk_2", ...
-        parts = sheet_name.split("_")
-        kb = int(parts[1]) if len(parts) > 1 and parts[1].isdigit() else sheet_name
-        df_temp = df_s.copy()
-        # Füge vorne die Spalte 'Kontrollbezirk' ein
-        df_temp.insert(0, 'Kontrollbezirk', kb)
-        gesamt_list.append(df_temp)
-    gesamt_df = pd.concat(gesamt_list, ignore_index=True)
-    # Gesamtübersicht in die Excel schreiben
-    gesamt_df.to_excel(writer, sheet_name='Gesamtübersicht', index=False)
-        
         detail = []
         for j, (_, r) in enumerate(df_t.iterrows(), start=1):
             coord = f"{r['lat']},{r['lon']}"
@@ -112,9 +97,18 @@ def make_export(df_assign):
                 'Google-Link': f"https://www.google.com/maps/search/?api=1&query={quote_plus(coord)}"
             })
         sheets[f"Bezirk_{idx}"] = pd.DataFrame(detail)
-    # Schreibe Excel und auto-adjust Spaltenbreiten
+    # Gesamtübersicht erstellen
+    gesamt_list = []
+    for sheet_name, df_s in sheets.items():
+        parts = sheet_name.split("_")
+        kb = int(parts[1]) if len(parts) > 1 and parts[1].isdigit() else sheet_name
+        df_temp = df_s.copy()
+        df_temp.insert(0, 'Kontrollbezirk', kb)
+        gesamt_list.append(df_temp)
+    gesamt_df = pd.concat(gesamt_list, ignore_index=True)
     with pd.ExcelWriter(output, engine='openpyxl') as writer:
         pd.DataFrame(overview).to_excel(writer, sheet_name='Übersicht', index=False)
+        gesamt_df.to_excel(writer, sheet_name='Gesamtübersicht', index=False)
         for name, df_s in sheets.items():
             df_s.to_excel(writer, sheet_name=name, index=False)
         for ws in writer.sheets.values():
@@ -127,12 +121,8 @@ def make_export(df_assign):
 
 # Streamlit-Seite konfigurieren
 st.set_page_config(layout='wide')
-
-# Basisdaten laden
-# Initialisiere Control-Form-Flag
 if 'show_new' not in st.session_state:
     st.session_state.show_new = False
-
 # Basisdaten laden
 if 'base_addresses' not in st.session_state:
     base = pd.read_csv('cleaned_addresses.csv').reset_index(drop=True)
@@ -147,16 +137,13 @@ if 'base_addresses' not in st.session_state:
     merged = base.merge(assign_df, on='Wahlraum-A', how='left')
     st.session_state.base_addresses = merged.copy()
     st.session_state.new_assignments = merged.copy()
-
-# Arbeitsdaten kopieren
+# Arbeitsdaten
 df_assign = st.session_state.new_assignments.copy()
 if 'latlong' in df_assign.columns and ('lat' not in df_assign.columns or 'lon' not in df_assign.columns):
     df_assign[['lat','lon']] = df_assign['latlong'].str.split(',',expand=True).astype(float)
-
 # Sidebar
 with st.sidebar:
     st.title('Bearbeitung Kontrollbezirke')
-    # Suchfeld
     opts = df_assign.dropna(subset=['Wahlraum-B','Wahlraum-A'])
     addrs_search = opts.apply(lambda r: f"{r['Wahlraum-B']} - {r['Wahlraum-A']}", axis=1).tolist()
     st.selectbox(
@@ -166,8 +153,6 @@ with st.sidebar:
         format_func=lambda x: 'Wahllokal oder Adresse suchen' if x=='' else x,
         key='search_selection'
     )
-
-        # Datei-Upload für alternative Zuweisung
     uploaded = st.file_uploader('Alternative Zuweisung importieren', type=['xlsx'])
     if uploaded:
         imp = pd.read_excel(uploaded, sheet_name=None)
@@ -183,63 +168,42 @@ with st.sidebar:
             .merge(assigns, on='Wahlraum-A', how='left')
         )
         st.success('Import erfolgreich.')
-
-    # Manuelle Zuweisung
     opts_assign = st.session_state.new_assignments.dropna(subset=['Wahlraum-B','Wahlraum-A'])
     addrs_assign = opts_assign.apply(lambda r: f"{r['Wahlraum-B']} - {r['Wahlraum-A']}", axis=1).tolist()
     sel = st.multiselect('Wahllokal wählen', options=addrs_assign, placeholder='Auswählen')
     teams = sorted(st.session_state.new_assignments['team'].dropna().astype(int).unique())
     tgt = st.selectbox('Kontrollbezirk wählen', options=[None] + teams, placeholder='Auswählen')
     if st.button('Zuweisung übernehmen') and tgt and sel:
+        graph = get_graph()
         for label in sel:
             addr = label.split(' - ',1)[1]
             idx = st.session_state.new_assignments.index[st.session_state.new_assignments['Wahlraum-A']==addr][0]
             st.session_state.new_assignments.at[idx,'team'] = tgt
-        # TSP für betroffene Teams neu berechnen
-        graph = get_graph()
-        for team_id in set([tgt]):
+        for team_id in {tgt}:
             df_team = st.session_state.new_assignments[st.session_state.new_assignments['team']==team_id]
             opt = tsp_solve_route(graph, df_team)
             st.session_state.new_assignments.loc[opt.index,'tsp_order'] = range(len(opt))
         st.success('Zuweisung gesetzt.')
-
-        # Neuen Kontrollbezirk erstellen
-    if not st.session_state.get('show_new', False):
-        if st.button('Neuen Kontrollbezirk erstellen', key='show_new_cb'):
+    if not st.session_state.show_new:
+        if st.button('Neuen Kontrollbezirk erstellen'):
             st.session_state.show_new = True
             st.experimental_rerun()
     else:
         max_t = int(st.session_state.new_assignments['team'].max(skipna=True) or 0) + 1
-        with st.form(key='new_district_form'):
+        with st.form('new_district_form'):
             st.markdown(f"### Neuen Kontrollbezirk {max_t} erstellen")
-            sel2 = st.multiselect(
-                f"Stops für Kontrollbezirk {max_t}",
-                options=addrs_assign,
-                placeholder='Auswählen',
-                key='new_team_sel'
-            )
-            submitted = st.form_submit_button('Erstellen und zuweisen')
-            if submitted:
-                if sel2:
-                    graph = get_graph()
-                    for label in sel2:
-                        addr = label.split(' - ',1)[1]
-                        idx = st.session_state.new_assignments.index[
-                            st.session_state.new_assignments['Wahlraum-A']==addr
-                        ][0]
-                        st.session_state.new_assignments.at[idx,'team'] = max_t
-                    # TSP neu berechnen
-                    df_nt = st.session_state.new_assignments[
-                        st.session_state.new_assignments['team']==max_t
-                    ]
-                    opt2 = tsp_solve_route(graph, df_nt)
-                    st.session_state.new_assignments.loc[opt2.index,'tsp_order'] = range(len(opt2))
-                    st.success(f'Kontrollbezirk {max_t} erstellt.')
-                    st.session_state.show_new = False
-                else:
-                    st.warning('Bitte mindestens ein Wahllokal auswählen.')
-
-    # Routenberechnung neu
+            sel2 = st.multiselect(f"Stops für Kontrollbezirk {max_t}", options=addrs_assign)
+            if st.form_submit_button('Erstellen und zuweisen') and sel2:
+                graph = get_graph()
+                for label in sel2:
+                    addr = label.split(' - ',1)[1]
+                    idx = st.session_state.new_assignments.index[st.session_state.new_assignments['Wahlraum-A']==addr][0]
+                    st.session_state.new_assignments.at[idx,'team'] = max_t
+                df_nt = st.session_state.new_assignments[st.session_state.new_assignments['team']==max_t]
+                opt2 = tsp_solve_route(graph, df_nt)
+                st.session_state.new_assignments.loc[opt2.index,'tsp_order'] = range(len(opt2))
+                st.success(f'Kontrollbezirk {max_t} erstellt.')
+                st.session_state.show_new = False
     if st.button('Routen berechnen', key='recalc_routes'):
         graph = get_graph()
         for team_id in sorted(st.session_state.new_assignments['team'].dropna().astype(int).unique()):
@@ -247,16 +211,13 @@ with st.sidebar:
             opt = tsp_solve_route(graph, df_team)
             st.session_state.new_assignments.loc[opt.index,'tsp_order'] = range(len(opt))
         st.success('Routen neu berechnet.')
-
-    # Download-Button mit aktuellem Export
     export_buf = make_export(st.session_state.new_assignments)
     st.download_button(
-        label='Kontrollbezirke herunterladen',
+        'Kontrollbezirke herunterladen',
         data=export_buf,
         file_name='routen_zuweisung.xlsx',
         mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
     )
-
 # Map anzeigen
 def draw_map(df_assign):
     search_sel = st.session_state.get('search_selection','')
@@ -293,7 +254,6 @@ def draw_map(df_assign):
             f"<div style='white-space: nowrap;'>"
             f"<b>{r['Wahlraum-B']}</b><br>{r['Wahlraum-A']}<br>Anzahl Räume: {r['num_rooms']}"
             "</div>"
-              
         )
         popup = folium.Popup(popup_html, max_width=300)
         marker = folium.Marker(location=[r['lat'], r['lon']], popup=popup)
