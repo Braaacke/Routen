@@ -153,6 +153,7 @@ def _generate_excel_bytes():
     df['team_export'] = df['team'].map(team_map)
     overview = []
     team_sheets = {}
+    # Build overview and individual sheets
     for old_team, new_team in team_map.items():
         stops = df[df['team'] == old_team].copy()
         if 'tsp_order' in stops.columns:
@@ -167,8 +168,10 @@ def _generate_excel_bytes():
                     dist = nx.shortest_path_length(graph, u, v, weight='length')
                 except:
                     pass
-            km += dist/1000; mn += dist/1000*2
-        service = rooms*10; total = int(service + mn)
+            km += dist / 1000
+            mn += dist / 1000 * 2
+        service = rooms * 10
+        total = int(service + mn)
         link = "https://www.google.com/maps/dir/" + "/".join(
             f"{lat},{lon}" for lat, lon in stops[['lat','lon']].values
         )
@@ -202,9 +205,10 @@ def _generate_excel_bytes():
         df_temp.insert(0, 'Kontrollbezirk', team_num)
         gesamt_list.append(df_temp)
     gesamt_df = pd.concat(gesamt_list, ignore_index=True)
-    # Write Excel
+    # Write Excel with Übersicht, Gesamtübersicht, then individual sheets
     buf = io.BytesIO()
     with pd.ExcelWriter(buf, engine='openpyxl') as writer:
+        # Übersicht
         overview_df = pd.DataFrame(overview)
         overview_df.to_excel(writer, sheet_name='Übersicht', index=False)
         from openpyxl.utils import get_column_letter
@@ -213,6 +217,14 @@ def _generate_excel_bytes():
             ws0.column_dimensions[get_column_letter(i)].width = max(
                 overview_df[col].astype(str).map(len).max(), len(col)
             ) + 2
+        # Gesamtübersicht
+        gesamt_df.to_excel(writer, sheet_name='Gesamtübersicht', index=False)
+        ws1 = writer.sheets['Gesamtübersicht']
+        for i, col in enumerate(gesamt_df.columns, 1):
+            ws1.column_dimensions[get_column_letter(i)].width = max(
+                gesamt_df[col].astype(str).map(len).max(), len(col)
+            ) + 2
+        # Individual sheets
         for sheet_name, df_sheet in team_sheets.items():
             df_sheet.to_excel(writer, sheet_name=sheet_name, index=False)
             ws = writer.sheets[sheet_name]
@@ -304,7 +316,7 @@ if st.session_state.show_map:
                 opacity=0.8,
                 tooltip=f'Route {team_id}'
             ).add_to(m)
-    marker_cluster = MarkerCluster()()
+    marker_cluster = MarkerCluster()
     for _, row in dfm.dropna(subset=['lat', 'lon']).iterrows():
         popup_html = (
             f"<div style='font-weight:bold;'>"
