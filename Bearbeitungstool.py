@@ -139,7 +139,7 @@ def make_export(df_assign):
                 max_length = max(len(str(cell.value)) if cell.value is not None else 0 for cell in col_cells)
                 col_letter = get_column_letter(col_cells[0].column)
                 ws.column_dimensions[col_letter].width = max_length + 2
-    output.seek(0)(0)
+    output.seek(0)
     return output
 
 # Streamlit-Seite konfigurieren
