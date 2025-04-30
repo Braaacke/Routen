@@ -94,13 +94,13 @@ def make_export(df_assign):
         for j, (_, r) in enumerate(df_t.iterrows(), start=1):
             coord = f"{r['lat']},{r['lon']}"
             rooms_str = r.get('rooms','')
-numbers = re.findall(r'\b(\d+)\b', rooms_str)
-stimmbez = ', '.join(numbers)
-detail.append({
-    'Nr.': j,
-    'Wahllokal': r.get('Wahlraum-B',''),
-    'Adresse': r['Wahlraum-A'],
-    'Stimmbezirke': stimmbez,
+            numbers = re.findall(r'\b(\d+)\b', rooms_str)
+            stimmbez = ', '.join(numbers)
+            detail.append({
+               'Nr.': j,
+               'Wahllokal': r.get('Wahlraum-B',''),
+               'Adresse': r['Wahlraum-A'],
+               'Stimmbezirke': stimmbez,
             })
         sheets[idx] = pd.DataFrame(detail)
     # Schreibe Excel mit Übersicht, Gesamtübersicht (gruppiert) und Details
