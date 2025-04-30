@@ -13,6 +13,7 @@ from urllib.parse import quote_plus
 from datetime import timedelta
 import io
 from openpyxl.utils import get_column_letter
+from openpyxl.styles import PatternFill
 from math import radians, sin, cos, sqrt, asin
 
 # Haversine-Distanz (Fallback)
@@ -103,17 +104,28 @@ def make_export(df_assign):
     with pd.ExcelWriter(output, engine='openpyxl') as writer:
         # Übersicht
         pd.DataFrame(overview).to_excel(writer, sheet_name='Übersicht', index=False)
-        # Gesamtübersicht: jeweils Block pro Kontrollbezirk
+                # Gesamtübersicht: jeweils Block pro Kontrollbezirk
         ws = writer.book.create_sheet('Gesamtübersicht')
         row_cursor = 1
+        # Definiere Spaltenanzahl für Merge
+        num_cols = len(sheets[next(iter(sheets))].columns)
         for kb, df_s in sheets.items():
-            # Überschrift
-            ws.cell(row=row_cursor, column=1, value=f"Kontrollbezirk {kb}")
+            # Überschrift 'Kontrollbezirk X' über alle Spalten mergen
+            start_col = 1
+            end_col = num_cols
+            ws.merge_cells(start_row=row_cursor, start_column=start_col, end_row=row_cursor, end_column=end_col)
+            cell = ws.cell(row=row_cursor, column=1, value=f"Kontrollbezirk {kb}")
+            cell.font = cell.font.copy(bold=True)
+cell.fill = PatternFill(fill_type='solid', start_color='DDDDDD')
             row_cursor += 1
-            # Tabelle schreiben
+            # Spaltenüberschriften
             for col_idx, col in enumerate(df_s.columns, start=1):
-                ws.cell(row=row_cursor, column=col_idx, value=col)
+                hdr = ws.cell(row=row_cursor, column=col_idx, value=col)
+hdr.font = hdr.font.copy(bold=True)
+hdr.fill = PatternFill(fill_type='solid', start_color='EEEEEE')
+                hdr.font = hdr.font.copy(bold=True)
             row_cursor += 1
+            # Datenzeilen
             for _, r in df_s.iterrows():
                 for col_idx, val in enumerate(r, start=1):
                     ws.cell(row=row_cursor, column=col_idx, value=val)
