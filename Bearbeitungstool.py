@@ -104,43 +104,35 @@ def make_export(df_assign):
     with pd.ExcelWriter(output, engine='openpyxl') as writer:
         # Übersicht
         pd.DataFrame(overview).to_excel(writer, sheet_name='Übersicht', index=False)
-                # Gesamtübersicht: jeweils Block pro Kontrollbezirk
-        ws = writer.book.create_sheet('Gesamtübersicht')
-        row_cursor = 1
-        # Definiere Spaltenanzahl für Merge
-        num_cols = len(sheets[next(iter(sheets))].columns)
-        for kb, df_s in sheets.items():
-            # Überschrift 'Kontrollbezirk X' über alle Spalten mergen
-            start_col = 1
-            end_col = num_cols
-            ws.merge_cells(start_row=row_cursor, start_column=start_col, end_row=row_cursor, end_column=end_col)
-            cell = ws.cell(row=row_cursor, column=1, value=f"Kontrollbezirk {kb}")
-            cell.font = cell.font.copy(bold=True)
-            cell.fill = PatternFill(fill_type='solid', start_color='DDDDDD')
+
+    # Gesamtübersicht: jeweils Block pro Kontrollbezirk
+    ws = writer.book.create_sheet('Gesamtübersicht')
+    row_cursor = 1
+    num_cols = len(sheets[next(iter(sheets))].columns)
+    for kb, df_s in sheets.items():
+        ws.merge_cells(start_row=row_cursor, start_column=1,
+                       end_row=row_cursor, end_column=num_cols)
+        cell = ws.cell(row=row_cursor, column=1, value=f"Kontrollbezirk {kb}")
+        cell.font = cell.font.copy(bold=True)
+        cell.fill = PatternFill(fill_type='solid', start_color='DDDDDD')
+        row_cursor += 1
+        # Header
+        for col_idx, col in enumerate(df_s.columns, start=1):
+            hdr = ws.cell(row=row_cursor, column=col_idx, value=col)
+            hdr.font = hdr.font.copy(bold=True)
+            hdr.fill = PatternFill(fill_type='solid', start_color='EEEEEE')
+        row_cursor += 1
+        # Daten
+        for _, r in df_s.iterrows():
+            for col_idx, val in enumerate(r, start=1):
+                ws.cell(row=row_cursor, column=col_idx, value=val)
             row_cursor += 1
-            # Spaltenüberschriften
-            for col_idx, col in enumerate(df_s.columns, start=1):
-                hdr = ws.cell(row=row_cursor, column=col_idx, value=col)
-                hdr.font = hdr.font.copy(bold=True)
-                hdr.fill = PatternFill(fill_type='solid', start_color='EEEEEE')
-            row_cursor += 1
-            # Spaltenüberschriften
-            for col_idx, col in enumerate(df_s.columns, start=1):
-                hdr = ws.cell(row=row_cursor, column=col_idx, value=col)
-hdr.font = hdr.font.copy(bold=True)
-hdr.fill = PatternFill(fill_type='solid', start_color='EEEEEE')
-                hdr.font = hdr.font.copy(bold=True)
-            row_cursor += 1
-            # Datenzeilen
-            for _, r in df_s.iterrows():
-                for col_idx, val in enumerate(r, start=1):
-                    ws.cell(row=row_cursor, column=col_idx, value=val)
-                row_cursor += 1
-            row_cursor += 1  # Leerzeile
-        # Detail-Sheets
-        for kb, df_s in sheets.items():
-            name = f"Bezirk_{kb}"
-            df_s.to_excel(writer, sheet_name=name, index=False)
+        row_cursor += 1  # Leerzeile
+
+    # Detail-Sheets
+    for kb, df_s in sheets.items():
+        name = f"Bezirk_{kb}"
+        df_s.to_excel(writer, sheet_name=name, index=False)
         # Spaltenbreiten anpassen
         for ws in writer.sheets.values():
             for col_cells in ws.columns:
