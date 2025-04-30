@@ -105,61 +105,48 @@ def make_export(df_assign):
     with pd.ExcelWriter(output, engine='openpyxl') as writer:
         # Übersicht
         pd.DataFrame(overview).to_excel(writer, sheet_name='Übersicht', index=False)
-                        # Gesamtübersicht: Blockweise je Kontrollbezirk
+                                # Gesamtübersicht: Blockweise je Kontrollbezirk
         ws = writer.book.create_sheet('Gesamtübersicht')
         row_cursor = 1
-        num_cols = 4  # Spaltenanzahl
-        # Einfache hellgraue Hintergrundfarbe
+        num_cols = 4  # Spaltenanzahl: Nr., Wahllokal, Adresse, Stimmbezirke
         data_fill = PatternFill(fill_type='solid', start_color='F2F2F2')
         thick = Side(style='thick')
         thin = Side(style='thin')
         for kb, df_s in sheets.items():
-            # Titelzeile über alle Spalten, hellgrau füllen
-            ws.merge_cells(start_row=row_cursor, start_column=1,
-                           end_row=row_cursor, end_column=num_cols)
-            cell = ws.cell(row=row_cursor, column=1, value=f"Kontrollbezirk {kb}")
-            cell.font = cell.font.copy(bold=True)
-            cell.fill = data_fill
-            # Außenrand oben und seitlich für Titel
-            for col in range(1, num_cols+1):
-                border = Border(
-                    top=thick,
-                    left=thick if col==1 else thin,
-                    right=thick if col==num_cols else thin
-                )
-                ws.cell(row=row_cursor, column=col).border = border
-            row_cursor += 1
-            # Kopfzeile (Spaltenheader) hellgrau füllen
-            headers = ['', 'Wahllokal', 'Adresse', 'Stimmbezirke']
-            for col_idx, text in enumerate(headers, start=1):
-                hdr = ws.cell(row=row_cursor, column=col_idx, value=text)
+            # Titel und Spaltenheader in einer Zeile
+            # Titel in Spalte 1
+            title_cell = ws.cell(row=row_cursor, column=1, value=f"Kontrollbezirk {kb}")
+            title_cell.font = title_cell.font.copy(bold=True)
+            title_cell.fill = data_fill
+            # Rahmen links und rechts des Blocks (oben)
+            title_cell.border = Border(top=thick, left=thick, right=thin)
+            # Header in Spalten 2-4 derselben Zeile
+            headers = ['Wahllokal', 'Adresse', 'Stimmbezirke']
+            for idx, hdr_text in enumerate(headers, start=2):
+                hdr = ws.cell(row=row_cursor, column=idx, value=hdr_text)
                 hdr.font = hdr.font.copy(bold=True)
                 hdr.fill = data_fill
-                # Außenrand seitlich für Kopf
-                hdr.border = Border(
-                    left=thick if col_idx==1 else thin,
-                    right=thick if col_idx==num_cols else thin
-                )
+                # Rahmen zwischen Headerzellen
+                left = thin if idx>2 else thin
+                right = thick if idx==num_cols else thin
+                hdr.border = Border(top=thick, left=left, right=right)
             row_cursor += 1
-            # Datenzeilen hellgrau füllen und Außenrand seitlich
+            # Datenzeilen
             for j, r in enumerate(df_s.itertuples(), start=1):
                 vals = [j, r.Wahllokal, r.Adresse, r.Stimmbezirke]
                 for col_idx, val in enumerate(vals, start=1):
                     c = ws.cell(row=row_cursor, column=col_idx, value=val)
                     c.fill = data_fill
-                    c.border = Border(
-                        left=thick if col_idx==1 else thin,
-                        right=thick if col_idx==num_cols else thin
-                    )
+                    left = thick if col_idx==1 else thin
+                    right = thick if col_idx==num_cols else thin
+                    c.border = Border(left=left, right=right)
                 row_cursor += 1
-            # Unterer Außenrand dick für abschließende Zeile
+            # Unterer Außenrand dick
             for col in range(1, num_cols+1):
                 c = ws.cell(row=row_cursor-1, column=col)
-                c.border = Border(
-                    bottom=thick,
-                    left=thick if col==1 else thin,
-                    right=thick if col==num_cols else thin
-                )
+                left = thick if col==1 else thin
+                right = thick if col==num_cols else thin
+                c.border = Border(bottom=thick, left=left, right=right)
             row_cursor += 1  # Leerzeile
         # Detail-Sheets
         for kb, df_s in sheets.items():
