@@ -16,6 +16,7 @@ from openpyxl.utils import get_column_letter
 from openpyxl.styles import PatternFill, Border, Side
 from openpyxl.styles import PatternFill
 from math import radians, sin, cos, sqrt, asin
+import re
 
 # Haversine-Distanz (Fallback)
 def haversine(lon1, lat1, lon2, lat2):
