@@ -182,7 +182,6 @@ def _generate_excel_bytes():
             'Gesamtzeit': str(timedelta(minutes=total)),
             'Google-Link': link
         })
-        # Detailed sheet rows
         rows = []
         for idx, row in stops.iterrows():
             coord = f"{row['lat']},{row['lon']}"
@@ -193,7 +192,16 @@ def _generate_excel_bytes():
                 'Anzahl Stimmbezirke': row.get('num_rooms',''),
                 'Link': f"https://www.google.com/maps/search/?api=1&query={quote_plus(coord)}"
             })
-        team_sheets[f"Team_{new_team}"] = pd.DataFrame(rows)
+        team_sheets[f'Team_{new_team}'] = pd.DataFrame(rows)
+    # Gesamtübersicht erstellen
+    gesamt_list = []
+    for sheet_name, df_sheet in team_sheets.items():
+        parts = sheet_name.split("_")
+        team_num = int(parts[1]) if len(parts) > 1 and parts[1].isdigit() else sheet_name
+        df_temp = df_sheet.copy()
+        df_temp.insert(0, 'Kontrollbezirk', team_num)
+        gesamt_list.append(df_temp)
+    gesamt_df = pd.concat(gesamt_list, ignore_index=True)
     # Write Excel
     buf = io.BytesIO()
     with pd.ExcelWriter(buf, engine='openpyxl') as writer:
