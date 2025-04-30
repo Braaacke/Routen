@@ -53,10 +53,12 @@ def make_export(df_assign):
     sheets = {}
     # Sortiere Kontrollbezirke geografisch (Nordwest nach Südost)
     teams = df_assign['team'].dropna().astype(int).unique()
-    centers = {t: (df_assign[df_assign['team']==t]['lat'].mean(),
-                   df_assign[df_assign['team']==t]['lon'].mean())
-               for t in teams}
+    centers = {t: (
+        df_assign[df_assign['team']==t]['lat'].mean(),
+        df_assign[df_assign['team']==t]['lon'].mean()
+    ) for t in teams}
     sorted_teams = sorted(centers.keys(), key=lambda t: (-centers[t][0], centers[t][1]))
+    # Detail- und Übersichtsdaten sammeln
     for idx, t in enumerate(sorted_teams, start=1):
         df_t = df_assign[df_assign['team'] == t]
         if 'tsp_order' in df_t.columns:
@@ -84,33 +86,44 @@ def make_export(df_assign):
             'Fahrtzeit (min)': int(travel_min),
             'Kontrollzeit (min)': ctrl_time,
             'Gesamtzeit': str(timedelta(minutes=int(total_time))),
-            'Google-Link': 'https://www.google.com/maps/dir/' + '/'.join([f"{lat},{lon}" for lat, lon in coords])
+            'Google-Link': 'https://www.google.com/maps/dir/' + '/'.join([f"{lat},{lon}" for lat,lon in coords])
         })
         detail = []
         for j, (_, r) in enumerate(df_t.iterrows(), start=1):
             coord = f"{r['lat']},{r['lon']}"
             detail.append({
-                'Bezirk': j,
+                'Nr.': j,
+                'Wahllokal': r.get('Wahlraum-B',''),
                 'Adresse': r['Wahlraum-A'],
                 'Stimmbezirke': r.get('rooms',''),
                 'Anzahl Stimmbezirke': r.get('num_rooms',''),
-                'Google-Link': f"https://www.google.com/maps/search/?api=1&query={quote_plus(coord)}"
             })
-        sheets[f"Bezirk_{idx}"] = pd.DataFrame(detail)
-    # Gesamtübersicht erstellen
-    gesamt_list = []
-    for sheet_name, df_s in sheets.items():
-        parts = sheet_name.split("_")
-        kb = int(parts[1]) if len(parts) > 1 and parts[1].isdigit() else sheet_name
-        df_temp = df_s.copy()
-        df_temp.insert(0, 'Kontrollbezirk', kb)
-        gesamt_list.append(df_temp)
-    gesamt_df = pd.concat(gesamt_list, ignore_index=True)
+        sheets[idx] = pd.DataFrame(detail)
+    # Schreibe Excel mit Übersicht, Gesamtübersicht (gruppiert) und Details
     with pd.ExcelWriter(output, engine='openpyxl') as writer:
+        # Übersicht
         pd.DataFrame(overview).to_excel(writer, sheet_name='Übersicht', index=False)
-        gesamt_df.to_excel(writer, sheet_name='Gesamtübersicht', index=False)
-        for name, df_s in sheets.items():
+        # Gesamtübersicht: jeweils Block pro Kontrollbezirk
+        ws = writer.book.create_sheet('Gesamtübersicht')
+        row_cursor = 1
+        for kb, df_s in sheets.items():
+            # Überschrift
+            ws.cell(row=row_cursor, column=1, value=f"Kontrollbezirk {kb}")
+            row_cursor += 1
+            # Tabelle schreiben
+            for col_idx, col in enumerate(df_s.columns, start=1):
+                ws.cell(row=row_cursor, column=col_idx, value=col)
+            row_cursor += 1
+            for _, r in df_s.iterrows():
+                for col_idx, val in enumerate(r, start=1):
+                    ws.cell(row=row_cursor, column=col_idx, value=val)
+                row_cursor += 1
+            row_cursor += 1  # Leerzeile
+        # Detail-Sheets
+        for kb, df_s in sheets.items():
+            name = f"Bezirk_{kb}"
             df_s.to_excel(writer, sheet_name=name, index=False)
+        # Spaltenbreiten anpassen
         for ws in writer.sheets.values():
             for col_cells in ws.columns:
                 max_length = max(len(str(cell.value)) if cell.value is not None else 0 for cell in col_cells)
