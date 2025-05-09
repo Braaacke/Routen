@@ -170,26 +170,8 @@ with st.sidebar:
         )
         st.success('Import erfolgreich.')
 
-    # Manuelle Zuweisung
-    opts_assign = st.session_state.new_assignments.dropna(subset=['Wahlraum-B','Wahlraum-A'])
-    addrs_assign = opts_assign.apply(lambda r: f"{r['Wahlraum-B']} - {r['Wahlraum-A']}", axis=1).tolist()
-    sel = st.multiselect('Wahllokal wählen', options=addrs_assign, placeholder='Auswählen')
-    teams = sorted(st.session_state.new_assignments['team'].dropna().astype(int).unique())
-    tgt = st.selectbox('Kontrollbezirk wählen', options=[None] + teams, placeholder='Auswählen')
-    if st.button('Zuweisung übernehmen') and tgt and sel:
-        for label in sel:
-            addr = label.split(' - ',1)[1]
-            idx = st.session_state.new_assignments.index[st.session_state.new_assignments['Wahlraum-A']==addr][0]
-            st.session_state.new_assignments.at[idx,'team'] = tgt
-        # TSP für betroffene Teams neu berechnen
-        graph = get_graph()
-        for team_id in set([tgt]):
-            df_team = st.session_state.new_assignments[st.session_state.new_assignments['team']==team_id]
-            opt = tsp_solve_route(graph, df_team)
-            st.session_state.new_assignments.loc[opt.index,'tsp_order'] = range(len(opt))
-        st.success('Zuweisung gesetzt.')
-        # Karte sofort aktualisieren
-        draw_map(st.session_state.new_assignments)
+            st.success('Zuweisung gesetzt.')
+        # Karte wird beim Neuladen automatisch aktualisiert
         st.experimental_rerun()
 
         # Neuen Kontrollbezirk erstellen
