@@ -60,16 +60,20 @@ def make_export(df, routing_method, central_addr, central_coord):
         grp = df[df.team == t]
         # Determine route order
         if routing_method == 'Sternförmig':
-            # TSP on original stops
-            ordered_cent = solve_tsp(graph, grp)
-            # greedy_tsp returns cycle with repeated start at end; remove duplicate
-            if len(ordered_cent) > 1 and ordered_cent.iloc[0]['Wahlraum-A'] == ordered_cent.iloc[-1]['Wahlraum-A']:
-                ordered_cent = ordered_cent.iloc[:-1].reset_index(drop=True)
-            # Append central stop at end
-            central_row = pd.DataFrame([{ 'Wahlraum-A': central_addr, 'lat': central_coord[0], 'lon': central_coord[1], 'rooms': '', 'num_rooms': 0, 'team': t }])
-            ordered = pd.concat([ordered_cent, central_row], ignore_index=True)
-        else:
-            ordered = grp.sort_values('tsp_order') if 'tsp_order' in grp else grp
++            ordered = solve_tsp(graph, grp)
++            if len(ordered) > 1 and ordered.iloc[0]['Wahlraum-A'] == ordered.iloc[-1]['Wahlraum-A']:
++                ordered = ordered.iloc[:-1].reset_index(drop=True)
++            central_row = pd.DataFrame([{
++                'Wahlraum-A': central_addr,
++                'lat': central_coord[0],
++                'lon': central_coord[1],
++                'rooms': '',
++                'num_rooms': 0,
++                'team': t
++            }])
++            ordered = pd.concat([ordered, central_row], ignore_index=True)
++        else:
++            ordered = grp.sort_values('tsp_order') if 'tsp_order' in grp else grp
         # Overview calculations
         rooms = int(ordered.num_rooms.sum())
         km = mn = 0.0
@@ -291,17 +295,30 @@ for i, t in enumerate(sorted(assign.team.dropna().astype(int).unique())):
             folium.PolyLine(path, color=cols[i % len(cols)], weight=6, opacity=0.8,
                             tooltip=f"Kontrollbezirk {int(t)}").add_to(m)
     else:
-        # sternförmige Routen: jede Route endet am zentralen Punkt
-        for _, r_stop in df_t.iterrows():
-            try:
-                n1 = ox.distance.nearest_nodes(G, X=r_stop.lon, Y=r_stop.lat)
-                n2 = ox.distance.nearest_nodes(G, X=central_coord[1], Y=central_coord[0])
-                p = nx.shortest_path(G, n1, n2, weight='length')
-                seg = [(G.nodes[n]['y'], G.nodes[n]['x']) for n in p]
-                folium.PolyLine(seg, color=cols[i % len(cols)], weight=3, opacity=0.6,
-                                tooltip=f"Kontrollbezirk {int(t)} sternförmig").add_to(m)
-            except:
-                continue
+       # sternförmige Routen: jede Route endet am zentralen Punkt
++        stopping_points = solve_tsp(G, df_t)  # TSP nur auf Original-Stops
++        # Abschneiden des Duplikats am Ende, falls vorhanden
++        if len(stopping_points) > 1 and stopping_points.iloc[0]['Wahlraum-A'] == stopping_points.iloc[-1]['Wahlraum-A']:
++            stopping_points = stopping_points.iloc[:-1]
++        # Füge Zentralpunkt ans Ende
++        stopping_points = pd.concat([
++            stopping_points,
++            pd.DataFrame([{
++                'Wahlraum-A': central_addr,
++                'lat': central_coord[0],
++                'lon': central_coord[1]
++           }])
++        ], ignore_index=True)
++        for u_stop, v_stop in zip(stopping_points.itertuples(index=False), stopping_points.shift(-1).itertuples(index=False)[:-1]):
++            try:
++                n1 = ox.distance.nearest_nodes(G, X=u_stop.lon, Y=u_stop.lat)
++                n2 = ox.distance.nearest_nodes(G, X=v_stop.lon, Y=v_stop.lat)
++                path = nx.shortest_path(G, n1, n2, weight='length')
++                seg = [(G.nodes[n]['y'], G.nodes[n]['x']) for n in path]
++                folium.PolyLine(seg, color=cols[i % len(cols)], weight=3, opacity=0.6,
++                                tooltip=f"Kontrollbezirk {int(t)} sternförmig").add_to(m)
++            except:
++                continue
         # sternförmige Routen: jede Route endet am zentralen Punkt
         for _, r_stop in df_t.iterrows():
             try:
