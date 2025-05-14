@@ -225,25 +225,19 @@ with st.sidebar:
             opt = solve_tsp(g, df_team)
             assign.loc[opt.index, 'tsp_order'] = range(len(opt))
         st.success('Routen berechnet')
-        
-        st.download_button(
-        'Herunterladen',
-        make_export(
+
+    # Download-Button mit Export-Funktion
+    st.download_button(
+        label='Herunterladen',
+        data=make_export(
             assign,
-            routing_method,
+            st.session_state.routing_method,
             central_addr,
             central_coord
         ),
-        'routen.xlsx',
-        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-    ),
-        'routen.xlsx',
-        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-    ),
-        'routen.xlsx',
-        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        file_name='routen.xlsx',
+        mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
     )
-
 # Map
 search = st.session_state.get('search', '')
 # Zentrale für sternförmige Routen
