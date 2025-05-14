@@ -58,13 +58,22 @@ def make_export(df, routing_method, central_addr, central_coord):
     sheets = {}
     for idx, t in enumerate(sorted_teams, start=1):
         grp = df[df.team == t]
-        # Für sternförmig: append central point als Halt und lösen TSP inklusive Zentrale
+                # Bestimme Routenfolge
         if routing_method == 'Sternförmig':
-            # zentrale als zusätzlicher Stop
-            central_row = pd.DataFrame([{ 'Wahlraum-A': central_addr, 'lat': central_coord[0], 'lon': central_coord[1], 'rooms': '', 'num_rooms': 0, 'team': t }])
-            grp_ext = pd.concat([grp, central_row], ignore_index=True)
-            ordered = solve_tsp(graph, grp_ext)
+            # TSP nur auf dezentralen Stops
+            ordered_cent = solve_tsp(graph, grp)
+            # Zentralen Punkt ans Ende setzen
+            central_row = pd.DataFrame([{
+                'Wahlraum-A': central_addr,
+                'lat': central_coord[0],
+                'lon': central_coord[1],
+                'rooms': '',
+                'num_rooms': 0,
+                'team': t
+            }])
+            ordered = pd.concat([ordered_cent, central_row], ignore_index=True)
         else:
+            ordered = grp.sort_values('tsp_order') if 'tsp_order' in grp else grp
             ordered = grp.sort_values('tsp_order') if 'tsp_order' in grp else grp
         # Berechne Übersichtsdaten auf ordered
         rooms = int(ordered.num_rooms.sum())
