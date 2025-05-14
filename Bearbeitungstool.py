@@ -58,24 +58,16 @@ def make_export(df, routing_method, central_addr, central_coord):
     sheets = {}
     for idx, t in enumerate(sorted_teams, start=1):
         grp = df[df.team == t]
-                # Bestimme Routenfolge
+        # Determine route order
         if routing_method == 'Sternförmig':
-            # TSP nur auf dezentralen Stops
+            # TSP on original stops
             ordered_cent = solve_tsp(graph, grp)
-            # Zentralen Punkt ans Ende setzen
-            central_row = pd.DataFrame([{
-                'Wahlraum-A': central_addr,
-                'lat': central_coord[0],
-                'lon': central_coord[1],
-                'rooms': '',
-                'num_rooms': 0,
-                'team': t
-            }])
+            # Append central stop at end
+            central_row = pd.DataFrame([{ 'Wahlraum-A': central_addr, 'lat': central_coord[0], 'lon': central_coord[1], 'rooms': '', 'num_rooms': 0, 'team': t }])
             ordered = pd.concat([ordered_cent, central_row], ignore_index=True)
         else:
             ordered = grp.sort_values('tsp_order') if 'tsp_order' in grp else grp
-            ordered = grp.sort_values('tsp_order') if 'tsp_order' in grp else grp
-        # Berechne Übersichtsdaten auf ordered
+        # Overview calculations
         rooms = int(ordered.num_rooms.sum())
         km = mn = 0.0
         pts = list(zip(ordered.lat, ordered.lon))
@@ -98,13 +90,12 @@ def make_export(df, routing_method, central_addr, central_coord):
             'Gesamtzeit': str(timedelta(minutes=int(mn + rooms * 10))),
             'Google-Link': 'https://www.google.com/maps/dir/' + '/'.join(f"{lat},{lon}" for lat, lon in pts)
         })
-                # Detailblatt
+        # Detail sheet
         detail = []
-        # Liste alle Stops in der Reihenfolge
         for j, (_, r) in enumerate(ordered.iterrows(), start=1):
             coord = f"{r.lat},{r.lon}"
             addr = r['Wahlraum-A']
-            # Für den zentralen Stop vollständige Adresse ergänzen
+            # Add full address for central stop
             if routing_method == 'Sternförmig' and addr == central_addr:
                 addr = f"{central_addr}, 48143 Münster"
             detail.append({
@@ -115,6 +106,7 @@ def make_export(df, routing_method, central_addr, central_coord):
                 'Google-Link': f"https://www.google.com/maps/search/?api=1&query={quote_plus(coord)}"
             })
         sheets[f"Bezirk_{idx}"] = pd.DataFrame(detail)
+    # Write Excel and auto-adjust widths
     with pd.ExcelWriter(buf, engine='openpyxl') as writer:
         pd.DataFrame(overview).to_excel(writer, sheet_name='Übersicht', index=False)
         for name, df_s in sheets.items():
