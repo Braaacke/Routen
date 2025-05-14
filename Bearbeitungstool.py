@@ -215,30 +215,25 @@ with st.sidebar:
                     
                 else:
                     st.warning('Bitte mindestens ein Wahllokal auswählen')
-    if st.button('Routen berechnen'):
+        if st.button('Routen berechnen'):
         g = load_graph()
         for t in assign['team'].dropna().astype(int).unique():
             df_team = assign[assign['team'] == t]
             opt = solve_tsp(g, df_team)
             assign.loc[opt.index, 'tsp_order'] = range(len(opt))
         st.success('Routen berechnet')
-        
-        st.download_button(
-        'Herunterladen',
-        make_export(
+
+    # Download-Button mit korrekter Parameterliste
+    st.download_button(
+        label='Herunterladen',
+        data=make_export(
             assign,
-            routing_method,
+            st.session_state.routing_method,
             central_addr,
             central_coord
         ),
-        'routen.xlsx',
-        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-    ),
-        'routen.xlsx',
-        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-    ),
-        'routen.xlsx',
-        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        file_name='routen.xlsx',
+        mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
     )
 
 # Map
