@@ -1,5 +1,4 @@
-```python
-"""Interaktives Routenbearbeitungstool mit Zoom-abhängiger Markersichtbarkeit und TSP-Optimierung bei Zuweisung"""
+"""""Interaktives Routenbearbeitungstool mit Zoom-abhängiger Markersichtbarkeit und TSP-Optimierung bei Zuweisung"""
 
 import streamlit as st
 import pandas as pd
@@ -15,7 +14,6 @@ from datetime import timedelta
 import io
 from openpyxl.utils import get_column_letter
 from openpyxl.styles import PatternFill, Border, Side
-from openpyxl.styles import PatternFill
 from math import radians, sin, cos, sqrt, asin
 import re
 
@@ -92,7 +90,6 @@ def make_export(df_assign):
         })
         detail = []
         for j, (_, r) in enumerate(df_t.iterrows(), start=1):
-            coord = f"{r['lat']},{r['lon']}"
             rooms_str = r.get('rooms','')
             numbers = re.findall(r'\b(\d+)\b', rooms_str)
             stimmbez = ', '.join(numbers)
@@ -116,7 +113,7 @@ def make_export(df_assign):
             title_cell.font = title_cell.font.copy(bold=True)
             title_cell.fill = data_fill
             title_cell.border = Border(top=thick, left=thick, right=thin)
-            headers = ['Wahllokal', 'Adresse', 'Stimmbezirke']
+            headers = ['Wahllokal', 'Adresse', 'Stimmbezirk']
             for idx_h, hdr_text in enumerate(headers, start=2):
                 hdr = ws.cell(row=row_cursor, column=idx_h, value=hdr_text)
                 hdr.font = hdr.font.copy(bold=True)
@@ -195,102 +192,5 @@ with st.sidebar:
             st.session_state.base_addresses.drop(columns=['team'])
             .merge(assigns, on='Wahlraum-A', how='left')
         )
-        st.success('Import erfolgreich.')
-    opts_assign = st.session_state.new_assignments.dropna(subset=['Wahlraum-B','Wahlraum-A'])
-    addrs_assign = opts_assign.apply(lambda r: f"{r['Wahlraum-B']} - {r['Wahlraum-A']}", axis=1).tolist()
-    sel = st.multiselect('Wahllokal wählen', options=addrs_assign, placeholder='Auswählen')
-    teams = sorted(st.session_state.new_assignments['team'].dropna().astype(int).unique())
-    tgt = st.selectbox('Kontrollbezirk wählen', options=[None] + teams, placeholder='Auswählen')
-    if st.button('Zuweisung übernehmen') and tgt and sel:
-        graph = get_graph()
-        for label in sel:
-            addr = label.split(' - ',1)[1]
-            idx = st.session_state.new_assignments.index[st.session_state.new_assignments['Wahlraum-A']==addr][0]
-            st.session_state.new_assignments.at[idx,'team'] = tgt
-        for team_id in {tgt}:
-            df_team = st.session_state.new_assignments[st.session_state.new_assignments['team']==team_id]
-            opt = tsp_solve_route(graph, df_team)
-            st.session_state.new_assignments.loc[opt.index,'tsp_order'] = range(len(opt))
-        st.success('Zuweisung gesetzt.')
-    if not st.session_state.show_new:
-        if st.button('Neuen Kontrollbezirk erstellen'):
-            st.session_state.show_new = True
-            st.experimental_rerun()
-    else:
-        max_t = int(st.session_state.new_assignments['team'].max(skipna=True) or 0) + 1
-        with st.form('new_district_form'):
-            st.markdown(f"### Neuen Kontrollbezirk {max_t} erstellen")
-            sel2 = st.multiselect(f"Stops für Kontrollbezirk {max_t}", options=addrs_assign)
-            if st.form_submit_button('Erstellen und zuweisen') and sel2:
-                graph = get_graph()
-                for label in sel2:
-                    addr = label.split(' - ',1)[1]
-                    idx = st.session_state.new_assignments.index[st.session_state.new_assignments['Wahlraum-A']==addr][0]
-                    st.session_state.new_assignments.at[idx,'team'] = max_t
-                df_nt = st.session_state.new_assignments[st.session_state.new_assignments['team']==max_t]
-                opt2 = tsp_solve_route(graph, df_nt)
-                st.session_state.new_assignments.loc[opt2.index,'tsp_order'] = range(len(opt2))
-                st.success(f'Kontrollbezirk {max_t} erstellt.')
-                st.session_state.show_new = False
-    if st.button('Routen berechnen', key='recalc_routes'):
-        graph = get_graph()
-        for team_id in sorted(st.session_state.new_assignments['team'].dropna().astype(int).unique()):
-            df_team = st.session_state.new_assignments[st.session_state.new_assignments['team']==team_id]
-            opt = tsp_solve_route(graph, df_team)
-            st.session_state.new_assignments.loc[opt.index,'tsp_order'] = range(len(opt))
-        st.success('Routen neu berechnet.')
-    export_buf = make_export(st.session_state.new_assignments)
-    st.download_button(
-        'Kontrollbezirke herunterladen',
-        data=export_buf,
-        file_name='routen_zuweisung.xlsx',
-        mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-    )
-
-def draw_map(df_assign):
-    search_sel = st.session_state.get('search_selection','')
-    if search_sel:
-        addr = search_sel.split(' - ',1)[1]
-        row = df_assign[df_assign['Wahlraum-A']==addr]
-        center = [row.iloc[0]['lat'], row.iloc[0]['lon']] if not row.empty else [df_assign['lat'].mean(), df_assign['lon'].mean()]
-        zoom = 17
-    else:
-        center = [df_assign['lat'].mean(), df_assign['lon'].mean()]
-        zoom = 10
-    m = leafmap.Map(center=center, zoom=zoom)
-    graph = get_graph()
-    colors = ['#FF00FF','#00FFFF','#00FF00','#FF0000','#FFA500','#FFFF00','#00CED1','#DA70D6','#FF69B4','#8A2BE2']
-    for i, t in enumerate(sorted(df_assign['team'].dropna().unique())):
-        df_t = df_assign[df_assign['team']==t]
-        if 'tsp_order' in df_t.columns:
-            df_t = df_t.sort_values('tsp_order')
-        pts = df_t[['lat','lon']].values.tolist()
-        if len(pts)>1:
-            path=[]
-            nodes=[ox.distance.nearest_nodes(graph,X=lon,Y=lat) for lat,lon in pts]
-            for u,v in zip(nodes[:-1],nodes[1:]):
-                try:
-                    p=nx.shortest_path(graph,u,v,weight='length')
-                    path.extend([(graph.nodes[n]['y'],graph.nodes[n]['x']) for n in p])
-                except:
-                    pass
-            folium.PolyLine(path,color=colors[i%len(colors)],weight=6,opacity=0.8,
-                            tooltip=f"Kontrollbezirk {int(t)}").add_to(m)
-        cluster = MarkerCluster(disableClusteringAtZoom=13)
-    for _, r in df_assign.dropna(subset=['lat','lon']).iterrows():
-        popup_html = (
-            f"<div style='white-space: nowrap;'>"
-            f"<b>{r['Wahlraum-B']}</b><br>{r['Wahlraum-A']}<br>Anzahl Räume: {r['num_rooms']}"
-            "</div>"
-        )
-        popup = folium.Popup(popup_html, max_width=300)
-        marker = folium.Marker(location=[r['lat'], r['lon']], popup=popup)
-        cluster.add_child(marker)
-    cluster.add_to(m)
-    if not st.session_state.get('search_selection',''):
-        m.fit_bounds(df_assign[['lat','lon']].values.tolist())
-    m.to_streamlit(use_container_width=True, height=700)
-
-# Karte rendern
-draw_map(df_assign)
-```
+        st.success('Import
+""
