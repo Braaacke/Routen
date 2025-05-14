@@ -239,6 +239,9 @@ with st.sidebar:
     ),
         'routen.xlsx',
         'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    ),
+        'routen.xlsx',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
     )
 
 # Map
