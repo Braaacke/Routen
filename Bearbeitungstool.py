@@ -218,7 +218,10 @@ with st.sidebar:
         
     st.download_button(
         'Herunterladen',
-        make_export(assign),
+        make_export(assign,
+                    routing_method,
+                    central_addr,
+                    central_coord),
         'routen.xlsx',
         'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
     )
