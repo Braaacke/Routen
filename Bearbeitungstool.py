@@ -162,11 +162,11 @@ with st.sidebar:
         opt = solve_tsp(g, df)
         assign.loc[opt.index, 'tsp_order'] = range(len(opt))
         st.success('Zuweisung gesetzt')
-        st.experimental_rerun()
+        
     if not st.session_state.show_new:
         if st.button('Neuen Kontrollbezirk erstellen'):
             st.session_state.show_new = True
-            st.experimental_rerun()
+            
     else:
         max_t = int(assign.team.max(skipna=True) or 0) + 1
         with st.form('new'):
@@ -183,7 +183,7 @@ with st.sidebar:
                     assign.loc[opt2.index, 'tsp_order'] = range(len(opt2))
                     st.success(f'Bezirk {max_t} erstellt')
                     st.session_state.show_new = False
-                    st.experimental_rerun()
+                    
                 else:
                     st.warning('Bitte mindestens ein Wahllokal auswählen')
     if st.button('Routen berechnen'):
@@ -193,7 +193,7 @@ with st.sidebar:
             opt = solve_tsp(g, df_team)
             assign.loc[opt.index, 'tsp_order'] = range(len(opt))
         st.success('Routen berechnet')
-        st.experimental_rerun()
+        
     st.download_button(
         'Herunterladen',
         make_export(assign),
