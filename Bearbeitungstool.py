@@ -295,30 +295,26 @@ for i, t in enumerate(sorted(assign.team.dropna().astype(int).unique())):
             folium.PolyLine(path, color=cols[i % len(cols)], weight=6, opacity=0.8,
                             tooltip=f"Kontrollbezirk {int(t)}").add_to(m)
     else:
-       # sternförmige Routen: jede Route endet am zentralen Punkt
-+        stopping_points = solve_tsp(G, df_t)  # TSP nur auf Original-Stops
-+        # Abschneiden des Duplikats am Ende, falls vorhanden
-+        if len(stopping_points) > 1 and stopping_points.iloc[0]['Wahlraum-A'] == stopping_points.iloc[-1]['Wahlraum-A']:
-+            stopping_points = stopping_points.iloc[:-1]
-+        # Füge Zentralpunkt ans Ende
-+        stopping_points = pd.concat([
-+            stopping_points,
-+            pd.DataFrame([{
-+                'Wahlraum-A': central_addr,
-+                'lat': central_coord[0],
-+                'lon': central_coord[1]
-+           }])
-+        ], ignore_index=True)
-+        for u_stop, v_stop in zip(stopping_points.itertuples(index=False), stopping_points.shift(-1).itertuples(index=False)[:-1]):
-+            try:
-+                n1 = ox.distance.nearest_nodes(G, X=u_stop.lon, Y=u_stop.lat)
-+                n2 = ox.distance.nearest_nodes(G, X=v_stop.lon, Y=v_stop.lat)
-+                path = nx.shortest_path(G, n1, n2, weight='length')
-+                seg = [(G.nodes[n]['y'], G.nodes[n]['x']) for n in path]
-+                folium.PolyLine(seg, color=cols[i % len(cols)], weight=3, opacity=0.6,
-+                                tooltip=f"Kontrollbezirk {int(t)} sternförmig").add_to(m)
-+            except:
-+                continue
+               # sternförmige Routen: jede Route endet am zentralen Punkt
+        stopping_points = solve_tsp(G, df_t)  # TSP nur auf Original-Stops
+        # Abschneiden des Duplikats am Ende, falls vorhanden
+        if len(stopping_points) > 1 and stopping_points.iloc[0]['Wahlraum-A'] == stopping_points.iloc[-1]['Wahlraum-A']:
+            stopping_points = stopping_points.iloc[:-1]
+        # Füge Zentralpunkt ans Ende
+        stopping_points = pd.concat([
+            stopping_points,
+            pd.DataFrame([{ 'Wahlraum-A': central_addr, 'lat': central_coord[0], 'lon': central_coord[1] }])
+        ], ignore_index=True)
+        for u_stop, v_stop in zip(stopping_points.itertuples(index=False), stopping_points.shift(-1).itertuples(index=False)[:-1]):
+            try:
+                n1 = ox.distance.nearest_nodes(G, X=u_stop.lon, Y=u_stop.lat)
+                n2 = ox.distance.nearest_nodes(G, X=v_stop.lon, Y=v_stop.lat)
+                path = nx.shortest_path(G, n1, n2, weight='length')
+                seg = [(G.nodes[n]['y'], G.nodes[n]['x']) for n in path]
+                folium.PolyLine(seg, color=cols[i % len(cols)], weight=3, opacity=0.6,
+                                tooltip=f"Kontrollbezirk {int(t)} sternförmig").add_to(m)
+            except:
+                continue
         
 
 cluster = MarkerCluster(disableClusteringAtZoom=13)
