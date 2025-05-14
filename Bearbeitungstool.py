@@ -264,7 +264,8 @@ G = load_graph()
 cols = ['#FF00FF', '#00FFFF', '#00FF00', '#FF0000', '#FFA500', '#FFFF00', '#00CED1', '#DA70D6', '#FF69B4', '#8A2BE2']
 for i, t in enumerate(sorted(assign.team.dropna().astype(int).unique())):
     df_t = assign[assign.team == t]
-    if routing_method == 'Dezentral':
+    method = st.session_state.get('routing_method', 'Dezentral')
+    if method == 'Dezentral':
         # wie bisher: TSP-Route
         if 'tsp_order' in df_t:
             df_t = df_t.sort_values('tsp_order')
@@ -281,6 +282,17 @@ for i, t in enumerate(sorted(assign.team.dropna().astype(int).unique())):
             folium.PolyLine(path, color=cols[i % len(cols)], weight=6, opacity=0.8,
                             tooltip=f"Kontrollbezirk {int(t)}").add_to(m)
     else:
+        # sternförmige Routen: jede Route endet am zentralen Punkt
+        for _, r_stop in df_t.iterrows():
+            try:
+                n1 = ox.distance.nearest_nodes(G, X=r_stop.lon, Y=r_stop.lat)
+                n2 = ox.distance.nearest_nodes(G, X=central_coord[1], Y=central_coord[0])
+                p = nx.shortest_path(G, n1, n2, weight='length')
+                seg = [(G.nodes[n]['y'], G.nodes[n]['x']) for n in p]
+                folium.PolyLine(seg, color=cols[i % len(cols)], weight=3, opacity=0.6,
+                                tooltip=f"Kontrollbezirk {int(t)} sternförmig").add_to(m)
+            except:
+                continue
         # sternförmige Routen: jede Route endet am zentralen Punkt
         for _, r_stop in df_t.iterrows():
             try:
