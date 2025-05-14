@@ -155,16 +155,17 @@ else:
 with st.sidebar:
     st.title('Bearbeitung Kontrollbezirke')
     # Routing-Methode wählen
-    routing_method = st.radio(
-        'Routing-Methode',
-        options=['Dezentral', 'Sternförmig'],
-        index=0
+    st.session_state.routing_method = st.radio(
+        'Routing-Methode', ['Dezentral', 'Sternförmig'],
+        index=['Dezentral', 'Sternförmig'].index(st.session_state.get('routing_method', 'Dezentral'))
     )
-    st.title('Bearbeitung Kontrollbezirke')
     opts = assign.dropna(subset=['Wahlraum-B', 'Wahlraum-A'])
     labels = opts.apply(lambda r: f"{r['Wahlraum-B']} - {r['Wahlraum-A']}", axis=1).tolist()
     st.selectbox('Wahllokal oder Adresse suchen', options=[''] + labels, key='search')
-    if file := st.file_uploader('Import alternative Zuweisung', type=['xlsx']):
+
+    # Import alternative Zuweisung
+    file = st.file_uploader('Import alternative Zuweisung', type=['xlsx'])
+    if file:
         imp = pd.read_excel(file, sheet_name=None)
         tmp = []
         for n, df in imp.items():
@@ -178,6 +179,8 @@ with st.sidebar:
             .merge(pd.DataFrame(tmp, columns=['Wahlraum-A', 'team']), on='Wahlraum-A', how='left')
         )
         st.success('Import erfolgreich')
+
+    # Manuelle Zuweisung
     sel = st.multiselect('Wahllokal wählen', options=labels, placeholder='Auswählen')
     teams = sorted(assign.team.dropna().astype(int).unique())
     tgt = st.selectbox('Kontrollbezirk wählen', options=[None] + teams, key='tgt', placeholder='Auswählen')
@@ -187,39 +190,41 @@ with st.sidebar:
             idx = assign.index[assign['Wahlraum-A'] == a][0]
             assign.at[idx, 'team'] = tgt
         g = load_graph()
-        df = assign[assign.team == tgt]
-        opt = solve_tsp(g, df)
+        df_sel = assign[assign.team == tgt]
+        opt = solve_tsp(g, df_sel)
         assign.loc[opt.index, 'tsp_order'] = range(len(opt))
         st.success('Zuweisung gesetzt')
-        
+
+    # Neuer Kontrollbezirk
     if not st.session_state.show_new:
         if st.button('Neuen Kontrollbezirk erstellen'):
             st.session_state.show_new = True
-            
     else:
         max_t = int(assign.team.max(skipna=True) or 0) + 1
-        with st.form('new'):
-            st.markdown(f"### Kontrollbezirk {max_t}")
+        with st.form('new_district'):
+            st.markdown(f"### Kontrollbezirk {max_t} erstellen")
             sel2 = st.multiselect('Stops auswählen', options=labels, key='new_sel')
-            if st.form_submit_button('Erstellen'):
+            if st.form_submit_button('Erstellen und zuweisen'):
                 if sel2:
                     g = load_graph()
                     for l in sel2:
                         a = l.split(' - ', 1)[1]
                         idx = assign.index[assign['Wahlraum-A'] == a][0]
                         assign.at[idx, 'team'] = max_t
-                    opt2 = solve_tsp(g, assign[assign.team == max_t])
+                    df_nt = assign[assign.team == max_t]
+                    opt2 = solve_tsp(g, df_nt)
                     assign.loc[opt2.index, 'tsp_order'] = range(len(opt2))
-                    st.success(f'Bezirk {max_t} erstellt')
+                    st.success(f'Kontrollbezirk {max_t} erstellt')
                     st.session_state.show_new = False
-                    
                 else:
                     st.warning('Bitte mindestens ein Wahllokal auswählen')
-         if st.button('Routen berechnen'):
+
+    # Routen neu berechnen
+    if st.button('Routen berechnen'):
         g = load_graph()
         for t in assign['team'].dropna().astype(int).unique():
-            df_team = assign[assign['team'] == t]
-            opt = solve_tsp(g, df_team)
+            df_t = assign[assign['team'] == t]
+            opt = solve_tsp(g, df_t)
             assign.loc[opt.index, 'tsp_order'] = range(len(opt))
         st.success('Routen berechnet')
 
