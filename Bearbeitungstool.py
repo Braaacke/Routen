@@ -62,6 +62,9 @@ def make_export(df, routing_method, central_addr, central_coord):
         if routing_method == 'Sternförmig':
             # TSP on original stops
             ordered_cent = solve_tsp(graph, grp)
+            # greedy_tsp returns cycle with repeated start at end; remove duplicate
+            if len(ordered_cent) > 1 and ordered_cent.iloc[0]['Wahlraum-A'] == ordered_cent.iloc[-1]['Wahlraum-A']:
+                ordered_cent = ordered_cent.iloc[:-1].reset_index(drop=True)
             # Append central stop at end
             central_row = pd.DataFrame([{ 'Wahlraum-A': central_addr, 'lat': central_coord[0], 'lon': central_coord[1], 'rooms': '', 'num_rooms': 0, 'team': t }])
             ordered = pd.concat([ordered_cent, central_row], ignore_index=True)
