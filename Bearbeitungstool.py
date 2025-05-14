@@ -93,7 +93,13 @@ st.set_page_config(layout='wide')
 if 'show_new' not in st.session_state: st.session_state.show_new=False
 if 'new_assignments' not in st.session_state:
     base=pd.read_csv('cleaned_addresses.csv'); xls=pd.read_excel('routes_optimized.xlsx',sheet_name=None)
-    tmp=[(addr,int(name.split('_')[1])) for name,df in xls.items() if name!='Übersicht' for addr in df['Adresse']]
+    tmp = []
+    for name, df in xls.items():
+        parts = name.split('_')
+        if name != 'Übersicht' and len(parts) > 1 and parts[1].isdigit():
+            team_id = int(parts[1])
+            for addr in df['Adresse']:
+                tmp.append((addr, team_id))
     st.session_state.base_addresses=base.merge(pd.DataFrame(tmp,columns=['Wahlraum-A','team']),on='Wahlraum-A',how='left')
     st.session_state.new_assignments=st.session_state.base_addresses.copy()
 assign=st.session_state.new_assignments
