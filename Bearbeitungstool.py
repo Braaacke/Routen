@@ -89,13 +89,18 @@ def make_export(df, routing_method, central_addr, central_coord):
             'Gesamtzeit': str(timedelta(minutes=int(mn + rooms * 10))),
             'Google-Link': 'https://www.google.com/maps/dir/' + '/'.join(f"{lat},{lon}" for lat, lon in pts)
         })
-        # Detailblatt
+                # Detailblatt
         detail = []
+        # Liste alle Stops in der Reihenfolge
         for j, (_, r) in enumerate(ordered.iterrows(), start=1):
             coord = f"{r.lat},{r.lon}"
+            addr = r['Wahlraum-A']
+            # Für den zentralen Stop vollständige Adresse ergänzen
+            if routing_method == 'Sternförmig' and addr == central_addr:
+                addr = f"{central_addr}, 48143 Münster"
             detail.append({
                 'Bezirk': j,
-                'Adresse': r['Wahlraum-A'],
+                'Adresse': addr,
                 'Stimmbezirke': r.get('rooms', ''),
                 'Anzahl Stimmbezirke': r.get('num_rooms', ''),
                 'Google-Link': f"https://www.google.com/maps/search/?api=1&query={quote_plus(coord)}"
