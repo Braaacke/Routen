@@ -28,6 +28,8 @@ def load_graph():
     with open("munster_graph.pickle","rb") as f:
         return pickle.load(f)
 
+# Solve TSP
+
 def solve_tsp(graph, df):
     if len(df) <= 2:
         return df
@@ -183,7 +185,7 @@ with st.sidebar:
                     st.session_state.show_new = False
                     st.experimental_rerun()
                 else:
-                    st.warning('Wählen bitte')
+                    st.warning('Bitte mindestens ein Wahllokal auswählen')
     if st.button('Routen berechnen'):
         g = load_graph()
         for t in assign['team'].dropna().astype(int).unique():
