@@ -103,7 +103,7 @@ def make_export(df):
                 'Anzahl Stimmbezirke': '',
                 'Google-Link': f"https://www.google.com/maps/search/?api=1&query={quote_plus(coord_c)}"
             })
-        sheets[f"Bezirk_{idx}"] = pd.DataFrame(detail)"Bezirk_{idx}"] = pd.DataFrame(detail)
+        sheets[f"Bezirk_{idx}"] = pd.DataFrame(detail)
     with pd.ExcelWriter(buf, engine='openpyxl') as writer:
         pd.DataFrame(overview).to_excel(writer, sheet_name='Übersicht', index=False)
         for name, df_s in sheets.items():
