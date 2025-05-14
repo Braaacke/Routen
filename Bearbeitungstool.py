@@ -48,7 +48,7 @@ def solve_tsp(graph, df):
     return df.iloc[order].reset_index(drop=True)
 
 # Export helper
-def make_export(df):
+def make_export(df, routing_method, central_addr, central_coord):
     buf = io.BytesIO()
     graph = load_graph()
     teams = df.team.dropna().astype(int).unique()
@@ -118,6 +118,9 @@ def make_export(df):
 
 # Init
 st.set_page_config(layout='wide')
+# Default routing method
+if 'routing_method' not in st.session_state:
+    st.session_state.routing_method = 'Dezentral'
 if 'show_new' not in st.session_state:
     st.session_state.show_new = False
 if 'new_assignments' not in st.session_state:
@@ -136,6 +139,8 @@ if 'new_assignments' not in st.session_state:
     )
     st.session_state.new_assignments = st.session_state.base_addresses.copy()
 assign = st.session_state.new_assignments
+if 'latlong' in assign and ('lat' not in assign or 'lon' not in assign):
+    assign[['lat', 'lon']] = assign.latlong.str.split(',', expand=True).astype(float)
 if 'latlong' in assign and ('lat' not in assign or 'lon' not in assign):
     assign[['lat', 'lon']] = assign.latlong.str.split(',', expand=True).astype(float)
 
