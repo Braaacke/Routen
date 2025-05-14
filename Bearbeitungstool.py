@@ -215,7 +215,7 @@ with st.sidebar:
                     
                 else:
                     st.warning('Bitte mindestens ein Wahllokal auswählen')
-        if st.button('Routen berechnen'):
+         if st.button('Routen berechnen'):
         g = load_graph()
         for t in assign['team'].dropna().astype(int).unique():
             df_team = assign[assign['team'] == t]
