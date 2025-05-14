@@ -267,4 +267,4 @@ for _, r in assign.dropna(subset=['lat','lon']).iterrows():
 cluster.add_to(m)
 if not search:
     m.fit_bounds(assign[['lat','lon']].values.tolist())
-m.to_streamlit(use_container_width=True, height=700)(use_container_width=True, height=700)
+m.to_streamlit(use_container_width=True, height=700)
