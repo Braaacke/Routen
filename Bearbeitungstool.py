@@ -93,7 +93,17 @@ def make_export(df):
                 'Anzahl Stimmbezirke': r.get('num_rooms', ''),
                 'Google-Link': f"https://www.google.com/maps/search/?api=1&query={quote_plus(coord)}"
             })
-        sheets[f"Bezirk_{idx}"] = pd.DataFrame(detail)
+        # Bei sternförmiger Methode den zentralen Punkt hinzufügen
+        if st.session_state.get('routing_method', 'Dezentral') == 'Sternförmig':
+            coord_c = f"{central_coord[0]},{central_coord[1]}"
+            detail.append({
+                'Bezirk': len(detail) + 1,
+                'Adresse': central_addr,
+                'Stimmbezirke': '',
+                'Anzahl Stimmbezirke': '',
+                'Google-Link': f"https://www.google.com/maps/search/?api=1&query={quote_plus(coord_c)}"
+            })
+        sheets[f"Bezirk_{idx}"] = pd.DataFrame(detail)"Bezirk_{idx}"] = pd.DataFrame(detail)
     with pd.ExcelWriter(buf, engine='openpyxl') as writer:
         pd.DataFrame(overview).to_excel(writer, sheet_name='Übersicht', index=False)
         for name, df_s in sheets.items():
