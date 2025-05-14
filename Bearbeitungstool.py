@@ -48,7 +48,7 @@ def solve_tsp(graph, df):
     return df.iloc[order].reset_index(drop=True)
 
 # Export helper
-def make_export(df, routing_method, central_addr, central_coord):
+def make_export(df):
     buf = io.BytesIO()
     graph = load_graph()
     teams = df.team.dropna().astype(int).unique()
@@ -58,33 +58,19 @@ def make_export(df, routing_method, central_addr, central_coord):
     sheets = {}
     for idx, t in enumerate(sorted_teams, start=1):
         grp = df[df.team == t]
-        # Determine route order
-        if routing_method == 'Sternförmig':
-+            ordered = solve_tsp(graph, grp)
-+            if len(ordered) > 1 and ordered.iloc[0]['Wahlraum-A'] == ordered.iloc[-1]['Wahlraum-A']:
-+                ordered = ordered.iloc[:-1].reset_index(drop=True)
-+            central_row = pd.DataFrame([{
-+                'Wahlraum-A': central_addr,
-+                'lat': central_coord[0],
-+                'lon': central_coord[1],
-+                'rooms': '',
-+                'num_rooms': 0,
-+                'team': t
-+            }])
-+            ordered = pd.concat([ordered, central_row], ignore_index=True)
-+        else:
-+            ordered = grp.sort_values('tsp_order') if 'tsp_order' in grp else grp
-        # Overview calculations
-        rooms = int(ordered.num_rooms.sum())
+        if 'tsp_order' in grp:
+            grp = grp.sort_values('tsp_order')
+        rooms = int(grp.num_rooms.sum())
         km = mn = 0.0
-        pts = list(zip(ordered.lat, ordered.lon))
+        pts = list(zip(grp.lat, grp.lon))
         if len(pts) > 1:
-            nodes = [ox.distance.nearest_nodes(graph, X=lon, Y=lat) for lat, lon in pts]
-            for u, v in zip(nodes[:-1], nodes[1:]):
+            for (la, lo), (la2, lo2) in zip(pts, pts[1:]):
                 try:
-                    d = nx.shortest_path_length(graph, u, v, weight='length')
+                    n1 = ox.distance.nearest_nodes(graph, X=lo, Y=la)
+                    n2 = ox.distance.nearest_nodes(graph, X=lo2, Y=la2)
+                    d = nx.shortest_path_length(graph, n1, n2, weight='length')
                 except:
-                    d = haversine(pts[nodes.index(u)][1], pts[nodes.index(u)][0], pts[nodes.index(v)][1], pts[nodes.index(v)][0])
+                    d = haversine(lo, la, lo2, la2)
                 km += d / 1000.0
                 mn += (d / 1000.0) * 2.0
         overview.append({
@@ -95,25 +81,19 @@ def make_export(df, routing_method, central_addr, central_coord):
             'Fahrtzeit (min)': int(mn),
             'Kontrollzeit (min)': rooms * 10,
             'Gesamtzeit': str(timedelta(minutes=int(mn + rooms * 10))),
-            'Google-Link': 'https://www.google.com/maps/dir/' + '/'.join(f"{lat},{lon}" for lat, lon in pts)
+            'Google-Link': 'https://www.google.com/maps/dir/' + '/'.join(f"{la},{lo}" for la, lo in pts)
         })
-        # Detail sheet
         detail = []
-        for j, (_, r) in enumerate(ordered.iterrows(), start=1):
+        for j, (_, r) in enumerate(grp.iterrows(), start=1):
             coord = f"{r.lat},{r.lon}"
-            addr = r['Wahlraum-A']
-            # Add full address for central stop
-            if routing_method == 'Sternförmig' and addr == central_addr:
-                addr = f"{central_addr}, 48143 Münster"
             detail.append({
                 'Bezirk': j,
-                'Adresse': addr,
+                'Adresse': r['Wahlraum-A'],
                 'Stimmbezirke': r.get('rooms', ''),
                 'Anzahl Stimmbezirke': r.get('num_rooms', ''),
                 'Google-Link': f"https://www.google.com/maps/search/?api=1&query={quote_plus(coord)}"
             })
         sheets[f"Bezirk_{idx}"] = pd.DataFrame(detail)
-    # Write Excel and auto-adjust widths
     with pd.ExcelWriter(buf, engine='openpyxl') as writer:
         pd.DataFrame(overview).to_excel(writer, sheet_name='Übersicht', index=False)
         for name, df_s in sheets.items():
@@ -128,9 +108,6 @@ def make_export(df, routing_method, central_addr, central_coord):
 
 # Init
 st.set_page_config(layout='wide')
-# Default routing method
-if 'routing_method' not in st.session_state:
-    st.session_state.routing_method = 'Dezentral'
 if 'show_new' not in st.session_state:
     st.session_state.show_new = False
 if 'new_assignments' not in st.session_state:
@@ -151,34 +128,14 @@ if 'new_assignments' not in st.session_state:
 assign = st.session_state.new_assignments
 if 'latlong' in assign and ('lat' not in assign or 'lon' not in assign):
     assign[['lat', 'lon']] = assign.latlong.str.split(',', expand=True).astype(float)
-if 'latlong' in assign and ('lat' not in assign or 'lon' not in assign):
-    assign[['lat', 'lon']] = assign.latlong.str.split(',', expand=True).astype(float)
-
-# Zentrale für sternförmige Routen
-central_addr = 'Prinzipalmarkt 8'
-central_row = st.session_state.get('new_assignments', pd.DataFrame())
-central_row = central_row[central_row['Wahlraum-A'] == central_addr]
-if not central_row.empty:
-    central_coord = (central_row.lat.iloc[0], central_row.lon.iloc[0])
-else:
-    df_tmp = st.session_state.get('new_assignments', pd.DataFrame())
-    central_coord = (df_tmp.lat.mean(), df_tmp.lon.mean())
 
 # Sidebar
 with st.sidebar:
     st.title('Bearbeitung Kontrollbezirke')
-    # Routing-Methode wählen
-    st.session_state.routing_method = st.radio(
-        'Routing-Methode', ['Dezentral', 'Sternförmig'],
-        index=['Dezentral', 'Sternförmig'].index(st.session_state.get('routing_method', 'Dezentral'))
-    )
     opts = assign.dropna(subset=['Wahlraum-B', 'Wahlraum-A'])
     labels = opts.apply(lambda r: f"{r['Wahlraum-B']} - {r['Wahlraum-A']}", axis=1).tolist()
     st.selectbox('Wahllokal oder Adresse suchen', options=[''] + labels, key='search')
-
-    # Import alternative Zuweisung
-    file = st.file_uploader('Import alternative Zuweisung', type=['xlsx'])
-    if file:
+    if file := st.file_uploader('Import alternative Zuweisung', type=['xlsx']):
         imp = pd.read_excel(file, sheet_name=None)
         tmp = []
         for n, df in imp.items():
@@ -192,8 +149,6 @@ with st.sidebar:
             .merge(pd.DataFrame(tmp, columns=['Wahlraum-A', 'team']), on='Wahlraum-A', how='left')
         )
         st.success('Import erfolgreich')
-
-    # Manuelle Zuweisung
     sel = st.multiselect('Wahllokal wählen', options=labels, placeholder='Auswählen')
     teams = sorted(assign.team.dropna().astype(int).unique())
     tgt = st.selectbox('Kontrollbezirk wählen', options=[None] + teams, key='tgt', placeholder='Auswählen')
@@ -203,67 +158,51 @@ with st.sidebar:
             idx = assign.index[assign['Wahlraum-A'] == a][0]
             assign.at[idx, 'team'] = tgt
         g = load_graph()
-        df_sel = assign[assign.team == tgt]
-        opt = solve_tsp(g, df_sel)
+        df = assign[assign.team == tgt]
+        opt = solve_tsp(g, df)
         assign.loc[opt.index, 'tsp_order'] = range(len(opt))
         st.success('Zuweisung gesetzt')
-
-    # Neuer Kontrollbezirk
+        
     if not st.session_state.show_new:
         if st.button('Neuen Kontrollbezirk erstellen'):
             st.session_state.show_new = True
+            
     else:
         max_t = int(assign.team.max(skipna=True) or 0) + 1
-        with st.form('new_district'):
-            st.markdown(f"### Kontrollbezirk {max_t} erstellen")
+        with st.form('new'):
+            st.markdown(f"### Kontrollbezirk {max_t}")
             sel2 = st.multiselect('Stops auswählen', options=labels, key='new_sel')
-            if st.form_submit_button('Erstellen und zuweisen'):
+            if st.form_submit_button('Erstellen'):
                 if sel2:
                     g = load_graph()
                     for l in sel2:
                         a = l.split(' - ', 1)[1]
                         idx = assign.index[assign['Wahlraum-A'] == a][0]
                         assign.at[idx, 'team'] = max_t
-                    df_nt = assign[assign.team == max_t]
-                    opt2 = solve_tsp(g, df_nt)
+                    opt2 = solve_tsp(g, assign[assign.team == max_t])
                     assign.loc[opt2.index, 'tsp_order'] = range(len(opt2))
-                    st.success(f'Kontrollbezirk {max_t} erstellt')
+                    st.success(f'Bezirk {max_t} erstellt')
                     st.session_state.show_new = False
+                    
                 else:
                     st.warning('Bitte mindestens ein Wahllokal auswählen')
-
-    # Routen neu berechnen
     if st.button('Routen berechnen'):
         g = load_graph()
         for t in assign['team'].dropna().astype(int).unique():
-            df_t = assign[assign['team'] == t]
-            opt = solve_tsp(g, df_t)
+            df_team = assign[assign['team'] == t]
+            opt = solve_tsp(g, df_team)
             assign.loc[opt.index, 'tsp_order'] = range(len(opt))
         st.success('Routen berechnet')
-
-    # Download-Button mit korrekter Parameterliste
+        
     st.download_button(
-        label='Herunterladen',
-        data=make_export(
-            assign,
-            st.session_state.routing_method,
-            central_addr,
-            central_coord
-        ),
-        file_name='routen.xlsx',
-        mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        'Herunterladen',
+        make_export(assign),
+        'routen.xlsx',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
     )
 
 # Map
 search = st.session_state.get('search', '')
-# Zentrale für sternförmige Routen
-central_addr = 'Prinzipalmarkt 8'
-central_row = assign[assign['Wahlraum-A'] == central_addr]
-if not central_row.empty:
-    central_coord = (central_row.lat.iloc[0], central_row.lon.iloc[0])
-else:
-    central_coord = (assign.lat.mean(), assign.lon.mean())
-
 if search:
     addr = search.split(' - ', 1)[1]
     r = assign[assign['Wahlraum-A'] == addr]
@@ -277,46 +216,20 @@ G = load_graph()
 cols = ['#FF00FF', '#00FFFF', '#00FF00', '#FF0000', '#FFA500', '#FFFF00', '#00CED1', '#DA70D6', '#FF69B4', '#8A2BE2']
 for i, t in enumerate(sorted(assign.team.dropna().astype(int).unique())):
     df_t = assign[assign.team == t]
-    method = st.session_state.get('routing_method', 'Dezentral')
-    if method == 'Dezentral':
-        # wie bisher: TSP-Route
-        if 'tsp_order' in df_t:
-            df_t = df_t.sort_values('tsp_order')
-        pts = list(zip(df_t.lat, df_t.lon))
-        if len(pts) > 1:
-            path = []
-            nodes = [ox.distance.nearest_nodes(G, X=lon, Y=lat) for lat, lon in pts]
-            for u, v in zip(nodes[:-1], nodes[1:]):
-                try:
-                    p = nx.shortest_path(G, u, v, weight='length')
-                    path.extend([(G.nodes[n]['y'], G.nodes[n]['x']) for n in p])
-                except:
-                    pass
-            folium.PolyLine(path, color=cols[i % len(cols)], weight=6, opacity=0.8,
-                            tooltip=f"Kontrollbezirk {int(t)}").add_to(m)
-    else:
-               # sternförmige Routen: jede Route endet am zentralen Punkt
-        stopping_points = solve_tsp(G, df_t)  # TSP nur auf Original-Stops
-        # Abschneiden des Duplikats am Ende, falls vorhanden
-        if len(stopping_points) > 1 and stopping_points.iloc[0]['Wahlraum-A'] == stopping_points.iloc[-1]['Wahlraum-A']:
-            stopping_points = stopping_points.iloc[:-1]
-        # Füge Zentralpunkt ans Ende
-        stopping_points = pd.concat([
-            stopping_points,
-            pd.DataFrame([{ 'Wahlraum-A': central_addr, 'lat': central_coord[0], 'lon': central_coord[1] }])
-        ], ignore_index=True)
-        for u_stop, v_stop in zip(stopping_points.itertuples(index=False), stopping_points.shift(-1).itertuples(index=False)[:-1]):
+    if 'tsp_order' in df_t:
+        df_t = df_t.sort_values('tsp_order')
+    pts = list(zip(df_t.lat, df_t.lon))
+    if len(pts) > 1:
+        path = []
+        nodes = [ox.distance.nearest_nodes(G, X=lo, Y=la) for la, lo in pts]
+        for u, v in zip(nodes[:-1], nodes[1:]):
             try:
-                n1 = ox.distance.nearest_nodes(G, X=u_stop.lon, Y=u_stop.lat)
-                n2 = ox.distance.nearest_nodes(G, X=v_stop.lon, Y=v_stop.lat)
-                path = nx.shortest_path(G, n1, n2, weight='length')
-                seg = [(G.nodes[n]['y'], G.nodes[n]['x']) for n in path]
-                folium.PolyLine(seg, color=cols[i % len(cols)], weight=3, opacity=0.6,
-                                tooltip=f"Kontrollbezirk {int(t)} sternförmig").add_to(m)
+                p = nx.shortest_path(G, u, v, weight='length')
+                path.extend([(G.nodes[n]['y'], G.nodes[n]['x']) for n in p])
             except:
-                continue
-        
-
+                pass
+        folium.PolyLine(path, color=cols[i % len(cols)], weight=6, opacity=0.8,
+                        tooltip=f"Kontrollbezirk {int(t)}").add_to(m)
 cluster = MarkerCluster(disableClusteringAtZoom=13)
 for _, r in assign.dropna(subset=['lat','lon']).iterrows():
     html = f"<div style='white-space: nowrap;'><b>{r['Wahlraum-B']}</b><br>{r['Wahlraum-A']}<br>Anzahl Räume: {r['num_rooms']}</div>"
