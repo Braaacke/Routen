@@ -144,6 +144,16 @@ if 'latlong' in assign and ('lat' not in assign or 'lon' not in assign):
 if 'latlong' in assign and ('lat' not in assign or 'lon' not in assign):
     assign[['lat', 'lon']] = assign.latlong.str.split(',', expand=True).astype(float)
 
+# Zentrale für sternförmige Routen
+central_addr = 'Prinzipalmarkt 8'
+central_row = st.session_state.get('new_assignments', pd.DataFrame())
+central_row = central_row[central_row['Wahlraum-A'] == central_addr]
+if not central_row.empty:
+    central_coord = (central_row.lat.iloc[0], central_row.lon.iloc[0])
+else:
+    df_tmp = st.session_state.get('new_assignments', pd.DataFrame())
+    central_coord = (df_tmp.lat.mean(), df_tmp.lon.mean())
+
 # Sidebar
 with st.sidebar:
     st.title('Bearbeitung Kontrollbezirke')
@@ -216,12 +226,17 @@ with st.sidebar:
             assign.loc[opt.index, 'tsp_order'] = range(len(opt))
         st.success('Routen berechnet')
         
-    st.download_button(
+        st.download_button(
         'Herunterladen',
-        make_export(assign,
-                    routing_method,
-                    central_addr,
-                    central_coord),
+        make_export(
+            assign,
+            routing_method,
+            central_addr,
+            central_coord
+        ),
+        'routen.xlsx',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    ),
         'routen.xlsx',
         'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
     )
