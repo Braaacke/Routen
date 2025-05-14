@@ -26,9 +26,7 @@ def haversine(lon1, lat1, lon2, lat2):
 @st.cache_data
 def load_graph():
     with open("munster_graph.pickle","rb") as f:
-        return pickle.load(f)():
-    with open("munster_graph.pickle","rb") as f:
-        return pickle.load(f)
+        return pickle.load(f) 
 
 def solve_tsp(graph,df):
     if len(df)<=2: return df
