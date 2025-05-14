@@ -139,8 +139,14 @@ with st.sidebar:
                     st.success(f'Bezirk {max_t} erstellt'); st.session_state.show_new=False; st.experimental_rerun()
                 else: st.warning('Wählen bitte')
     if st.button('Routen berechnen'):
-        g=load_graph(); [assign.loc[solve_tsp(g,assign[assign.team==t]).index,'tsp_order']=range(len(solve_tsp(g,assign[assign.team==t]))) for t in assign.team.dropna().astype(int).unique()]
-        st.success('Routen berechnet'); st.experimental_rerun()
+        g = load_graph()
+        # Neu berechnen in einer Schleife statt List Comprehension
+        for t in assign['team'].dropna().astype(int).unique():
+            df_team = assign[assign['team'] == t]
+            opt = solve_tsp(g, df_team)
+            assign.loc[opt.index, 'tsp_order'] = range(len(opt))
+        st.success('Routen berechnet')
+        st.experimental_rerun()
     st.download_button('Herunterladen',make_export(assign),'routen.xlsx','application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
 
 # Karte
