@@ -58,19 +58,25 @@ def make_export(df, routing_method, central_addr, central_coord):
     sheets = {}
     for idx, t in enumerate(sorted_teams, start=1):
         grp = df[df.team == t]
-        if 'tsp_order' in grp:
-            grp = grp.sort_values('tsp_order')
-        rooms = int(grp.num_rooms.sum())
+        # Für sternförmig: append central point als Halt und lösen TSP inklusive Zentrale
+        if routing_method == 'Sternförmig':
+            # zentrale als zusätzlicher Stop
+            central_row = pd.DataFrame([{ 'Wahlraum-A': central_addr, 'lat': central_coord[0], 'lon': central_coord[1], 'rooms': '', 'num_rooms': 0, 'team': t }])
+            grp_ext = pd.concat([grp, central_row], ignore_index=True)
+            ordered = solve_tsp(graph, grp_ext)
+        else:
+            ordered = grp.sort_values('tsp_order') if 'tsp_order' in grp else grp
+        # Berechne Übersichtsdaten auf ordered
+        rooms = int(ordered.num_rooms.sum())
         km = mn = 0.0
-        pts = list(zip(grp.lat, grp.lon))
+        pts = list(zip(ordered.lat, ordered.lon))
         if len(pts) > 1:
-            for (la, lo), (la2, lo2) in zip(pts, pts[1:]):
+            nodes = [ox.distance.nearest_nodes(graph, X=lon, Y=lat) for lat, lon in pts]
+            for u, v in zip(nodes[:-1], nodes[1:]):
                 try:
-                    n1 = ox.distance.nearest_nodes(graph, X=lo, Y=la)
-                    n2 = ox.distance.nearest_nodes(graph, X=lo2, Y=la2)
-                    d = nx.shortest_path_length(graph, n1, n2, weight='length')
+                    d = nx.shortest_path_length(graph, u, v, weight='length')
                 except:
-                    d = haversine(lo, la, lo2, la2)
+                    d = haversine(pts[nodes.index(u)][1], pts[nodes.index(u)][0], pts[nodes.index(v)][1], pts[nodes.index(v)][0])
                 km += d / 1000.0
                 mn += (d / 1000.0) * 2.0
         overview.append({
@@ -81,10 +87,11 @@ def make_export(df, routing_method, central_addr, central_coord):
             'Fahrtzeit (min)': int(mn),
             'Kontrollzeit (min)': rooms * 10,
             'Gesamtzeit': str(timedelta(minutes=int(mn + rooms * 10))),
-            'Google-Link': 'https://www.google.com/maps/dir/' + '/'.join(f"{la},{lo}" for la, lo in pts)
+            'Google-Link': 'https://www.google.com/maps/dir/' + '/'.join(f"{lat},{lon}" for lat, lon in pts)
         })
+        # Detailblatt
         detail = []
-        for j, (_, r) in enumerate(grp.iterrows(), start=1):
+        for j, (_, r) in enumerate(ordered.iterrows(), start=1):
             coord = f"{r.lat},{r.lon}"
             detail.append({
                 'Bezirk': j,
@@ -92,16 +99,6 @@ def make_export(df, routing_method, central_addr, central_coord):
                 'Stimmbezirke': r.get('rooms', ''),
                 'Anzahl Stimmbezirke': r.get('num_rooms', ''),
                 'Google-Link': f"https://www.google.com/maps/search/?api=1&query={quote_plus(coord)}"
-            })
-        # Bei sternförmiger Methode den zentralen Punkt hinzufügen
-        if st.session_state.get('routing_method', 'Dezentral') == 'Sternförmig':
-            coord_c = f"{central_coord[0]},{central_coord[1]}"
-            detail.append({
-                'Bezirk': len(detail) + 1,
-                'Adresse': central_addr,
-                'Stimmbezirke': '',
-                'Anzahl Stimmbezirke': '',
-                'Google-Link': f"https://www.google.com/maps/search/?api=1&query={quote_plus(coord_c)}"
             })
         sheets[f"Bezirk_{idx}"] = pd.DataFrame(detail)
     with pd.ExcelWriter(buf, engine='openpyxl') as writer:
@@ -225,19 +222,25 @@ with st.sidebar:
             opt = solve_tsp(g, df_team)
             assign.loc[opt.index, 'tsp_order'] = range(len(opt))
         st.success('Routen berechnet')
-
-    # Download-Button mit Export-Funktion
-    st.download_button(
-        label='Herunterladen',
-        data=make_export(
+        
+        st.download_button(
+        'Herunterladen',
+        make_export(
             assign,
-            st.session_state.routing_method,
+            routing_method,
             central_addr,
             central_coord
         ),
-        file_name='routen.xlsx',
-        mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        'routen.xlsx',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    ),
+        'routen.xlsx',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    ),
+        'routen.xlsx',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
     )
+
 # Map
 search = st.session_state.get('search', '')
 # Zentrale für sternförmige Routen
