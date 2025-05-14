@@ -132,6 +132,13 @@ if 'latlong' in assign and ('lat' not in assign or 'lon' not in assign):
 # Sidebar
 with st.sidebar:
     st.title('Bearbeitung Kontrollbezirke')
+    # Routing-Methode wählen
+    routing_method = st.radio(
+        'Routing-Methode',
+        options=['Dezentral', 'Sternförmig'],
+        index=0
+    )
+    st.title('Bearbeitung Kontrollbezirke')
     opts = assign.dropna(subset=['Wahlraum-B', 'Wahlraum-A'])
     labels = opts.apply(lambda r: f"{r['Wahlraum-B']} - {r['Wahlraum-A']}", axis=1).tolist()
     st.selectbox('Wahllokal oder Adresse suchen', options=[''] + labels, key='search')
@@ -203,6 +210,14 @@ with st.sidebar:
 
 # Map
 search = st.session_state.get('search', '')
+# Zentrale für sternförmige Routen
+central_addr = 'Prinzipalmarkt 8'
+central_row = assign[assign['Wahlraum-A'] == central_addr]
+if not central_row.empty:
+    central_coord = (central_row.lat.iloc[0], central_row.lon.iloc[0])
+else:
+    central_coord = (assign.lat.mean(), assign.lon.mean())
+
 if search:
     addr = search.split(' - ', 1)[1]
     r = assign[assign['Wahlraum-A'] == addr]
@@ -216,20 +231,35 @@ G = load_graph()
 cols = ['#FF00FF', '#00FFFF', '#00FF00', '#FF0000', '#FFA500', '#FFFF00', '#00CED1', '#DA70D6', '#FF69B4', '#8A2BE2']
 for i, t in enumerate(sorted(assign.team.dropna().astype(int).unique())):
     df_t = assign[assign.team == t]
-    if 'tsp_order' in df_t:
-        df_t = df_t.sort_values('tsp_order')
-    pts = list(zip(df_t.lat, df_t.lon))
-    if len(pts) > 1:
-        path = []
-        nodes = [ox.distance.nearest_nodes(G, X=lo, Y=la) for la, lo in pts]
-        for u, v in zip(nodes[:-1], nodes[1:]):
+    if routing_method == 'Dezentral':
+        # wie bisher: TSP-Route
+        if 'tsp_order' in df_t:
+            df_t = df_t.sort_values('tsp_order')
+        pts = list(zip(df_t.lat, df_t.lon))
+        if len(pts) > 1:
+            path = []
+            nodes = [ox.distance.nearest_nodes(G, X=lon, Y=lat) for lat, lon in pts]
+            for u, v in zip(nodes[:-1], nodes[1:]):
+                try:
+                    p = nx.shortest_path(G, u, v, weight='length')
+                    path.extend([(G.nodes[n]['y'], G.nodes[n]['x']) for n in p])
+                except:
+                    pass
+            folium.PolyLine(path, color=cols[i % len(cols)], weight=6, opacity=0.8,
+                            tooltip=f"Kontrollbezirk {int(t)}").add_to(m)
+    else:
+        # sternförmige Routen: jede Route endet am zentralen Punkt
+        for _, r_stop in df_t.iterrows():
             try:
-                p = nx.shortest_path(G, u, v, weight='length')
-                path.extend([(G.nodes[n]['y'], G.nodes[n]['x']) for n in p])
+                n1 = ox.distance.nearest_nodes(G, X=r_stop.lon, Y=r_stop.lat)
+                n2 = ox.distance.nearest_nodes(G, X=central_coord[1], Y=central_coord[0])
+                p = nx.shortest_path(G, n1, n2, weight='length')
+                seg = [(G.nodes[n]['y'], G.nodes[n]['x']) for n in p]
+                folium.PolyLine(seg, color=cols[i % len(cols)], weight=3, opacity=0.6,
+                                tooltip=f"Kontrollbezirk {int(t)} sternförmig").add_to(m)
             except:
-                pass
-        folium.PolyLine(path, color=cols[i % len(cols)], weight=6, opacity=0.8,
-                        tooltip=f"Kontrollbezirk {int(t)}").add_to(m)
+                continue
+
 cluster = MarkerCluster(disableClusteringAtZoom=13)
 for _, r in assign.dropna(subset=['lat','lon']).iterrows():
     html = f"<div style='white-space: nowrap;'><b>{r['Wahlraum-B']}</b><br>{r['Wahlraum-A']}<br>Anzahl Räume: {r['num_rooms']}</div>"
@@ -237,4 +267,4 @@ for _, r in assign.dropna(subset=['lat','lon']).iterrows():
 cluster.add_to(m)
 if not search:
     m.fit_bounds(assign[['lat','lon']].values.tolist())
-m.to_streamlit(use_container_width=True, height=700)
+m.to_streamlit(use_container_width=True, height=700)(use_container_width=True, height=700)
