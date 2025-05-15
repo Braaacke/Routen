@@ -91,6 +91,25 @@ def export_routes_pdf_osm(df_assign, filename="routen_uebersicht.pdf", figsize=(
         source=provider,
         zoom=zoom
     )
+    # Plot administrative district boundaries (Stadtteile) from OSM using place tags
+    try:
+        tags = {'place': ['suburb','neighbourhood','quarter']}
+        dist_gdf = ox.geometries_from_place('Münster, Germany', tags=tags)
+        dist_gdf = dist_gdf[dist_gdf['name'].notna() & dist_gdf.geometry.type.isin(['Polygon','MultiPolygon'])]
+        dist_gdf = dist_gdf.to_crs(epsg=3857)
+        dist_gdf.boundary.plot(ax=ax, linewidth=0.8, edgecolor='gray', zorder=2)
+        for _, drow in dist_gdf.iterrows():
+            label_pt = drow.geometry.representative_point()
+            ax.text(
+                label_pt.x, label_pt.y, drow['name'],
+                fontsize=6, color='gray', ha='center', va='center', zorder=3,
+                bbox=dict(boxstyle='round,pad=0.1', fc='white', alpha=0.6, lw=0)
+            )
+    except Exception:
+        pass
+
+    # Plot lines on top of background tiles with thinner lines        zoom=zoom
+    )
         # Plot administrative district boundaries (Stadtteile) from OSM using place=suburb/neighbourhood
     try:
         tags = {'place': ['suburb','neighbourhood','quarter']}
