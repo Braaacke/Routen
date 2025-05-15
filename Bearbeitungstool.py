@@ -91,6 +91,23 @@ def export_routes_pdf_osm(df_assign, filename="routen_uebersicht.pdf", figsize=(
         source=provider,
         zoom=zoom
     )
+    # Plot administrative district boundaries (Stadtteile) from OSM
+    try:
+        dist_gdf = ox.geometries_from_place('Münster, Germany', tags={'boundary':'administrative','admin_level':'9'})
+        dist_gdf = dist_gdf.to_crs(epsg=3857)
+        dist_gdf.boundary.plot(ax=ax, linewidth=1, edgecolor='gray', zorder=2)
+        # Label each district at centroid
+        for _, drow in dist_gdf.dropna(subset=['name']).iterrows():
+            centroid = drow.geometry.centroid
+            ax.text(
+                centroid.x, centroid.y, drow['name'],
+                fontsize=6, color='gray', ha='center', va='center', zorder=3
+            )
+    except Exception:
+        pass,
+        source=provider,
+        zoom=zoom
+    )
     # Plot lines on top of background tiles with thinner lines
     colors = [
         'magenta','cyan','lime','red','orange','yellow','turquoise','purple','pink','blue',
