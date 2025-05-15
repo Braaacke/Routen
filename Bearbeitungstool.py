@@ -297,7 +297,7 @@ def draw_map(df_assign):
         m.fit_bounds(df_assign[['lat','lon']].values.tolist())
     m.to_streamlit(use_container_width=True, height=700)
 
-def export_routes_pdf_osm(df_assign, filename="routen_uebersicht.pdf"):
+def export_routes_pdf_osm(df_assign, filename="routen_uebersicht.pdf", figsize=(8.27, 11.69), dpi=300):
     import geopandas as gpd
     from shapely.geometry import Point, LineString
     import matplotlib.pyplot as plt
