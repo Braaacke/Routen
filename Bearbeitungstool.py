@@ -39,15 +39,6 @@ DEFAULT_ZOOMS = {
 from shapely.geometry import Point, LineString
 import geopandas as gpd
 
-# Load district boundaries shapefile (Ebene 2) directly from repo
-try:
-    districts_shp = gpd.read_file("stadtbezirk.shp")
-    if 'layer' in districts_shp.columns:
-        districts_shp = districts_shp[districts_shp['layer'] == 2]
-    st.session_state['districts_gdf'] = districts_shp
-except Exception:
-    pass
-
 def export_routes_pdf_osm(df_assign, filename="routen_uebersicht.pdf", figsize=(8.27, 11.69), dpi=300, zoom=15):
     import matplotlib.pyplot as plt
     import contextily as ctx
@@ -108,29 +99,18 @@ def export_routes_pdf_osm(df_assign, filename="routen_uebersicht.pdf", figsize=(
                 bbox=dict(boxstyle='round,pad=0.2', fc='white', alpha=0.85, lw=1), zorder=6)
     # draw points
     pts_gdf.plot(ax=ax, color='k', markersize=10, zorder=7)
-        # draw district boundaries and labels
+    # draw district boundaries and labels
     try:
-        # Try admin_level 9, fallback to 10
-        tags = {'boundary':'administrative','admin_level':'9'}
+        tags = {'place': ['suburb','neighbourhood','quarter']}
         dist = ox.geometries_from_place('Münster, Germany', tags=tags)
-        if dist.empty:
-            tags = {'boundary':'administrative','admin_level':'10'}
-            dist = ox.geometries_from_place('Münster, Germany', tags=tags)
         dist = dist[dist['name'].notna() & dist.geometry.type.isin(['Polygon','MultiPolygon'])]
         dist = dist.to_crs(epsg=3857)
-        # plot boundaries
         dist.boundary.plot(ax=ax, linewidth=0.8, edgecolor='gray', zorder=3)
-        # label each polygon using its centroid
         for _, drow in dist.iterrows():
             pt = drow.geometry.representative_point()
-            ax.annotate(
-                drow['name'],
-                xy=(pt.x, pt.y), xycoords='data',
-                xytext=(5,5), textcoords='offset points',
-                fontsize=6, color='gray', ha='center', va='center', zorder=4,
-                bbox=dict(boxstyle='round,pad=0.1', fc='white', alpha=0.6, lw=0)
-            )
-    except Exception:
+            ax.text(pt.x, pt.y, drow['name'], fontsize=6, color='gray', ha='center', va='center',
+                    zorder=4, bbox=dict(boxstyle='round,pad=0.1', fc='white', alpha=0.6, lw=0))
+    except:
         pass
     # finalize plot
     ax.set_axis_off()
@@ -289,10 +269,111 @@ if 'base_addresses' not in st.session_state:
 df_assign = st.session_state.new_assignments.copy()
 if 'latlong' in df_assign.columns and ('lat' not in df_assign.columns or 'lon' not in df_assign.columns):
     df_assign[['lat','lon']] = df_assign['latlong'].str.split(',',expand=True).astype(float)
-    # District boundaries upload
-    district_file = st.file_uploader('Stadtteil-Grenzen (GeoJSON)', type=['geojson'], key='districts')
-    if district_file:
-        st.session_state['districts_gdf'] = gpd.read_file(district_file)
+with st.sidebar:
+    st.title('Bearbeitung Kontrollbezirke')
+    opts = df_assign.dropna(subset=['Wahlraum-B','Wahlraum-A'])
+    addrs_search = opts.apply(lambda r: f"{r['Wahlraum-B']} - {r['Wahlraum-A']}", axis=1).tolist()
+    st.selectbox(
+        'Wahllokal oder Adresse suchen',
+        options=[''] + addrs_search,
+        index=0,
+        format_func=lambda x: 'Wahllokal oder Adresse suchen' if x=='' else x,
+        key='search_selection'
+    )
+    uploaded = st.file_uploader('Alternative Zuweisung importieren', type=['xlsx'])
+    if uploaded:
+        # import logic
+        imp = pd.read_excel(uploaded, sheet_name=None)
+        temp = []
+        for sheet, df in imp.items():
+            if sheet != 'Übersicht' and 'Adresse' in df.columns:
+                team_id = int(sheet.split('_')[1])
+                for addr in df['Adresse']:
+                    temp.append((addr, team_id))
+        assigns = pd.DataFrame(temp, columns=['Wahlraum-A','team'])
+        st.session_state.new_assignments = (
+            st.session_state.base_addresses.drop(columns=['team'])
+            .merge(assigns, on='Wahlraum-A', how='left')
+        )
+        st.success('Import erfolgreich.')
+    opts_assign = st.session_state.new_assignments.dropna(subset=['Wahlraum-B','Wahlraum-A'])
+    addrs_assign = opts_assign.apply(lambda r: f"{r['Wahlraum-B']} - {r['Wahlraum-A']}", axis=1).tolist()
+    sel = st.multiselect('Wahllokal wählen', options=addrs_assign, placeholder='Auswählen')
+    teams = sorted(st.session_state.new_assignments['team'].dropna().astype(int).unique())
+    tgt = st.selectbox('Kontrollbezirk wählen', options=[None] + teams, placeholder='Auswählen')
+    if st.button('Zuweisung übernehmen') and tgt and sel:
+        graph = get_graph()
+        for label in sel:
+            addr = label.split(' - ',1)[1]
+            idx = st.session_state.new_assignments[st.session_state.new_assignments['Wahlraum-A']==addr].index[0]
+            st.session_state.new_assignments.at[idx,'team'] = tgt
+        df_team = st.session_state.new_assignments[st.session_state.new_assignments['team']==tgt]
+        opt = tsp_solve_route(graph, df_team)
+        st.session_state.new_assignments.loc[opt.index,'tsp_order'] = range(len(opt))
+        st.success('Zuweisung gesetzt.')
+    if not st.session_state.show_new:
+        if st.button('Neuen Kontrollbezirk erstellen'):
+            st.session_state.show_new = True
+            st.experimental_rerun()
+    else:
+        max_t = int(st.session_state.new_assignments['team'].max(skipna=True) or 0) + 1
+        with st.form('new_district_form'):
+            st.markdown(f"### Neuen Kontrollbezirk {max_t} erstellen")
+            sel2 = st.multiselect(f"Stops für Kontrollbezirk {max_t}", options=addrs_assign)
+            if st.form_submit_button('Erstellen und zuweisen') and sel2:
+                graph = get_graph()
+                for label in sel2:
+                    addr = label.split(' - ',1)[1]
+                    idx = st.session_state.new_assignments[st.session_state.new_assignments['Wahlraum-A']==addr].index[0]
+                    st.session_state.new_assignments.at[idx,'team'] = max_t
+                df_nt = st.session_state.new_assignments[st.session_state.new_assignments['team']==max_t]
+                opt2 = tsp_solve_route(graph, df_nt)
+                st.session_state.new_assignments.loc[opt2.index,'tsp_order'] = range(len(opt2))
+                st.success(f'Kontrollbezirk {max_t} erstellt.')
+                st.session_state.show_new = False
+    if st.button('Routen berechnen', key='recalc_routes'):
+        graph = get_graph()
+        for team_id in sorted(st.session_state.new_assignments['team'].dropna().astype(int).unique()):
+            df_team = st.session_state.new_assignments[st.session_state.new_assignments['team']==team_id]
+            opt = tsp_solve_route(graph, df_team)
+            st.session_state.new_assignments.loc[opt.index,'tsp_order'] = range(len(opt))
+        st.success('Routen neu berechnet.')
+
+    # Excel-Export
+    export_buf = make_export(st.session_state.new_assignments)
+    st.download_button(
+        'Kontrollbezirke herunterladen',
+        data=export_buf,
+        file_name='routen_zuweisung.xlsx',
+        mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    )
+
+    # GeoJSON-Export der Routen
+    line_features = []
+    for t in sorted(st.session_state.new_assignments['team'].dropna().astype(int).unique()):
+        df_t = st.session_state.new_assignments[st.session_state.new_assignments['team']==t]
+        if 'tsp_order' in df_t.columns:
+            df_t = df_t.sort_values('tsp_order')
+        pts = df_t[['lat','lon']].values.tolist()
+        if len(pts) > 1:
+            nodes = [ox.distance.nearest_nodes(get_graph(), X=lon, Y=lat) for lat, lon in pts]
+            for u, v in zip(nodes[:-1], nodes[1:]):
+                try:
+                    path_nodes = nx.shortest_path(get_graph(), u, v, weight='length')
+                    coords = [(get_graph().nodes[n]['x'], get_graph().nodes[n]['y']) for n in path_nodes]  # lon, lat
+                    line = LineString(coords)
+                    line_features.append({'team': t, 'geometry': line})
+                except:
+                    pass
+    gdf_lines = gpd.GeoDataFrame(line_features, crs='EPSG:4326')
+    geojson_str = gdf_lines.to_json()
+    st.download_button(
+        label='GeoJSON herunterladen',
+        data=geojson_str,
+        file_name='routen.geojson',
+        mime='application/geo+json'
+    )
+
     # Karte als A3 PDF (600 dpi) exportieren
     if st.button('Karte als A3 PDF (600dpi) exportieren'):
         with st.spinner('Erstelle A3-PDF-Karte, bitte warten...'):
@@ -310,3 +391,52 @@ if 'latlong' in df_assign.columns and ('lat' not in df_assign.columns or 'lon' n
                 file_name='routen_karte_A3.pdf',
                 mime='application/pdf'
             )
+
+# Funktion zum Zeichnen der interaktiven Karte
+def draw_map(df_assign):
+    search_sel = st.session_state.get('search_selection','')
+    if search_sel:
+        addr = search_sel.split(' - ',1)[1]
+        row = df_assign[df_assign['Wahlraum-A']==addr]
+        center = [row.iloc[0]['lat'], row.iloc[0]['lon']] if not row.empty else [df_assign['lat'].mean(), df_assign['lon'].mean()]
+        zoom = 17
+    else:
+        center = [df_assign['lat'].mean(), df_assign['lon'].mean()]
+        zoom = 10
+    m = leafmap.Map(center=center, zoom=zoom)
+    graph = get_graph()
+    colors = ['#FF00FF','#00FFFF','#00FF00','#FF0000','#FFA500','#FFFF00','#00CED1','#DA70D6','#FF69B4','#8A2BE2']
+    for i, t in enumerate(sorted(df_assign['team'].dropna().unique())):
+        df_t = df_assign[df_assign['team']==t]
+        if 'tsp_order' in df_t.columns:
+            df_t = df_t.sort_values('tsp_order')
+        pts = df_t[['lat','lon']].values.tolist()
+        if len(pts)>1:
+            path=[]
+            nodes=[ox.distance.nearest_nodes(graph,X=lon,Y=lat) for lat,lon in pts]
+            for u,v in zip(nodes[:-1],nodes[1:]):
+                try:
+                    p=nx.shortest_path(graph,u,v,weight='length')
+                    path.extend([(graph.nodes[n]['y'],graph.nodes[n]['x']) for n in p])
+                except:
+                    pass
+            folium.PolyLine(path,color=colors[i%len(colors)],weight=6,opacity=0.8,
+                            tooltip=f"Kontrollbezirk {int(t)}").add_to(m)
+        cluster = MarkerCluster(disableClusteringAtZoom=13)
+    for _, r in df_assign.dropna(subset=['lat','lon']).iterrows():
+        popup_html = (
+            f"<div style='white-space: nowrap;'>"
+            f"<b>{r['Wahlraum-B']}</b><br>{r['Wahlraum-A']}<br>Anzahl Räume: {r.get('num_rooms','')}"
+            "</div>"
+        )
+        popup = folium.Popup(popup_html, max_width=300)
+        marker = folium.Marker(location=[r['lat'], r['lon']], popup=popup)
+        cluster.add_child(marker)
+    cluster.add_to(m)
+    if not st.session_state.get('search_selection',''):
+        m.fit_bounds(df_assign[['lat','lon']].values.tolist())
+    m.to_streamlit(use_container_width=True, height=700)
+
+# Karte rendern
+# ----------------------
+draw_map(df_assign)
