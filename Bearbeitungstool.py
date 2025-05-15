@@ -296,7 +296,7 @@ def export_routes_pdf_osm(df_assign, filename="routen_uebersicht.pdf"):
     teams = sorted(df_assign['team'].dropna().astype(int).unique())
     for i, t in enumerate(teams):
         df_t = df_assign[df_assign['team']==t]
-          if 'tsp_order' in df_t.columns:
+        if 'tsp_order' in df_t.columns:
             df_t = df_t.sort_values('tsp_order')
         # Punkte-Liste: (lon, lat)
         pts = [Point(lon, lat) for lat, lon in df_t[['lat','lon']].values]
