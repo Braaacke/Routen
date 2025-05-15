@@ -44,65 +44,69 @@ def export_routes_pdf_osm(df_assign, filename="routen_uebersicht.pdf", figsize=(
     import contextily as ctx
     from shapely.geometry import Point, LineString
     import geopandas as gpd
-    # Load graph
+    # Load graph and prepare GeoDataFrames
     graph = get_graph()
-    # Convert stops to Web Mercator GeoDataFrame
+    # Points as WebMercator
     pts_gdf = gpd.GeoDataFrame(
         df_assign,
         geometry=gpd.points_from_xy(df_assign['lon'], df_assign['lat']),
         crs='EPSG:4326'
     ).to_crs(epsg=3857)
-    # Create figure
-    fig, ax = plt.subplots(figsize=figsize)
-    # Plot control district routes
-    colors = [
-        'magenta','cyan','lime','red','orange','yellow','turquoise','purple','pink','blue',
-        'black','green','brown','violet','gold','deepskyblue','indigo','crimson','darkorange','teal'
-    ]
+    # Lines for each district in WebMercator
+    line_features = []
     teams = sorted(df_assign['team'].dropna().astype(int).unique())
-    for i, t in enumerate(teams):
+    for t in teams:
         df_t = df_assign[df_assign['team'] == t]
         if 'tsp_order' in df_t.columns:
             df_t = df_t.sort_values('tsp_order')
         pts = df_t[['lat','lon']].values.tolist()
-        labeled = False
         if len(pts) > 1:
             nodes = [ox.distance.nearest_nodes(graph, X=lon, Y=lat) for lat, lon in pts]
+            coords = []
             for u, v in zip(nodes[:-1], nodes[1:]):
                 try:
                     path_nodes = nx.shortest_path(graph, u, v, weight='length')
-                    coords = [(graph.nodes[n]['x'], graph.nodes[n]['y']) for n in path_nodes]
-                    line = LineString(coords)
-                    gdf_line = gpd.GeoDataFrame(geometry=[line], crs='EPSG:4326').to_crs(epsg=3857)
-                    gdf_line.plot(ax=ax, color=colors[i % len(colors)], linewidth=4, zorder=3)
-                    if not labeled:
-                        mid = line.interpolate(0.5, normalized=True)
-                        mx, my = gpd.GeoSeries([mid], crs='EPSG:4326').to_crs(epsg=3857)[0].coords[0]
-                        ax.text(mx, my, str(t), fontsize=10, color='black', fontweight='bold',
-                                ha='center', va='center', bbox=dict(boxstyle='round,pad=0.3', fc='white', alpha=0.85, lw=1), zorder=4)
-                        labeled = True
-                except Exception as e:
-                    print(f"Fehler Route {t}: {e}")
-        elif len(pts) == 1:
-            lon, lat = pts[0][1], pts[0][0]
-            gdf_pt = gpd.GeoDataFrame({'team':[t]}, geometry=[Point(lon, lat)], crs='EPSG:4326').to_crs(epsg=3857)
-            gdf_pt.plot(ax=ax, color=colors[i % len(colors)], marker='o', zorder=3)
-            x, y = gdf_pt.geometry.iloc[0].coords[0]
-            ax.text(x, y, str(t), fontsize=10, color='black', fontweight='bold', ha='center', va='center',
-                    bbox=dict(boxstyle='round,pad=0.3', fc='white', alpha=0.85, lw=1), zorder=4)
-    # Plot points of stops
-    pts_gdf.plot(ax=ax, color='k', markersize=24, label='Wahllokale', zorder=5)
-    # Add basemap now that data extents are set
+                    coords.extend([(graph.nodes[n]['x'], graph.nodes[n]['y']) for n in path_nodes])
+                except:
+                    pass
+            if coords:
+                line = LineString(coords)
+                line_features.append({'team': t, 'geometry': line})
+    gdf_lines = gpd.GeoDataFrame(line_features, crs='EPSG:4326').to_crs(epsg=3857)
+
+    # Create figure and axis
+    fig, ax = plt.subplots(figsize=figsize)
+    # Set axis to data bounds with slight buffer
+    minx, miny, maxx, maxy = pts_gdf.total_bounds
+    xbuf = (maxx-minx)*0.05
+    ybuf = (maxy-miny)*0.05
+    ax.set_xlim(minx - xbuf, maxx + xbuf)
+    ax.set_ylim(miny - ybuf, maxy + ybuf)
+    # Add basemap with extent
     ctx.add_basemap(
         ax,
         crs=pts_gdf.crs.to_string(),
         source=ctx.providers.OpenStreetMap.Mapnik,
         zoom=zoom
     )
-    # Final touches
+    # Plot lines and points on top
+    colors = [
+        'magenta','cyan','lime','red','orange','yellow','turquoise','purple','pink','blue',
+        'black','green','brown','violet','gold','deepskyblue','indigo','crimson','darkorange','teal'
+    ]
+    for i, row in gdf_lines.iterrows():
+        row.geometry.plot(ax=ax, color=colors[i % len(colors)], linewidth=4, zorder=5)
+        # label at midpoint
+        mid = row.geometry.interpolate(0.5, normalized=True)
+        ax.text(mid.x, mid.y, str(int(row['team'])), fontsize=10, color='black',
+                fontweight='bold', ha='center', va='center',
+                bbox=dict(boxstyle='round,pad=0.3', fc='white', alpha=0.85, lw=1), zorder=6)
+    # Plot points
+    pts_gdf.plot(ax=ax, color='k', markersize=24, zorder=7)
+    # Title and legend
     ax.set_axis_off()
     ax.set_title('Routenübersicht Kontrollbezirke', fontsize=22, fontweight='bold', pad=20)
-    ax.legend(loc='upper right', fontsize=12)
+    # Save high-res
     plt.tight_layout()
     plt.savefig(filename, bbox_inches='tight', dpi=dpi)
     plt.close(fig)
