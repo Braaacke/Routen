@@ -99,18 +99,29 @@ def export_routes_pdf_osm(df_assign, filename="routen_uebersicht.pdf", figsize=(
                 bbox=dict(boxstyle='round,pad=0.2', fc='white', alpha=0.85, lw=1), zorder=6)
     # draw points
     pts_gdf.plot(ax=ax, color='k', markersize=10, zorder=7)
-    # draw district boundaries and labels
+        # draw district boundaries and labels
     try:
-        tags = {'place': ['suburb','neighbourhood','quarter']}
+        # Try admin_level 9, fallback to 10
+        tags = {'boundary':'administrative','admin_level':'9'}
         dist = ox.geometries_from_place('Münster, Germany', tags=tags)
+        if dist.empty:
+            tags = {'boundary':'administrative','admin_level':'10'}
+            dist = ox.geometries_from_place('Münster, Germany', tags=tags)
         dist = dist[dist['name'].notna() & dist.geometry.type.isin(['Polygon','MultiPolygon'])]
         dist = dist.to_crs(epsg=3857)
+        # plot boundaries
         dist.boundary.plot(ax=ax, linewidth=0.8, edgecolor='gray', zorder=3)
+        # label each polygon using its centroid
         for _, drow in dist.iterrows():
             pt = drow.geometry.representative_point()
-            ax.text(pt.x, pt.y, drow['name'], fontsize=6, color='gray', ha='center', va='center',
-                    zorder=4, bbox=dict(boxstyle='round,pad=0.1', fc='white', alpha=0.6, lw=0))
-    except:
+            ax.annotate(
+                drow['name'],
+                xy=(pt.x, pt.y), xycoords='data',
+                xytext=(5,5), textcoords='offset points',
+                fontsize=6, color='gray', ha='center', va='center', zorder=4,
+                bbox=dict(boxstyle='round,pad=0.1', fc='white', alpha=0.6, lw=0)
+            )
+    except Exception:
         pass
     # finalize plot
     ax.set_axis_off()
