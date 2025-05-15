@@ -6,4 +6,4 @@ networkx
 osmnx
 openpyxl
 scikit-learn 
-
+contextily 
