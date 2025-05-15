@@ -1,4 +1,4 @@
-"""""Interaktives Routenbearbeitungstool mit Zoom-abhängiger Markersichtbarkeit und TSP-Optimierung bei Zuweisung"""
+"""Interaktives Routenbearbeitungstool mit Zoom-abhängiger Markersichtbarkeit und TSP-Optimierung bei Zuweisung"""
 
 import streamlit as st
 import pandas as pd
@@ -152,14 +152,14 @@ if 'show_new' not in st.session_state:
     st.session_state.show_new = False
 if 'base_addresses' not in st.session_state:
     base = pd.read_csv('cleaned_addresses.csv').reset_index(drop=True)
-    initial = pd.read_excel('routes_optimized.xlsx', sheet_name=None)
+    xls = pd.read_excel('routes_optimized.xlsx', sheet_name=None)
     tmp = []
     for name, df in xls.items():
-    m = re.match(r"Bezirk_(\d+)", name)
-    if m and 'Adresse' in df.columns:
-        team_id = int(m.group(1))
-        for addr in df['Adresse']:
-            tmp.append((addr, team_id))
+        m = re.match(r"Bezirk_(\d+)", name)
+        if m and 'Adresse' in df.columns:
+            team_id = int(m.group(1))
+            for addr in df['Adresse']:
+                tmp.append((addr, team_id))
     assign_df = pd.DataFrame(tmp, columns=['Wahlraum-A','team'])
     merged = base.merge(assign_df, on='Wahlraum-A', how='left')
     st.session_state.base_addresses = merged.copy()
@@ -193,7 +193,7 @@ with st.sidebar:
             st.session_state.base_addresses.drop(columns=['team'])
             .merge(assigns, on='Wahlraum-A', how='left')
         )
-        sst.success('Import erfolgreich.')
+        st.success('Import erfolgreich.')
     opts_assign = st.session_state.new_assignments.dropna(subset=['Wahlraum-B','Wahlraum-A'])
     addrs_assign = opts_assign.apply(lambda r: f"{r['Wahlraum-B']} - {r['Wahlraum-A']}", axis=1).tolist()
     sel = st.multiselect('Wahllokal wählen', options=addrs_assign, placeholder='Auswählen')
