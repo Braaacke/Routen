@@ -91,20 +91,26 @@ def export_routes_pdf_osm(df_assign, filename="routen_uebersicht.pdf", figsize=(
         source=provider,
         zoom=zoom
     )
-    # Plot administrative district boundaries (Stadtteile) from OSM
+        # Plot administrative district boundaries (Stadtteile) from OSM using place=suburb/neighbourhood
     try:
-        dist_gdf = ox.geometries_from_place('Münster, Germany', tags={'boundary':'administrative','admin_level':'9'})
+        tags = {'place': ['suburb','neighbourhood','quarter']}
+        dist_gdf = ox.geometries_from_place('Münster, Germany', tags=tags)
+        # Filter polygons with a valid name and geometry type Polygon or MultiPolygon
+        dist_gdf = dist_gdf[dist_gdf['name'].notna() & dist_gdf.geometry.type.isin(['Polygon','MultiPolygon'])]
         dist_gdf = dist_gdf.to_crs(epsg=3857)
-        dist_gdf.boundary.plot(ax=ax, linewidth=1, edgecolor='gray', zorder=2)
-        # Label each district at centroid
-        for _, drow in dist_gdf.dropna(subset=['name']).iterrows():
-            centroid = drow.geometry.centroid
+        # Draw boundaries lightly
+        dist_gdf.boundary.plot(ax=ax, linewidth=0.8, edgecolor='gray', zorder=2)
+        # Label each district at interior point (centroid may lie outside for concave shapes)
+        for _, drow in dist_gdf.iterrows():
+            label_point = drow.geometry.representative_point()
             ax.text(
-                centroid.x, centroid.y, drow['name'],
-                fontsize=6, color='gray', ha='center', va='center', zorder=3
+                label_point.x, label_point.y, drow['name'],
+                fontsize=6, color='gray', ha='center', va='center', zorder=3,
+                bbox=dict(boxstyle='round,pad=0.1', fc='white', alpha=0.6, lw=0)
             )
     except Exception:
         pass
+
     # Plot lines on top of background tiles with thinner lines
     colors = [
         'magenta','cyan','lime','red','orange','yellow','turquoise','purple','pink','blue',
