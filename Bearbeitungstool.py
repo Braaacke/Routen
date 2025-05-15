@@ -309,14 +309,31 @@ with st.sidebar:
             st.session_state.new_assignments.loc[opt.index,'tsp_order'] = range(len(opt))
         st.success('Routen neu berechnet.')
 
-        # Excel-Export
+            # Excel-Export
     export_buf = make_export(st.session_state.new_assignments)
     st.download_button(
-                label='PDF-Karte herunterladen',
-                data=f,
-                file_name='routen_uebersicht.pdf',
-                mime='application/pdf'
-            )
+        'Kontrollbezirke herunterladen',
+        data=export_buf,
+        file_name='routen_zuweisung.xlsx',
+        mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    )
+
+    # GeoJSON-Export der Wahllokale
+    gdf_geo = gpd.GeoDataFrame(
+        st.session_state.new_assignments,
+        geometry=gpd.points_from_xy(
+            st.session_state.new_assignments['lon'],
+            st.session_state.new_assignments['lat']
+        ),
+        crs='EPSG:4326'
+    )
+    geojson_str = gdf_geo.to_json()
+    st.download_button(
+        label='GeoJSON herunterladen',
+        data=geojson_str,
+        file_name='routen.geojson',
+        mime='application/geo+json'
+    )
         # GeoJSON-Export der Wahllokale
         # Erstellt GeoDataFrame mit Punkten
         gdf_geo = gpd.GeoDataFrame(
