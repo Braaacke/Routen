@@ -19,6 +19,15 @@ import re
 import matplotlib.pyplot as plt
 import contextily as ctx
 
+FORMAT_SIZES = {
+    "A4": (8.27, 11.69),
+    "A3": (11.69, 16.54),
+    "A2": (16.54, 23.39),
+    "A1": (23.39, 33.11),
+    "A0": (33.11, 46.81),
+}
+DEFAULT_DPI = 300
+
 def haversine(lon1, lat1, lon2, lat2):
     dlon = radians(lon2 - lon1)
     dlat = radians(lat2 - lat1)
