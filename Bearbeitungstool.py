@@ -318,16 +318,26 @@ with st.sidebar:
         mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
     )
 
-    # GeoJSON-Export der Wahllokale
-    gdf_geo = gpd.GeoDataFrame(
-        st.session_state.new_assignments,
-        geometry=gpd.points_from_xy(
-            st.session_state.new_assignments['lon'],
-            st.session_state.new_assignments['lat']
-        ),
-        crs='EPSG:4326'
-    )
-    geojson_str = gdf_geo.to_json()
+        # GeoJSON-Export der Routen
+    # Erstelle GeoDataFrame mit Linien für jeden Kontrollbezirk
+    line_features = []
+    for t in sorted(st.session_state.new_assignments['team'].dropna().astype(int).unique()):
+        df_t = st.session_state.new_assignments[st.session_state.new_assignments['team']==t]
+        if 'tsp_order' in df_t.columns:
+            df_t = df_t.sort_values('tsp_order')
+        pts = df_t[['lat','lon']].values.tolist()
+        if len(pts) > 1:
+            nodes = [ox.distance.nearest_nodes(get_graph(), X=lon, Y=lat) for lat, lon in pts]
+            for u, v in zip(nodes[:-1], nodes[1:]):
+                try:
+                    path_nodes = nx.shortest_path(get_graph(), u, v, weight='length')
+                    coords = [(get_graph().nodes[n]['y'], get_graph().nodes[n]['x']) for n in path_nodes]
+                    line = LineString(coords)
+                    line_features.append({'team': t, 'geometry': line})
+                except:
+                    pass
+    gdf_lines = gpd.GeoDataFrame(line_features, crs='EPSG:4326')
+    geojson_str = gdf_lines.to_json()
     st.download_button(
         label='GeoJSON herunterladen',
         data=geojson_str,
