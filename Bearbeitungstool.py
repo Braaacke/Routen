@@ -312,38 +312,29 @@ with st.sidebar:
         # Excel-Export
     export_buf = make_export(st.session_state.new_assignments)
     st.download_button(
-        'Kontrollbezirke herunterladen',
-        data=export_buf,
-        file_name='routen_zuweisung.xlsx',
-        mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-    )
-
-    # PDF-Export Einstellungen
-    st.markdown('### PDF-Export Einstellungen')
-    format_choice = st.selectbox('Papierformat', list(FORMAT_SIZES.keys()), index=0)
-    orientation = st.radio('Ausrichtung', ['Hochformat','Querformat'], horizontal=True)
-    size = FORMAT_SIZES[format_choice]
-    if orientation == 'Querformat':
-        size = (size[1], size[0])
-    pdf_dpi = st.slider('Druckauflösung (dpi)', min_value=72, max_value=600, value=300, step=24)
-    basemap_zoom = st.slider('Karten-Detailstufe (Zoom)', min_value=10, max_value=19, value=DEFAULT_ZOOMS[format_choice])
-
-    if st.button('Übersichtskarte als PDF (mit Karte) exportieren'):
-        with st.spinner('Erstelle PDF-Karte, bitte warten...'):
-            pdf_file = export_routes_pdf_osm(
-                st.session_state.new_assignments,
-                figsize=size,
-                dpi=pdf_dpi,
-                zoom=basemap_zoom
-            )
-        st.success('PDF erstellt!')
-        with open(pdf_file, 'rb') as f:
-            st.download_button(
                 label='PDF-Karte herunterladen',
                 data=f,
                 file_name='routen_uebersicht.pdf',
                 mime='application/pdf'
             )
+        # GeoJSON-Export der Wahllokale
+        # Erstellt GeoDataFrame mit Punkten
+        gdf_geo = gpd.GeoDataFrame(
+            st.session_state.new_assignments,
+            geometry=gpd.points_from_xy(
+                st.session_state.new_assignments['lon'],
+                st.session_state.new_assignments['lat']
+            ),
+            crs='EPSG:4326'
+        )
+        # Export als GeoJSON-String
+        geojson_str = gdf_geo.to_json()
+        st.download_button(
+            label='GeoJSON herunterladen',
+            data=geojson_str,
+            file_name='routen.geojson',
+            mime='application/geo+json'
+        )
 
 # Funktion zum Zeichnen der interaktiven Karte
 def draw_map(df_assign):
