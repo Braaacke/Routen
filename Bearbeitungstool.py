@@ -26,7 +26,13 @@ FORMAT_SIZES = {
     "A1": (23.39, 33.11),
     "A0": (33.11, 46.81),
 }
-DEFAULT_DPI = 300
+DEFAULT_ZOOMS = {
+    "A4": 16,
+    "A3": 16,
+    "A2": 15,
+    "A1": 14,
+    "A0": 13,
+}
 
 def haversine(lon1, lat1, lon2, lat2):
     dlon = radians(lon2 - lon1)
@@ -297,7 +303,7 @@ def draw_map(df_assign):
         m.fit_bounds(df_assign[['lat','lon']].values.tolist())
     m.to_streamlit(use_container_width=True, height=700)
 
-def export_routes_pdf_osm(df_assign, filename="routen_uebersicht.pdf", figsize=(8.27, 11.69), dpi=300, basemap_zoom=15):
+def export_routes_pdf_osm(df_assign, filename="routen_uebersicht.pdf", figsize=(8.27, 11.69), dpi=300, zoom=15):
     import geopandas as gpd
     from shapely.geometry import Point, LineString
     import matplotlib.pyplot as plt
@@ -352,7 +358,7 @@ def export_routes_pdf_osm(df_assign, filename="routen_uebersicht.pdf", figsize=(
         crs='EPSG:4326'
     ).to_crs(epsg=3857)
     gdf_points.plot(ax=ax, color='k', markersize=24, label='Wahllokale')
-    ctx.add_basemap(ax, crs=gdf_points.crs.to_string(), source=ctx.providers.OpenStreetMap.Mapnik, zoom=basemap_zoom)
+    ctx.add_basemap(ax, crs=gdf_points.crs.to_string(), source=ctx.providers.OpenStreetMap.Mapnik, zoom=zoom)
     ax.set_axis_off()
     ax.set_title("Routenübersicht Kontrollbezirke", fontsize=22, fontweight='bold', pad=20)
     ax.legend(loc="upper right", fontsize=12)
@@ -373,20 +379,21 @@ draw_map(df_assign)
 # PDF-Export-Button für Übersichtskarte mit OSM-Hintergrund
 with st.sidebar:
     st.markdown("### PDF-Export Einstellungen")
-    pdf_format = st.selectbox(
-        "Papierformat",
-        list(FORMAT_SIZES.keys()),
-        index=0
-    )
+    pdf_format = st.selectbox("Papierformat", list(FORMAT_SIZES.keys()), index=0)
+    orientation = st.radio("Ausrichtung", ("Hochformat", "Querformat"), horizontal=True)
     pdf_dpi = st.slider("Druckauflösung (dpi)", min_value=72, max_value=600, value=300, step=24)
-    basemap_zoom = st.slider("Karten-Detailstufe (Zoom)", min_value=10, max_value=19, value=15)
+    default_zoom = DEFAULT_ZOOMS[pdf_format]
+    zoom = st.slider("Karten-Detailstufe (Zoom)", min_value=10, max_value=19, value=default_zoom)
+    size = FORMAT_SIZES[pdf_format]
+    if orientation == "Querformat":
+        size = (size[1], size[0])
 
     if st.button('Übersichtskarte als PDF (mit Karte) exportieren'):
         pdf_file = export_routes_pdf_osm(
             st.session_state.new_assignments,
-            figsize=FORMAT_SIZES[pdf_format],
+            figsize=size,
             dpi=pdf_dpi,
-            basemap_zoom=basemap_zoom
+            zoom=zoom
         )
         with open(pdf_file, "rb") as f:
             st.download_button(
