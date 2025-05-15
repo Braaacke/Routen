@@ -330,7 +330,7 @@ with st.sidebar:
             for u, v in zip(nodes[:-1], nodes[1:]):
                 try:
                     path_nodes = nx.shortest_path(get_graph(), u, v, weight='length')
-                    coords = [(get_graph().nodes[n]['y'], get_graph().nodes[n]['x']) for n in path_nodes]
+                    coords = [(get_graph().nodes[n]['x'], get_graph().nodes[n]['y']) for n in path_nodes]  # lon, lat
                     line = LineString(coords)
                     line_features.append({'team': t, 'geometry': line})
                 except:
