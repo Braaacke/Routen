@@ -82,14 +82,12 @@ def export_routes_pdf_osm(df_assign, filename="routen_uebersicht.pdf", figsize=(
     ybuf = (maxy-miny)*0.05
     ax.set_xlim(minx - xbuf, maxx + xbuf)
     ax.set_ylim(miny - ybuf, maxy + ybuf)
-    # Add basemap with extent
-    ctx.add_basemap(
-        ax,
-        crs=pts_gdf.crs.to_string(),
-        source=ctx.providers.OpenStreetMap.Mapnik,
-        zoom=zoom
-    )
-    # Plot lines on top of basemap
+        # Plot background street network from OSMnx
+    # Convert graph edges to GeoDataFrame in Web Mercator
+    edges = ox.graph_to_gdfs(graph, nodes=False, edges=True)
+    edges_proj = edges.to_crs(epsg=3857)
+    edges_proj.plot(ax=ax, linewidth=0.5, edgecolor='lightgray', zorder=1)
+    # Plot lines on top of background network
     colors = [
         'magenta','cyan','lime','red','orange','yellow','turquoise','purple','pink','blue',
         'black','green','brown','violet','gold','deepskyblue','indigo','crimson','darkorange','teal'
