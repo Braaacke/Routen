@@ -252,6 +252,8 @@ with st.sidebar:
             opt = tsp_solve_route(graph, df_team)
             st.session_state.new_assignments.loc[opt.index,'tsp_order'] = range(len(opt))
         st.success('Routen neu berechnet.')
+
+    # Excel-Export
     export_buf = make_export(st.session_state.new_assignments)
     st.download_button(
         'Kontrollbezirke herunterladen',
@@ -260,7 +262,19 @@ with st.sidebar:
         mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
     )
 
-    # PDF-Export
+    # Karte rendern
+draw_map(df_assign)
+
+# PDF-Export Einstellungen
+    st.markdown('### PDF-Export Einstellungen')
+    format_choice = st.selectbox('Papierformat', list(FORMAT_SIZES.keys()), index=0)
+    orientation = st.radio('Ausrichtung', ['Hochformat','Querformat'], horizontal=True)
+    size = FORMAT_SIZES[format_choice]
+    if orientation == 'Querformat':
+        size = (size[1], size[0])
+    pdf_dpi = st.slider('Druckauflösung (dpi)', min_value=72, max_value=600, value=300, step=24)
+    basemap_zoom = st.slider('Karten-Detailstufe (Zoom)', min_value=10, max_value=19, value=DEFAULT_ZOOMS[format_choice])
+
     if st.button('Übersichtskarte als PDF (mit Karte) exportieren'):
         with st.spinner('Erstelle PDF-Karte, bitte warten...'):
             pdf_file = export_routes_pdf_osm(
