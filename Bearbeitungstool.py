@@ -292,21 +292,29 @@ def export_routes_pdf_osm(df_assign, filename="routen_uebersicht.pdf"):
     import geopandas as gpd
     from shapely.geometry import Point, LineString
     fig, ax = plt.subplots(figsize=(10, 12))
+    graph = get_graph()
     colors = ['magenta','cyan','lime','red','orange','yellow','turquoise','purple','pink','blue']
     teams = sorted(df_assign['team'].dropna().astype(int).unique())
+
     for i, t in enumerate(teams):
-        df_t = df_assign[df_assign['team']==t]
+        df_t = df_assign[df_assign['team'] == t]
         if 'tsp_order' in df_t.columns:
             df_t = df_t.sort_values('tsp_order')
-        # Punkte-Liste: (lon, lat)
-        pts = [Point(lon, lat) for lat, lon in df_t[['lat','lon']].values]
+        pts = df_t[['lat', 'lon']].values.tolist()
         if len(pts) > 1:
-            line = LineString(pts)
-            gdf = gpd.GeoDataFrame({'team': [t]}, geometry=[line], crs='EPSG:4326')
-            gdf = gdf.to_crs(epsg=3857)
-            gdf.plot(ax=ax, color=colors[i % len(colors)], linewidth=3, label=f'Kontrollbezirk {t}')
+            nodes = [ox.distance.nearest_nodes(graph, X=lon, Y=lat) for lat, lon in pts]
+            for u, v in zip(nodes[:-1], nodes[1:]):
+                try:
+                    path_nodes = nx.shortest_path(graph, u, v, weight='length')
+                    path_coords = [(graph.nodes[n]['x'], graph.nodes[n]['y']) for n in path_nodes]
+                    # Linie als GeoDataFrame
+                    path_line = LineString([Point(lon, lat) for lon, lat in path_coords])
+                    path_gdf = gpd.GeoDataFrame(geometry=[path_line], crs='EPSG:4326').to_crs(epsg=3857)
+                    path_gdf.plot(ax=ax, color=colors[i % len(colors)], linewidth=3, label=f'Kontrollbezirk {t}' if u == nodes[0] else None)
+                except Exception as e:
+                    print(f"Fehler bei Kontrollbezirk {t}: {e}")
         elif len(pts) == 1:
-            gdf = gpd.GeoDataFrame({'team': [t]}, geometry=pts, crs='EPSG:4326')
+            gdf = gpd.GeoDataFrame({'team': [t]}, geometry=[Point(df_t['lon'].iloc[0], df_t['lat'].iloc[0])], crs='EPSG:4326')
             gdf = gdf.to_crs(epsg=3857)
             gdf.plot(ax=ax, color=colors[i % len(colors)], marker='o', label=f'Kontrollbezirk {t}')
     # Marker für alle Wahllokale
@@ -323,8 +331,12 @@ def export_routes_pdf_osm(df_assign, filename="routen_uebersicht.pdf"):
     # Hintergrundkarte
     ctx.add_basemap(ax, crs=gdf_points.crs.to_string(), source=ctx.providers.OpenStreetMap.Mapnik)
     ax.set_axis_off()
-    ax.set_title("Routenübersicht mit OSM-Hintergrund", fontsize=14)
-    ax.legend(loc="upper right")
+    ax.set_title("Routenübersicht mit OSM-Hintergrund (Straßenrouting)", fontsize=14)
+    handles, labels = ax.get_legend_handles_labels()
+    # Entferne doppelte Labels
+    from collections import OrderedDict
+    by_label = OrderedDict(zip(labels, handles))
+    ax.legend(by_label.values(), by_label.keys(), loc="upper right", fontsize=8)
     plt.tight_layout()
     plt.savefig(filename, bbox_inches='tight', dpi=200)
     plt.close(fig)
