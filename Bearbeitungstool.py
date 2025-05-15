@@ -122,13 +122,29 @@ def export_routes_pdf_osm(df_assign, filename='routen_uebersicht.pdf', figsize=(
         ax.text(mid.x, mid.y, str(int(row['team'])), fontsize=8, fontweight='bold', ha='center', va='center', bbox=dict(boxstyle='round,pad=0.2',fc='white',alpha=0.8,lw=0), zorder=6)
     # Punkte
     pts_gdf.plot(ax=ax, color='k', markersize=10, zorder=7)
-    # Districts
-    if 'districts_gdf' in st.session_state:
-        dist=st.session_state['districts_gdf'].to_crs(epsg=3857)
-        dist.boundary.plot(ax=ax,linewidth=0.8,edgecolor='gray',zorder=2)
-        for _,drow in dist.dropna(subset=['name']).iterrows():
-            pt=drow.geometry.representative_point()
-            ax.annotate(drow['name'],xy=(pt.x,pt.y),xycoords='data',xytext=(5,5),textcoords='offset points',fontsize=6,color='gray',ha='center',va='center',zorder=3,bbox=dict(boxstyle='round,pad=0.1',fc='white',alpha=0.6,lw=0))
+    # Districts: load from shapefile directly
+    try:
+        dist = gpd.read_file("stadtbezirk.shp")
+        # filter Ebene 2 if present
+        if 'layer' in dist.columns:
+            dist = dist[dist['layer'] == 2]
+        # ensure name column
+        if 'name' not in dist.columns and 'Stadtteil' in dist.columns:
+            dist['name'] = dist['Stadtteil']
+        dist = dist.to_crs(epsg=3857)
+        dist.boundary.plot(ax=ax, linewidth=0.8, edgecolor='gray', zorder=2)
+        for _, drow in dist.dropna(subset=['name']).iterrows():
+            pt = drow.geometry.representative_point()
+            ax.annotate(
+                drow['name'],
+                xy=(pt.x, pt.y), xycoords='data',
+                xytext=(5,5), textcoords='offset points',
+                fontsize=6, color='gray', ha='center', va='center', zorder=3,
+                bbox=dict(boxstyle='round,pad=0.1', fc='white', alpha=0.6, lw=0)
+            )
+    except Exception as e:
+        print(f"District shapefile load error: {e}")
+    # finalize plot
     ax.set_axis_off()
     ax.set_title('Routenübersicht Kontrollbezirke',fontsize=18,fontweight='bold',pad=15)
     plt.tight_layout()
