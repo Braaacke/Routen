@@ -154,11 +154,12 @@ if 'base_addresses' not in st.session_state:
     base = pd.read_csv('cleaned_addresses.csv').reset_index(drop=True)
     initial = pd.read_excel('routes_optimized.xlsx', sheet_name=None)
     tmp = []
-    for name, df in initial.items():
-        if name != 'Übersicht' and 'Adresse' in df.columns:
-            team = int(name.split('_')[1])
-            for addr in df['Adresse']:
-                tmp.append((addr, team))
+    for name, df in xls.items():
+    m = re.match(r"Bezirk_(\d+)", name)
+    if m and 'Adresse' in df.columns:
+        team_id = int(m.group(1))
+        for addr in df['Adresse']:
+            tmp.append((addr, team_id))
     assign_df = pd.DataFrame(tmp, columns=['Wahlraum-A','team'])
     merged = base.merge(assign_df, on='Wahlraum-A', how='left')
     st.session_state.base_addresses = merged.copy()
