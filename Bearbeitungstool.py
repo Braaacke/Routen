@@ -35,6 +35,62 @@ DEFAULT_ZOOMS = {
     "A0": 13,
 }
 
+# Funktion für PDF-Export mit variabler Größe, DPI und Zoom
+from shapely.geometry import Point, LineString
+import geopandas as gpd
+
+def export_routes_pdf_osm(df_assign, filename="routen_uebersicht.pdf", figsize=(8.27, 11.69), dpi=300, zoom=15):
+    import matplotlib.pyplot as plt
+    import contextily as ctx
+    graph = get_graph()
+    fig, ax = plt.subplots(figsize=figsize)
+    colors = [
+        'magenta','cyan','lime','red','orange','yellow','turquoise','purple','pink','blue',
+        'black','green','brown','violet','gold','deepskyblue','indigo','crimson','darkorange','teal'
+    ]
+    teams = sorted(df_assign['team'].dropna().astype(int).unique())
+    for i, t in enumerate(teams):
+        df_t = df_assign[df_assign['team'] == t]
+        if 'tsp_order' in df_t.columns:
+            df_t = df_t.sort_values('tsp_order')
+        pts = df_t[['lat','lon']].values.tolist()
+        labeled = False
+        if len(pts) > 1:
+            nodes = [ox.distance.nearest_nodes(graph, X=lon, Y=lat) for lat,lon in pts]
+            for u, v in zip(nodes[:-1], nodes[1:]):
+                try:
+                    path_nodes = nx.shortest_path(graph, u, v, weight='length')
+                    coords = [(graph.nodes[n]['x'], graph.nodes[n]['y']) for n in path_nodes]
+                    line = LineString([Point(x,y) for x,y in coords])
+                    gdf_line = gpd.GeoDataFrame(geometry=[line], crs='EPSG:4326').to_crs(epsg=3857)
+                    gdf_line.plot(ax=ax, color=colors[i%len(colors)], linewidth=4)
+                    if not labeled:
+                        mid = line.interpolate(0.5, normalized=True)
+                        mx, my = gpd.GeoSeries([mid], crs='EPSG:4326').to_crs(epsg=3857)[0].coords[0]
+                        ax.text(mx, my, str(t), fontsize=10, color='black', fontweight='bold',
+                                ha='center', va='center', bbox=dict(boxstyle='round,pad=0.3', fc='white', alpha=0.85, lw=1))
+                        labeled = True
+                except Exception as e:
+                    print(f"Fehler Route {t}: {e}")
+        elif len(pts) == 1:
+            point = Point(pts[0][1], pts[0][0])
+            gdf_pt = gpd.GeoDataFrame({'team':[t]}, geometry=[point], crs='EPSG:4326').to_crs(epsg=3857)
+            gdf_pt.plot(ax=ax, color=colors[i%len(colors)], marker='o')
+            x, y = gdf_pt.geometry.iloc[0].coords[0]
+            ax.text(x, y, str(t), fontsize=10, color='black', fontweight='bold',
+                    ha='center', va='center', bbox=dict(boxstyle='round,pad=0.3', fc='white', alpha=0.85, lw=1))
+    pts_gdf = gpd.GeoDataFrame(df_assign, geometry=gpd.points_from_xy(df_assign['lon'],df_assign['lat']), crs='EPSG:4326').to_crs(epsg=3857)
+    pts_gdf.plot(ax=ax, color='k', markersize=24, label='Wahllokale')
+    ctx.add_basemap(ax, crs=pts_gdf.crs.to_string(), source=ctx.providers.OpenStreetMap.Mapnik, zoom=zoom)
+    ax.set_axis_off()
+    ax.set_title('Routenübersicht Kontrollbezirke', fontsize=22, fontweight='bold', pad=20)
+    ax.legend(loc='upper right', fontsize=12)
+    plt.tight_layout()
+    plt.savefig(filename, bbox_inches='tight', dpi=dpi)
+    plt.close(fig)
+    return filename
+
+
 def haversine(lon1, lat1, lon2, lat2):
     dlon = radians(lon2 - lon1)
     dlat = radians(lat2 - lat1)
