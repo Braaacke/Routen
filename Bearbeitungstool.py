@@ -309,7 +309,7 @@ with st.sidebar:
             st.session_state.new_assignments.loc[opt.index,'tsp_order'] = range(len(opt))
         st.success('Routen neu berechnet.')
 
-            # Excel-Export
+                # Excel-Export
     export_buf = make_export(st.session_state.new_assignments)
     st.download_button(
         'Kontrollbezirke herunterladen',
@@ -334,24 +334,6 @@ with st.sidebar:
         file_name='routen.geojson',
         mime='application/geo+json'
     )
-        # GeoJSON-Export der Wahllokale
-        # Erstellt GeoDataFrame mit Punkten
-        gdf_geo = gpd.GeoDataFrame(
-            st.session_state.new_assignments,
-            geometry=gpd.points_from_xy(
-                st.session_state.new_assignments['lon'],
-                st.session_state.new_assignments['lat']
-            ),
-            crs='EPSG:4326'
-        )
-        # Export als GeoJSON-String
-        geojson_str = gdf_geo.to_json()
-        st.download_button(
-            label='GeoJSON herunterladen',
-            data=geojson_str,
-            file_name='routen.geojson',
-            mime='application/geo+json'
-        )
 
 # Funktion zum Zeichnen der interaktiven Karte
 def draw_map(df_assign):
