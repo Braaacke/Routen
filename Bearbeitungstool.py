@@ -44,113 +44,77 @@ def export_routes_pdf_osm(df_assign, filename="routen_uebersicht.pdf", figsize=(
     import contextily as ctx
     from shapely.geometry import Point, LineString
     import geopandas as gpd
-    # Load graph and prepare GeoDataFrames
+    # Load OSM graph
     graph = get_graph()
-    # Points as WebMercator
+    # Prepare point GeoDataFrame in Web Mercator
     pts_gdf = gpd.GeoDataFrame(
         df_assign,
         geometry=gpd.points_from_xy(df_assign['lon'], df_assign['lat']),
         crs='EPSG:4326'
     ).to_crs(epsg=3857)
-    # Lines for each district in WebMercator
+    # Prepare line features for routes
     line_features = []
-    teams = sorted(df_assign['team'].dropna().astype(int).unique())
-    for t in teams:
+    for t in sorted(df_assign['team'].dropna().astype(int).unique()):
         df_t = df_assign[df_assign['team'] == t]
         if 'tsp_order' in df_t.columns:
             df_t = df_t.sort_values('tsp_order')
-        pts = df_t[['lat','lon']].values.tolist()
+        pts = list(zip(df_t['lon'], df_t['lat']))
         if len(pts) > 1:
-            nodes = [ox.distance.nearest_nodes(graph, X=lon, Y=lat) for lat, lon in pts]
+            # get nearest nodes and path
             coords = []
+            nodes = [ox.distance.nearest_nodes(graph, X=lon, Y=lat) for lon, lat in pts]
             for u, v in zip(nodes[:-1], nodes[1:]):
                 try:
-                    path_nodes = nx.shortest_path(graph, u, v, weight='length')
-                    coords.extend([(graph.nodes[n]['x'], graph.nodes[n]['y']) for n in path_nodes])
+                    path = nx.shortest_path(graph, u, v, weight='length')
+                    coords += [(graph.nodes[n]['x'], graph.nodes[n]['y']) for n in path]
                 except:
                     pass
             if coords:
-                line = LineString(coords)
-                line_features.append({'team': t, 'geometry': line})
+                line_features.append({'team': t, 'geometry': LineString(coords)})
     gdf_lines = gpd.GeoDataFrame(line_features, crs='EPSG:4326').to_crs(epsg=3857)
-
-    # Create figure and axis
+    # Set up figure and axis
     fig, ax = plt.subplots(figsize=figsize)
-    # Set axis to data bounds with slight buffer
-    minx, miny, maxx, maxy = pts_gdf.total_bounds
-    xbuf = (maxx-minx)*0.05
-    ybuf = (maxy-miny)*0.05
-    ax.set_xlim(minx - xbuf, maxx + xbuf)
-    ax.set_ylim(miny - ybuf, maxy + ybuf)
-    # Add high-resolution basemap tiles (retina) for full OSM background
-    provider = ctx.providers.OpenStreetMap.Mapnik.copy()
-    provider['tile_scale'] = 2  # double-resolution tiles
-    ctx.add_basemap(
-        ax,
-        crs=pts_gdf.crs.to_string(),
-        source=provider,
-        zoom=zoom
-    )
-    # Plot administrative district boundaries (Stadtteile) from OSM using place tags
-    try:
-        tags = {'place': ['suburb','neighbourhood','quarter']}
-        dist_gdf = ox.geometries_from_place('Münster, Germany', tags=tags)
-        dist_gdf = dist_gdf[dist_gdf['name'].notna() & dist_gdf.geometry.type.isin(['Polygon','MultiPolygon'])]
-        dist_gdf = dist_gdf.to_crs(epsg=3857)
-        dist_gdf.boundary.plot(ax=ax, linewidth=0.8, edgecolor='gray', zorder=2)
-        for _, drow in dist_gdf.iterrows():
-            label_pt = drow.geometry.representative_point()
-            ax.text(
-                label_pt.x, label_pt.y, drow['name'],
-                fontsize=6, color='gray', ha='center', va='center', zorder=3,
-                bbox=dict(boxstyle='round,pad=0.1', fc='white', alpha=0.6, lw=0)
-            )
-    except Exception:
-        pass
-
-    # Plot lines on top of background tiles with thinner lines        zoom=zoom
-    )
-        # Plot administrative district boundaries (Stadtteile) from OSM using place=suburb/neighbourhood
-    try:
-        tags = {'place': ['suburb','neighbourhood','quarter']}
-        dist_gdf = ox.geometries_from_place('Münster, Germany', tags=tags)
-        # Filter polygons with a valid name and geometry type Polygon or MultiPolygon
-        dist_gdf = dist_gdf[dist_gdf['name'].notna() & dist_gdf.geometry.type.isin(['Polygon','MultiPolygon'])]
-        dist_gdf = dist_gdf.to_crs(epsg=3857)
-        # Draw boundaries lightly
-        dist_gdf.boundary.plot(ax=ax, linewidth=0.8, edgecolor='gray', zorder=2)
-        # Label each district at interior point (centroid may lie outside for concave shapes)
-        for _, drow in dist_gdf.iterrows():
-            label_point = drow.geometry.representative_point()
-            ax.text(
-                label_point.x, label_point.y, drow['name'],
-                fontsize=6, color='gray', ha='center', va='center', zorder=3,
-                bbox=dict(boxstyle='round,pad=0.1', fc='white', alpha=0.6, lw=0)
-            )
-    except Exception:
-        pass
-
-    # Plot lines on top of background tiles with thinner lines
-    colors = [
-        'magenta','cyan','lime','red','orange','yellow','turquoise','purple','pink','blue',
-        'black','green','brown','violet','gold','deepskyblue','indigo','crimson','darkorange','teal'
-    ]
+    # compute bounds
+    if not pts_gdf.empty:
+        minx, miny, maxx, maxy = pts_gdf.total_bounds
+        dx, dy = maxx - minx, maxy - miny
+        buf = 0.05
+        ax.set_xlim(minx - dx * buf, maxx + dx * buf)
+        ax.set_ylim(miny - dy * buf, maxy + dy * buf)
+    # draw high-res OSM tiles
+    prov = ctx.providers.OpenStreetMap.Mapnik.copy()
+    prov['tile_scale'] = 2
+    ctx.add_basemap(ax, crs=pts_gdf.crs.to_string(), source=prov, zoom=zoom)
+    # draw routes
+    colors = ['magenta','cyan','lime','red','orange','yellow','turquoise','purple','pink','blue',
+              'black','green','brown','violet','gold','deepskyblue','indigo','crimson','darkorange','teal']
     for idx, row in gdf_lines.iterrows():
         line = row.geometry
         xs, ys = line.xy
-        ax.plot(xs, ys, color=colors[idx % len(colors)], linewidth=2, zorder=5)  # thinner line
+        ax.plot(xs, ys, color=colors[idx % len(colors)], linewidth=2, zorder=5)
         # label at midpoint
         mid = line.interpolate(0.5, normalized=True)
-        mx, my = mid.x, mid.y
-        ax.text(mx, my, str(int(row['team'])), fontsize=8, color='black',  # smaller font
+        ax.text(mid.x, mid.y, str(int(row['team'])), fontsize=8, color='black',
                 fontweight='bold', ha='center', va='center',
                 bbox=dict(boxstyle='round,pad=0.2', fc='white', alpha=0.85, lw=1), zorder=6)
-    # Plot points smaller
+    # draw points
     pts_gdf.plot(ax=ax, color='k', markersize=10, zorder=7)
-    # Title and legend
+    # draw district boundaries and labels
+    try:
+        tags = {'place': ['suburb','neighbourhood','quarter']}
+        dist = ox.geometries_from_place('Münster, Germany', tags=tags)
+        dist = dist[dist['name'].notna() & dist.geometry.type.isin(['Polygon','MultiPolygon'])]
+        dist = dist.to_crs(epsg=3857)
+        dist.boundary.plot(ax=ax, linewidth=0.8, edgecolor='gray', zorder=3)
+        for _, drow in dist.iterrows():
+            pt = drow.geometry.representative_point()
+            ax.text(pt.x, pt.y, drow['name'], fontsize=6, color='gray', ha='center', va='center',
+                    zorder=4, bbox=dict(boxstyle='round,pad=0.1', fc='white', alpha=0.6, lw=0))
+    except:
+        pass
+    # finalize plot
     ax.set_axis_off()
     ax.set_title('Routenübersicht Kontrollbezirke', fontsize=18, fontweight='bold', pad=15)
-    # Save high-res
     plt.tight_layout()
     plt.savefig(filename, bbox_inches='tight', dpi=dpi)
     plt.close(fig)
