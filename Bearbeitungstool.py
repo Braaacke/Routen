@@ -39,6 +39,15 @@ DEFAULT_ZOOMS = {
 from shapely.geometry import Point, LineString
 import geopandas as gpd
 
+# Load district boundaries shapefile (Ebene 2) directly from repo
+try:
+    districts_shp = gpd.read_file("stadtbezirk.shp")
+    if 'layer' in districts_shp.columns:
+        districts_shp = districts_shp[districts_shp['layer'] == 2]
+    st.session_state['districts_gdf'] = districts_shp
+except Exception:
+    pass
+
 def export_routes_pdf_osm(df_assign, filename="routen_uebersicht.pdf", figsize=(8.27, 11.69), dpi=300, zoom=15):
     import matplotlib.pyplot as plt
     import contextily as ctx
@@ -99,18 +108,29 @@ def export_routes_pdf_osm(df_assign, filename="routen_uebersicht.pdf", figsize=(
                 bbox=dict(boxstyle='round,pad=0.2', fc='white', alpha=0.85, lw=1), zorder=6)
     # draw points
     pts_gdf.plot(ax=ax, color='k', markersize=10, zorder=7)
-    # draw district boundaries and labels
+        # draw district boundaries and labels
     try:
-        tags = {'place': ['suburb','neighbourhood','quarter']}
+        # Try admin_level 9, fallback to 10
+        tags = {'boundary':'administrative','admin_level':'9'}
         dist = ox.geometries_from_place('Münster, Germany', tags=tags)
+        if dist.empty:
+            tags = {'boundary':'administrative','admin_level':'10'}
+            dist = ox.geometries_from_place('Münster, Germany', tags=tags)
         dist = dist[dist['name'].notna() & dist.geometry.type.isin(['Polygon','MultiPolygon'])]
         dist = dist.to_crs(epsg=3857)
+        # plot boundaries
         dist.boundary.plot(ax=ax, linewidth=0.8, edgecolor='gray', zorder=3)
+        # label each polygon using its centroid
         for _, drow in dist.iterrows():
             pt = drow.geometry.representative_point()
-            ax.text(pt.x, pt.y, drow['name'], fontsize=6, color='gray', ha='center', va='center',
-                    zorder=4, bbox=dict(boxstyle='round,pad=0.1', fc='white', alpha=0.6, lw=0))
-    except:
+            ax.annotate(
+                drow['name'],
+                xy=(pt.x, pt.y), xycoords='data',
+                xytext=(5,5), textcoords='offset points',
+                fontsize=6, color='gray', ha='center', va='center', zorder=4,
+                bbox=dict(boxstyle='round,pad=0.1', fc='white', alpha=0.6, lw=0)
+            )
+    except Exception:
         pass
     # finalize plot
     ax.set_axis_off()
@@ -269,8 +289,11 @@ if 'base_addresses' not in st.session_state:
 df_assign = st.session_state.new_assignments.copy()
 if 'latlong' in df_assign.columns and ('lat' not in df_assign.columns or 'lon' not in df_assign.columns):
     df_assign[['lat','lon']] = df_assign['latlong'].str.split(',',expand=True).astype(float)
+
+# District boundaries upload
 with st.sidebar:
     st.title('Bearbeitung Kontrollbezirke')
+    # Suche
     opts = df_assign.dropna(subset=['Wahlraum-B','Wahlraum-A'])
     addrs_search = opts.apply(lambda r: f"{r['Wahlraum-B']} - {r['Wahlraum-A']}", axis=1).tolist()
     st.selectbox(
@@ -280,9 +303,9 @@ with st.sidebar:
         format_func=lambda x: 'Wahllokal oder Adresse suchen' if x=='' else x,
         key='search_selection'
     )
+    # Alternative Zuweisung importieren
     uploaded = st.file_uploader('Alternative Zuweisung importieren', type=['xlsx'])
     if uploaded:
-        # import logic
         imp = pd.read_excel(uploaded, sheet_name=None)
         temp = []
         for sheet, df in imp.items():
@@ -296,6 +319,7 @@ with st.sidebar:
             .merge(assigns, on='Wahlraum-A', how='left')
         )
         st.success('Import erfolgreich.')
+    # Manuelle Zuweisung
     opts_assign = st.session_state.new_assignments.dropna(subset=['Wahlraum-B','Wahlraum-A'])
     addrs_assign = opts_assign.apply(lambda r: f"{r['Wahlraum-B']} - {r['Wahlraum-A']}", axis=1).tolist()
     sel = st.multiselect('Wahllokal wählen', options=addrs_assign, placeholder='Auswählen')
@@ -305,12 +329,13 @@ with st.sidebar:
         graph = get_graph()
         for label in sel:
             addr = label.split(' - ',1)[1]
-            idx = st.session_state.new_assignments[st.session_state.new_assignments['Wahlraum-A']==addr].index[0]
+            idx = st.session_state.new_assignments.index[st.session_state.new_assignments['Wahlraum-A']==addr][0]
             st.session_state.new_assignments.at[idx,'team'] = tgt
         df_team = st.session_state.new_assignments[st.session_state.new_assignments['team']==tgt]
         opt = tsp_solve_route(graph, df_team)
         st.session_state.new_assignments.loc[opt.index,'tsp_order'] = range(len(opt))
         st.success('Zuweisung gesetzt.')
+    # Neuer Kontrollbezirk
     if not st.session_state.show_new:
         if st.button('Neuen Kontrollbezirk erstellen'):
             st.session_state.show_new = True
@@ -324,13 +349,14 @@ with st.sidebar:
                 graph = get_graph()
                 for label in sel2:
                     addr = label.split(' - ',1)[1]
-                    idx = st.session_state.new_assignments[st.session_state.new_assignments['Wahlraum-A']==addr].index[0]
+                    idx = st.session_state.new_assignments.index[st.session_state.new_assignments['Wahlraum-A']==addr][0]
                     st.session_state.new_assignments.at[idx,'team'] = max_t
                 df_nt = st.session_state.new_assignments[st.session_state.new_assignments['team']==max_t]
                 opt2 = tsp_solve_route(graph, df_nt)
                 st.session_state.new_assignments.loc[opt2.index,'tsp_order'] = range(len(opt2))
                 st.success(f'Kontrollbezirk {max_t} erstellt.')
                 st.session_state.show_new = False
+    # Routen neu berechnen
     if st.button('Routen berechnen', key='recalc_routes'):
         graph = get_graph()
         for team_id in sorted(st.session_state.new_assignments['team'].dropna().astype(int).unique()):
@@ -338,7 +364,6 @@ with st.sidebar:
             opt = tsp_solve_route(graph, df_team)
             st.session_state.new_assignments.loc[opt.index,'tsp_order'] = range(len(opt))
         st.success('Routen neu berechnet.')
-
     # Excel-Export
     export_buf = make_export(st.session_state.new_assignments)
     st.download_button(
@@ -347,7 +372,6 @@ with st.sidebar:
         file_name='routen_zuweisung.xlsx',
         mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
     )
-
     # GeoJSON-Export der Routen
     line_features = []
     for t in sorted(st.session_state.new_assignments['team'].dropna().astype(int).unique()):
@@ -360,9 +384,8 @@ with st.sidebar:
             for u, v in zip(nodes[:-1], nodes[1:]):
                 try:
                     path_nodes = nx.shortest_path(get_graph(), u, v, weight='length')
-                    coords = [(get_graph().nodes[n]['x'], get_graph().nodes[n]['y']) for n in path_nodes]  # lon, lat
-                    line = LineString(coords)
-                    line_features.append({'team': t, 'geometry': line})
+                    coords = [(get_graph().nodes[n]['x'], get_graph().nodes[n]['y']) for n in path_nodes]
+                    line_features.append({'team': t, 'geometry': LineString(coords)})
                 except:
                     pass
     gdf_lines = gpd.GeoDataFrame(line_features, crs='EPSG:4326')
@@ -373,8 +396,7 @@ with st.sidebar:
         file_name='routen.geojson',
         mime='application/geo+json'
     )
-
-    # Karte als A3 PDF (600 dpi) exportieren
+    # Karte als A3 PDF (600dpi) exportieren
     if st.button('Karte als A3 PDF (600dpi) exportieren'):
         with st.spinner('Erstelle A3-PDF-Karte, bitte warten...'):
             pdf_file = export_routes_pdf_osm(
@@ -383,14 +405,14 @@ with st.sidebar:
                 dpi=600,
                 zoom=DEFAULT_ZOOMS['A3']
             )
-        st.success('A3 PDF-Karte erstellt!')
-        with open(pdf_file, 'rb') as f:
-            st.download_button(
-                label='A3 PDF-Karte herunterladen',
-                data=f,
-                file_name='routen_karte_A3.pdf',
-                mime='application/pdf'
-            )
+        st.success('A3 PDF-Karte erstellt!'):
+            with open(pdf_file, 'rb') as f:
+                st.download_button(
+                    label='A3 PDF-Karte herunterladen',
+                    data=f,
+                    file_name='routen_karte_A3.pdf',
+                    mime='application/pdf'
+                )
 
 # Funktion zum Zeichnen der interaktiven Karte
 def draw_map(df_assign):
@@ -438,5 +460,4 @@ def draw_map(df_assign):
     m.to_streamlit(use_container_width=True, height=700)
 
 # Karte rendern
-# ----------------------
 draw_map(df_assign)
