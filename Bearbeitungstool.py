@@ -393,17 +393,4 @@ with st.sidebar:
                 data=f,
                 file_name='routen_uebersicht.pdf',
                 mime='application/pdf'
-            ) (mit Karte) exportieren'):
-        pdf_file = export_routes_pdf_osm(
-            st.session_state.new_assignments,
-            figsize=size,
-            dpi=pdf_dpi,
-            zoom=basemap_zoom
-        )
-        with open(pdf_file, 'rb') as f:
-            st.download_button(
-                label='PDF-Karte herunterladen',
-                data=f,
-                file_name='routen_uebersicht.pdf',
-                mime='application/pdf'
-            )
+            
