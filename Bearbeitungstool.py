@@ -1,4 +1,4 @@
-"""Interaktives Routenbearbeitungstool mit Zoom-abhängiger Markersichtbarkeit und TSP-Optimierung bei Zuweisung"""
+"""Interaktives Routenbearbeitungstool mit Zoom-abhängiger Markersichtbarkeit, TSP-Optimierung, Excel- und PDF-Export (mit OSM-Hintergrund)"""
 
 import streamlit as st
 import pandas as pd
@@ -16,15 +16,15 @@ from openpyxl.utils import get_column_letter
 from openpyxl.styles import PatternFill, Border, Side
 from math import radians, sin, cos, sqrt, asin
 import re
+import matplotlib.pyplot as plt
+import contextily as ctx
 
-# Haversine-Distanz (Fallback)
 def haversine(lon1, lat1, lon2, lat2):
     dlon = radians(lon2 - lon1)
     dlat = radians(lat2 - lat1)
     a = sin(dlat/2)**2 + cos(radians(lat1)) * cos(radians(lat2)) * sin(dlon/2)**2
     return 2 * 6371000 * asin(sqrt(a))
 
-# Funktionen für TSP
 @st.cache_resource
 def get_graph():
     with open("munster_graph.pickle", "rb") as f:
@@ -47,7 +47,6 @@ def tsp_solve_route(graph, stops_df):
     tsp_path = greedy_tsp(G)
     return stops_df.iloc[tsp_path].reset_index(drop=True)
 
-# Export-Funktion, erst beim Download aufrufen
 def make_export(df_assign):
     output = io.BytesIO()
     graph = get_graph()
@@ -289,5 +288,59 @@ def draw_map(df_assign):
         m.fit_bounds(df_assign[['lat','lon']].values.tolist())
     m.to_streamlit(use_container_width=True, height=700)
 
+def export_routes_pdf_osm(df_assign, filename="routen_uebersicht.pdf"):
+    import geopandas as gpd
+    from shapely.geometry import Point, LineString
+    fig, ax = plt.subplots(figsize=(10, 12))
+    colors = ['magenta','cyan','lime','red','orange','yellow','turquoise','purple','pink','blue']
+    teams = sorted(df_assign['team'].dropna().astype(int).unique())
+    for i, t in enumerate(teams):
+        df_t = df_assign[df_assign['team']==t]
+          if 'tsp_order' in df_t.columns:
+            df_t = df_t.sort_values('tsp_order')
+        # Punkte-Liste: (lon, lat)
+        pts = [Point(lon, lat) for lat, lon in df_t[['lat','lon']].values]
+        if len(pts) > 1:
+            line = LineString(pts)
+            gdf = gpd.GeoDataFrame({'team': [t]}, geometry=[line], crs='EPSG:4326')
+            gdf = gdf.to_crs(epsg=3857)
+            gdf.plot(ax=ax, color=colors[i % len(colors)], linewidth=3, label=f'Kontrollbezirk {t}')
+        elif len(pts) == 1:
+            gdf = gpd.GeoDataFrame({'team': [t]}, geometry=pts, crs='EPSG:4326')
+            gdf = gdf.to_crs(epsg=3857)
+            gdf.plot(ax=ax, color=colors[i % len(colors)], marker='o', label=f'Kontrollbezirk {t}')
+    # Marker für alle Wahllokale
+    gdf_points = gpd.GeoDataFrame(
+        df_assign,
+        geometry=gpd.points_from_xy(df_assign['lon'], df_assign['lat']),
+        crs='EPSG:4326'
+    ).to_crs(epsg=3857)
+    gdf_points.plot(ax=ax, color='k', markersize=20, label='Wahllokale')
+    # Wahllokal-Namen als Labels (optional)
+    for idx, row in gdf_points.iterrows():
+        ax.annotate(str(row.get('Wahlraum-B', row['team'])),
+                    (row.geometry.x, row.geometry.y), fontsize=6, color='gray', alpha=0.7)
+    # Hintergrundkarte
+    ctx.add_basemap(ax, crs=gdf_points.crs.to_string(), source=ctx.providers.OpenStreetMap.Mapnik)
+    ax.set_axis_off()
+    ax.set_title("Routenübersicht mit OSM-Hintergrund", fontsize=14)
+    ax.legend(loc="upper right")
+    plt.tight_layout()
+    plt.savefig(filename, bbox_inches='tight', dpi=200)
+    plt.close(fig)
+    return filename
+
 # Karte rendern
 draw_map(df_assign)
+
+# PDF-Export-Button für Übersichtskarte mit OSM-Hintergrund
+with st.sidebar:
+    if st.button('Übersichtskarte als PDF (mit Karte) exportieren'):
+        pdf_file = export_routes_pdf_osm(st.session_state.new_assignments)
+        with open(pdf_file, "rb") as f:
+            st.download_button(
+                label="PDF-Karte herunterladen",
+                data=f,
+                file_name="routen_uebersicht.pdf",
+                mime="application/pdf"
+            )
