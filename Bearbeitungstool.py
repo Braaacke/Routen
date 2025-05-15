@@ -294,7 +294,7 @@ def export_routes_pdf_osm(df_assign, filename="routen_uebersicht.pdf"):
     import matplotlib.pyplot as plt
     import contextily as ctx
     graph = get_graph()
-    fig, ax = plt.subplots(figsize=(13, 16))  # Größer für bessere Lesbarkeit
+    fig, ax = plt.subplots(figsize=(10, 12))  # Größer für bessere Lesbarkeit
     colors = [
         'magenta', 'cyan', 'lime', 'red', 'orange', 'yellow', 'turquoise', 'purple', 'pink', 'blue',
         'black', 'green', 'brown', 'violet', 'gold', 'deepskyblue', 'indigo', 'crimson', 'darkorange', 'teal'
