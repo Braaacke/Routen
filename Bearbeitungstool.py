@@ -253,7 +253,7 @@ with st.sidebar:
             st.session_state.new_assignments.loc[opt.index,'tsp_order'] = range(len(opt))
         st.success('Routen neu berechnet.')
 
-    # Excel-Export
+        # Excel-Export
     export_buf = make_export(st.session_state.new_assignments)
     st.download_button(
         'Kontrollbezirke herunterladen',
@@ -262,10 +262,7 @@ with st.sidebar:
         mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
     )
 
-    # Karte rendern
-draw_map(df_assign)
-
-# PDF-Export Einstellungen
+    # PDF-Export Einstellungen
     st.markdown('### PDF-Export Einstellungen')
     format_choice = st.selectbox('Papierformat', list(FORMAT_SIZES.keys()), index=0)
     orientation = st.radio('Ausrichtung', ['Hochformat','Querformat'], horizontal=True)
@@ -291,3 +288,7 @@ draw_map(df_assign)
                 file_name='routen_uebersicht.pdf',
                 mime='application/pdf'
             )
+
+# Karte rendern
+# ----------------------
+draw_map(df_assign)
