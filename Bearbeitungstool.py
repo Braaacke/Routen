@@ -289,11 +289,25 @@ if 'base_addresses' not in st.session_state:
 df_assign = st.session_state.new_assignments.copy()
 if 'latlong' in df_assign.columns and ('lat' not in df_assign.columns or 'lon' not in df_assign.columns):
     df_assign[['lat','lon']] = df_assign['latlong'].str.split(',',expand=True).astype(float)
-    # District boundaries upload
-    district_file = st.file_uploader('Stadtteil-Grenzen (GeoJSON)', type=['geojson'], key='districts')
+
+# District boundaries upload
+with st.sidebar:
+    district_file = st.file_uploader(
+        'Stadtteil-Grenzen hochladen (GeoJSON oder Shapefile)', type=['geojson','zip','shp'], key='districts'
+    )
     if district_file:
-        st.session_state['districts_gdf'] = gpd.read_file(district_file)
-    # Karte als A3 PDF (600 dpi) exportieren
+        import geopandas as gpd, zipfile, tempfile, os
+        if district_file.name.endswith('.geojson'):
+            st.session_state['districts_gdf'] = gpd.read_file(district_file)
+        else:
+            with tempfile.TemporaryDirectory() as tmp:
+                z = zipfile.ZipFile(district_file)
+                z.extractall(tmp)
+                shp = next((f for f in os.listdir(tmp) if f.endswith('.shp')), None)
+                if shp:
+                    st.session_state['districts_gdf'] = gpd.read_file(os.path.join(tmp, shp))
+
+    # Karte als A3 PDF (600dpi) exportieren
     if st.button('Karte als A3 PDF (600dpi) exportieren'):
         with st.spinner('Erstelle A3-PDF-Karte, bitte warten...'):
             pdf_file = export_routes_pdf_osm(
@@ -310,3 +324,6 @@ if 'latlong' in df_assign.columns and ('lat' not in df_assign.columns or 'lon' n
                 file_name='routen_karte_A3.pdf',
                 mime='application/pdf'
             )
+
+# Karte rendern
+draw_map(df_assign)
