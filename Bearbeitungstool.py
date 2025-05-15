@@ -294,7 +294,7 @@ def export_routes_pdf_osm(df_assign, filename="routen_uebersicht.pdf"):
     import matplotlib.pyplot as plt
     import contextily as ctx
     graph = get_graph()
-    fig, ax = plt.subplots(figsize=(13, 16))  # Groß für Übersicht, aber kleinere Zahlen!
+    fig, ax = plt.subplots(figsize=figsize)
     colors = [
         'magenta', 'cyan', 'lime', 'red', 'orange', 'yellow', 'turquoise', 'purple', 'pink', 'blue',
         'black', 'green', 'brown', 'violet', 'gold', 'deepskyblue', 'indigo', 'crimson', 'darkorange', 'teal'
@@ -352,7 +352,7 @@ def export_routes_pdf_osm(df_assign, filename="routen_uebersicht.pdf"):
     ax.set_title("Routenübersicht Kontrollbezirke", fontsize=22, fontweight='bold', pad=20)
     ax.legend(loc="upper right", fontsize=12)
     plt.tight_layout()
-    plt.savefig(filename, bbox_inches='tight', dpi=200)
+    plt.savefig(filename, bbox_inches='tight', dpi=dpi)
     plt.close(fig)
     return filename
 
@@ -366,8 +366,20 @@ draw_map(df_assign)
 
 # PDF-Export-Button für Übersichtskarte mit OSM-Hintergrund
 with st.sidebar:
+    st.markdown("### PDF-Export Einstellungen")
+    pdf_format = st.selectbox(
+        "Papierformat",
+        list(FORMAT_SIZES.keys()),
+        index=0
+    )
+    pdf_dpi = st.slider("Druckauflösung (dpi)", min_value=72, max_value=600, value=300, step=24)
+
     if st.button('Übersichtskarte als PDF (mit Karte) exportieren'):
-        pdf_file = export_routes_pdf_osm(st.session_state.new_assignments)
+        pdf_file = export_routes_pdf_osm(
+            st.session_state.new_assignments,
+            figsize=FORMAT_SIZES[pdf_format],
+            dpi=pdf_dpi
+        )
         with open(pdf_file, "rb") as f:
             st.download_button(
                 label="PDF-Karte herunterladen",
