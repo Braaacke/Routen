@@ -42,8 +42,25 @@ import geopandas as gpd
 def export_routes_pdf_osm(df_assign, filename="routen_uebersicht.pdf", figsize=(8.27, 11.69), dpi=300, zoom=15):
     import matplotlib.pyplot as plt
     import contextily as ctx
+    from shapely.geometry import Point, LineString
+    import geopandas as gpd
+    # Load graph
     graph = get_graph()
+    # Create figure and axis
     fig, ax = plt.subplots(figsize=figsize)
+    # Add basemap first
+    pts_gdf = gpd.GeoDataFrame(
+        df_assign,
+        geometry=gpd.points_from_xy(df_assign['lon'], df_assign['lat']),
+        crs='EPSG:4326'
+    ).to_crs(epsg=3857)
+    ctx.add_basemap(
+        ax,
+        crs=pts_gdf.crs.to_string(),
+        source=ctx.providers.OpenStreetMap.Mapnik,
+        zoom=zoom
+    )
+    # Plot control district routes
     colors = [
         'magenta','cyan','lime','red','orange','yellow','turquoise','purple','pink','blue',
         'black','green','brown','violet','gold','deepskyblue','indigo','crimson','darkorange','teal'
@@ -56,35 +73,36 @@ def export_routes_pdf_osm(df_assign, filename="routen_uebersicht.pdf", figsize=(
         pts = df_t[['lat','lon']].values.tolist()
         labeled = False
         if len(pts) > 1:
-            nodes = [ox.distance.nearest_nodes(graph, X=lon, Y=lat) for lat,lon in pts]
+            nodes = [ox.distance.nearest_nodes(graph, X=lon, Y=lat) for lat, lon in pts]
             for u, v in zip(nodes[:-1], nodes[1:]):
                 try:
                     path_nodes = nx.shortest_path(graph, u, v, weight='length')
                     coords = [(graph.nodes[n]['x'], graph.nodes[n]['y']) for n in path_nodes]
-                    line = LineString([Point(x,y) for x,y in coords])
+                    line = LineString(coords)
                     gdf_line = gpd.GeoDataFrame(geometry=[line], crs='EPSG:4326').to_crs(epsg=3857)
-                    gdf_line.plot(ax=ax, color=colors[i%len(colors)], linewidth=4)
+                    gdf_line.plot(ax=ax, color=colors[i % len(colors)], linewidth=4, zorder=5)
                     if not labeled:
                         mid = line.interpolate(0.5, normalized=True)
                         mx, my = gpd.GeoSeries([mid], crs='EPSG:4326').to_crs(epsg=3857)[0].coords[0]
                         ax.text(mx, my, str(t), fontsize=10, color='black', fontweight='bold',
-                                ha='center', va='center', bbox=dict(boxstyle='round,pad=0.3', fc='white', alpha=0.85, lw=1))
+                                ha='center', va='center', bbox=dict(boxstyle='round,pad=0.3', fc='white', alpha=0.85, lw=1), zorder=6)
                         labeled = True
                 except Exception as e:
                     print(f"Fehler Route {t}: {e}")
         elif len(pts) == 1:
-            point = Point(pts[0][1], pts[0][0])
-            gdf_pt = gpd.GeoDataFrame({'team':[t]}, geometry=[point], crs='EPSG:4326').to_crs(epsg=3857)
-            gdf_pt.plot(ax=ax, color=colors[i%len(colors)], marker='o')
+            lon, lat = pts[0][1], pts[0][0]
+            gdf_pt = gpd.GeoDataFrame({'team':[t]}, geometry=[Point(lon, lat)], crs='EPSG:4326').to_crs(epsg=3857)
+            gdf_pt.plot(ax=ax, color=colors[i % len(colors)], marker='o', zorder=5)
             x, y = gdf_pt.geometry.iloc[0].coords[0]
-            ax.text(x, y, str(t), fontsize=10, color='black', fontweight='bold',
-                    ha='center', va='center', bbox=dict(boxstyle='round,pad=0.3', fc='white', alpha=0.85, lw=1))
-    pts_gdf = gpd.GeoDataFrame(df_assign, geometry=gpd.points_from_xy(df_assign['lon'],df_assign['lat']), crs='EPSG:4326').to_crs(epsg=3857)
-    pts_gdf.plot(ax=ax, color='k', markersize=24, label='Wahllokale')
-    ctx.add_basemap(ax, crs=pts_gdf.crs.to_string(), source=ctx.providers.OpenStreetMap.Mapnik, zoom=zoom)
+            ax.text(x, y, str(t), fontsize=10, color='black', fontweight='bold', ha='center', va='center',
+                    bbox=dict(boxstyle='round,pad=0.3', fc='white', alpha=0.85, lw=1), zorder=6)
+    # Plot points of stops
+    pts_gdf.plot(ax=ax, color='k', markersize=24, label='Wahllokale', zorder=5)
+    # Title and legend
     ax.set_axis_off()
     ax.set_title('Routenübersicht Kontrollbezirke', fontsize=22, fontweight='bold', pad=20)
     ax.legend(loc='upper right', fontsize=12)
+    # Save with high DPI
     plt.tight_layout()
     plt.savefig(filename, bbox_inches='tight', dpi=dpi)
     plt.close(fig)
