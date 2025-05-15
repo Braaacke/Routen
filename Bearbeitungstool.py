@@ -321,7 +321,7 @@ def export_routes_pdf_osm(df_assign, filename="routen_uebersicht.pdf"):
                         mid_x, mid_y = gpd.GeoSeries([midpoint], crs='EPSG:4326').to_crs(epsg=3857)[0].coords[0]
                         ax.text(
                             mid_x, mid_y, str(t),
-                            fontsize=20, color=colors[i % len(colors)],
+                            fontsize=20, color='black',
                             fontweight='bold', ha='center', va='center',
                             bbox=dict(boxstyle="round,pad=0.4", fc="white", alpha=0.85, lw=2)
                         )
@@ -335,7 +335,7 @@ def export_routes_pdf_osm(df_assign, filename="routen_uebersicht.pdf"):
             x, y = gdf.geometry.iloc[0].x, gdf.geometry.iloc[0].y
             ax.text(
                 x, y, str(t),
-                fontsize=20, color=colors[i % len(colors)], fontweight='bold', ha='center', va='center',
+                fontsize=20, color='black', fontweight='bold', ha='center', va='center',
                 bbox=dict(boxstyle="round,pad=0.4", fc="white", alpha=0.85, lw=2)
             )
 
@@ -355,6 +355,7 @@ def export_routes_pdf_osm(df_assign, filename="routen_uebersicht.pdf"):
     plt.savefig(filename, bbox_inches='tight', dpi=200)
     plt.close(fig)
     return filename
+
 
 
 
