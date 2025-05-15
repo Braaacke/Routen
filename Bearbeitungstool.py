@@ -19,21 +19,6 @@ import re
 import matplotlib.pyplot as plt
 import contextily as ctx
 
-FORMAT_SIZES = {
-    "A4": (8.27, 11.69),
-    "A3": (11.69, 16.54),
-    "A2": (16.54, 23.39),
-    "A1": (23.39, 33.11),
-    "A0": (33.11, 46.81),
-}
-DEFAULT_ZOOMS = {
-    "A4": 16,
-    "A3": 16,
-    "A2": 15,
-    "A1": 14,
-    "A0": 13,
-}
-
 def haversine(lon1, lat1, lon2, lat2):
     dlon = radians(lon2 - lon1)
     dlat = radians(lat2 - lat1)
@@ -308,98 +293,86 @@ def export_routes_pdf_osm(df_assign, filename="routen_uebersicht.pdf", figsize=(
     from shapely.geometry import Point, LineString
     import matplotlib.pyplot as plt
     import contextily as ctx
+    # OSM-Graph laden
     graph = get_graph()
+    # Figure entsprechend gewähltem Format
     fig, ax = plt.subplots(figsize=figsize)
+    # Farben für Kontrollbezirke
     colors = [
-        'magenta', 'cyan', 'lime', 'red', 'orange', 'yellow', 'turquoise', 'purple', 'pink', 'blue',
-        'black', 'green', 'brown', 'violet', 'gold', 'deepskyblue', 'indigo', 'crimson', 'darkorange', 'teal'
+        'magenta','cyan','lime','red','orange','yellow','turquoise','purple','pink','blue',
+        'black','green','brown','violet','gold','deepskyblue','indigo','crimson','darkorange','teal'
     ]
     teams = sorted(df_assign['team'].dropna().astype(int).unique())
+    # Routen für jeden Kontrollbezirk plotten
     for i, t in enumerate(teams):
         df_t = df_assign[df_assign['team'] == t]
         if 'tsp_order' in df_t.columns:
             df_t = df_t.sort_values('tsp_order')
-        pts = df_t[['lat', 'lon']].values.tolist()
-        label_done = False
+        pts = df_t[['lat','lon']].values.tolist()
+        labeled = False
         if len(pts) > 1:
-            nodes = [ox.distance.nearest_nodes(graph, X=lon, Y=lat) for lat, lon in pts]
-            for idx_uv, (u, v) in enumerate(zip(nodes[:-1], nodes[1:])):
+            nodes = [ox.distance.nearest_nodes(graph, X=lon, Y=lat) for lat,lon in pts]
+            for u, v in zip(nodes[:-1], nodes[1:]):
                 try:
                     path_nodes = nx.shortest_path(graph, u, v, weight='length')
-                    path_coords = [(graph.nodes[n]['x'], graph.nodes[n]['y']) for n in path_nodes]
-                    path_line = LineString([Point(lon, lat) for lon, lat in path_coords])
-                    path_gdf = gpd.GeoDataFrame(geometry=[path_line], crs='EPSG:4326').to_crs(epsg=3857)
-                    path_gdf.plot(ax=ax, color=colors[i % len(colors)], linewidth=4)
-                    if not label_done:
-                        midpoint = path_line.interpolate(0.5, normalized=True)
-                        mid_x, mid_y = gpd.GeoSeries([midpoint], crs='EPSG:4326').to_crs(epsg=3857)[0].coords[0]
-                        ax.text(
-                            mid_x, mid_y, str(t),
-                            fontsize=10, color='black',
-                            fontweight='bold', ha='center', va='center',
-                            bbox=dict(boxstyle="round,pad=0.3", fc="white", alpha=0.85, lw=1)
-                        )
-                        label_done = True
+                    coords = [(graph.nodes[n]['x'], graph.nodes[n]['y']) for n in path_nodes]
+                    line = LineString([Point(x,y) for x,y in coords])
+                    gdf_line = gpd.GeoDataFrame(geometry=[line], crs='EPSG:4326').to_crs(epsg=3857)
+                    gdf_line.plot(ax=ax, color=colors[i%len(colors)], linewidth=4)
+                    if not labeled:
+                        mid = line.interpolate(0.5, normalized=True)
+                        mx, my = gpd.GeoSeries([mid], crs='EPSG:4326').to_crs(epsg=3857)[0].coords[0]
+                        ax.text(mx, my, str(t), fontsize=10, color='black', fontweight='bold',
+                                ha='center', va='center', bbox=dict(boxstyle='round,pad=0.3', fc='white', alpha=0.85, lw=1))
+                        labeled = True
                 except Exception as e:
-                    print(f"Fehler bei Kontrollbezirk {t}: {e}")
+                    print(f"Fehler Route {t}: {e}")
         elif len(pts) == 1:
-            gdf = gpd.GeoDataFrame({'team': [t]}, geometry=[Point(df_t['lon'].iloc[0], df_t['lat'].iloc[0])], crs='EPSG:4326')
-            gdf = gdf.to_crs(epsg=3857)
-            gdf.plot(ax=ax, color=colors[i % len(colors)], marker='o')
-            x, y = gdf.geometry.iloc[0].x, gdf.geometry.iloc[0].y
-            ax.text(
-                x, y, str(t),
-                fontsize=10, color='black', fontweight='bold', ha='center', va='center',
-                bbox=dict(boxstyle="round,pad=0.3", fc="white", alpha=0.85, lw=1)
-            )
-    gdf_points = gpd.GeoDataFrame(
-        df_assign,
-        geometry=gpd.points_from_xy(df_assign['lon'], df_assign['lat']),
-        crs='EPSG:4326'
-    ).to_crs(epsg=3857)
-    gdf_points.plot(ax=ax, color='k', markersize=24, label='Wahllokale')
-    ctx.add_basemap(ax, crs=gdf_points.crs.to_string(), source=ctx.providers.OpenStreetMap.Mapnik, zoom=zoom)
+            point = Point(pts[0][1], pts[0][0])
+            gdf_pt = gpd.GeoDataFrame({'team':[t]}, geometry=[point], crs='EPSG:4326').to_crs(epsg=3857)
+            gdf_pt.plot(ax=ax, color=colors[i%len(colors)], marker='o')
+            x, y = gdf_pt.geometry.iloc[0].coords[0]
+            ax.text(x, y, str(t), fontsize=10, color='black', fontweight='bold',
+                    ha='center', va='center', bbox=dict(boxstyle='round,pad=0.3', fc='white', alpha=0.85, lw=1))
+    # Wahllokal-Marker ohne Label
+    pts_gdf = gpd.GeoDataFrame(df_assign, geometry=gpd.points_from_xy(df_assign['lon'],df_assign['lat']), crs='EPSG:4326').to_crs(epsg=3857)
+    pts_gdf.plot(ax=ax, color='k', markersize=24, label='Wahllokale')
+    # Basemap mit gewähltem Zoom
+    ctx.add_basemap(ax, crs=pts_gdf.crs.to_string(), source=ctx.providers.OpenStreetMap.Mapnik, zoom=zoom)
     ax.set_axis_off()
-    ax.set_title("Routenübersicht Kontrollbezirke", fontsize=22, fontweight='bold', pad=20)
-    ax.legend(loc="upper right", fontsize=12)
+    ax.set_title('Routenübersicht Kontrollbezirke', fontsize=22, fontweight='bold', pad=20)
+    ax.legend(loc='upper right', fontsize=12)
     plt.tight_layout()
     plt.savefig(filename, bbox_inches='tight', dpi=dpi)
     plt.close(fig)
     return filename
 
-
-
-
-
-
-
 # Karte rendern
 draw_map(df_assign)
 
-# PDF-Export-Button für Übersichtskarte mit OSM-Hintergrund
+# PDF-Export-Button mit Papierformat, Ausrichtung, Zoom und DPI
 with st.sidebar:
-    st.markdown("### PDF-Export Einstellungen")
-    pdf_format = st.selectbox("Papierformat", list(FORMAT_SIZES.keys()), index=0)
-    orientation = st.radio("Ausrichtung", ("Hochformat", "Querformat"), horizontal=True)
-    pdf_dpi = st.slider("Druckauflösung (dpi)", min_value=72, max_value=600, value=300, step=24)
-    default_zoom = DEFAULT_ZOOMS[pdf_format]
-    zoom = st.slider("Karten-Detailstufe (Zoom)", min_value=10, max_value=19, value=default_zoom)
-    size = FORMAT_SIZES[pdf_format]
-    if orientation == "Querformat":
+    st.markdown('### PDF-Export Einstellungen')
+    # Format und Ausrichtung
+    format_choice = st.selectbox('Papierformat', list(FORMAT_SIZES.keys()), index=0)
+    orientation = st.radio('Ausrichtung', ['Hochformat','Querformat'], horizontal=True)
+    size = FORMAT_SIZES[format_choice]
+    if orientation == 'Querformat':
         size = (size[1], size[0])
-
+    # Auflösung und Zoom
+    pdf_dpi = st.slider('Druckauflösung (dpi)', min_value=72, max_value=600, value=300, step=24)
+    basemap_zoom = st.slider('Karten-Detailstufe (Zoom)', min_value=10, max_value=19, value=DEFAULT_ZOOMS[format_choice])
     if st.button('Übersichtskarte als PDF (mit Karte) exportieren'):
         pdf_file = export_routes_pdf_osm(
             st.session_state.new_assignments,
             figsize=size,
             dpi=pdf_dpi,
-            zoom=zoom
+            zoom=basemap_zoom
         )
-        with open(pdf_file, "rb") as f:
+        with open(pdf_file, 'rb') as f:
             st.download_button(
-                label="PDF-Karte herunterladen",
+                label='PDF-Karte herunterladen',
                 data=f,
-                file_name="routen_uebersicht.pdf",
-                mime="application/pdf"
+                file_name='routen_uebersicht.pdf',
+                mime='application/pdf'
             )
-
