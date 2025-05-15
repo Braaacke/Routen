@@ -294,7 +294,7 @@ if 'latlong' in df_assign.columns and ('lat' not in df_assign.columns or 'lon' n
     if district_file:
         st.session_state['districts_gdf'] = gpd.read_file(district_file)
     # Karte als A3 PDF (600 dpi) exportieren
-    if st.button('Karte als A3 PDF (600dpi) exportieren'): (600dpi) exportieren'):
+    if st.button('Karte als A3 PDF (600dpi) exportieren'):
         with st.spinner('Erstelle A3-PDF-Karte, bitte warten...'):
             pdf_file = export_routes_pdf_osm(
                 st.session_state.new_assignments,
@@ -310,52 +310,3 @@ if 'latlong' in df_assign.columns and ('lat' not in df_assign.columns or 'lon' n
                 file_name='routen_karte_A3.pdf',
                 mime='application/pdf'
             )
-
-# Funktion zum Zeichnen der interaktiven Karte
-def draw_map(df_assign):
-    search_sel = st.session_state.get('search_selection','')
-    if search_sel:
-        addr = search_sel.split(' - ',1)[1]
-        row = df_assign[df_assign['Wahlraum-A']==addr]
-        center = [row.iloc[0]['lat'], row.iloc[0]['lon']] if not row.empty else [df_assign['lat'].mean(), df_assign['lon'].mean()]
-        zoom = 17
-    else:
-        center = [df_assign['lat'].mean(), df_assign['lon'].mean()]
-        zoom = 10
-    m = leafmap.Map(center=center, zoom=zoom)
-    graph = get_graph()
-    colors = ['#FF00FF','#00FFFF','#00FF00','#FF0000','#FFA500','#FFFF00','#00CED1','#DA70D6','#FF69B4','#8A2BE2']
-    for i, t in enumerate(sorted(df_assign['team'].dropna().unique())):
-        df_t = df_assign[df_assign['team']==t]
-        if 'tsp_order' in df_t.columns:
-            df_t = df_t.sort_values('tsp_order')
-        pts = df_t[['lat','lon']].values.tolist()
-        if len(pts)>1:
-            path=[]
-            nodes=[ox.distance.nearest_nodes(graph,X=lon,Y=lat) for lat,lon in pts]
-            for u,v in zip(nodes[:-1],nodes[1:]):
-                try:
-                    p=nx.shortest_path(graph,u,v,weight='length')
-                    path.extend([(graph.nodes[n]['y'],graph.nodes[n]['x']) for n in p])
-                except:
-                    pass
-            folium.PolyLine(path,color=colors[i%len(colors)],weight=6,opacity=0.8,
-                            tooltip=f"Kontrollbezirk {int(t)}").add_to(m)
-        cluster = MarkerCluster(disableClusteringAtZoom=13)
-    for _, r in df_assign.dropna(subset=['lat','lon']).iterrows():
-        popup_html = (
-            f"<div style='white-space: nowrap;'>"
-            f"<b>{r['Wahlraum-B']}</b><br>{r['Wahlraum-A']}<br>Anzahl Räume: {r.get('num_rooms','')}"
-            "</div>"
-        )
-        popup = folium.Popup(popup_html, max_width=300)
-        marker = folium.Marker(location=[r['lat'], r['lon']], popup=popup)
-        cluster.add_child(marker)
-    cluster.add_to(m)
-    if not st.session_state.get('search_selection',''):
-        m.fit_bounds(df_assign[['lat','lon']].values.tolist())
-    m.to_streamlit(use_container_width=True, height=700)
-
-# Karte rendern
-# ----------------------
-draw_map(df_assign)
