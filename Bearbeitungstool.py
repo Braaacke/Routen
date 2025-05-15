@@ -82,7 +82,7 @@ def export_routes_pdf_osm(df_assign, filename="routen_uebersicht.pdf", figsize=(
     ybuf = (maxy-miny)*0.05
     ax.set_xlim(minx - xbuf, maxx + xbuf)
     ax.set_ylim(miny - ybuf, maxy + ybuf)
-            # Add high-resolution basemap tiles (retina) for full OSM background
+    # Add high-resolution basemap tiles (retina) for full OSM background
     provider = ctx.providers.OpenStreetMap.Mapnik.copy()
     provider['tile_scale'] = 2  # double-resolution tiles
     ctx.add_basemap(
@@ -91,11 +91,7 @@ def export_routes_pdf_osm(df_assign, filename="routen_uebersicht.pdf", figsize=(
         source=provider,
         zoom=zoom
     )
-    # Plot network edges lightly on top (optional)
-    # edges = ox.graph_to_gdfs(graph, nodes=False, edges=True)
-    # edges_proj = edges.to_crs(epsg=3857)
-    # edges_proj.plot(ax=ax, linewidth=0.3, edgecolor='lightgray', zorder=2)
-    # Plot lines on top of background tiles
+    # Plot lines on top of background tiles with thinner lines
     colors = [
         'magenta','cyan','lime','red','orange','yellow','turquoise','purple','pink','blue',
         'black','green','brown','violet','gold','deepskyblue','indigo','crimson','darkorange','teal'
@@ -103,18 +99,18 @@ def export_routes_pdf_osm(df_assign, filename="routen_uebersicht.pdf", figsize=(
     for idx, row in gdf_lines.iterrows():
         line = row.geometry
         xs, ys = line.xy
-        ax.plot(xs, ys, color=colors[idx % len(colors)], linewidth=4, zorder=5)
+        ax.plot(xs, ys, color=colors[idx % len(colors)], linewidth=2, zorder=5)  # thinner line
         # label at midpoint
         mid = line.interpolate(0.5, normalized=True)
         mx, my = mid.x, mid.y
-        ax.text(mx, my, str(int(row['team'])), fontsize=10, color='black',
+        ax.text(mx, my, str(int(row['team'])), fontsize=8, color='black',  # smaller font
                 fontweight='bold', ha='center', va='center',
-                bbox=dict(boxstyle='round,pad=0.3', fc='white', alpha=0.85, lw=1), zorder=6)
-    # Plot points
-    pts_gdf.plot(ax=ax, color='k', markersize=24, zorder=7)
+                bbox=dict(boxstyle='round,pad=0.2', fc='white', alpha=0.85, lw=1), zorder=6)
+    # Plot points smaller
+    pts_gdf.plot(ax=ax, color='k', markersize=10, zorder=7)
     # Title and legend
     ax.set_axis_off()
-    ax.set_title('Routenübersicht Kontrollbezirke', fontsize=22, fontweight='bold', pad=20)
+    ax.set_title('Routenübersicht Kontrollbezirke', fontsize=18, fontweight='bold', pad=15)
     # Save high-res
     plt.tight_layout()
     plt.savefig(filename, bbox_inches='tight', dpi=dpi)
