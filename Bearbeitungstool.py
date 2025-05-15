@@ -379,6 +379,21 @@ with st.sidebar:
     pdf_dpi = st.slider('Druckauflösung (dpi)', min_value=72, max_value=600, value=300, step=24)
     basemap_zoom = st.slider('Karten-Detailstufe (Zoom)', min_value=10, max_value=19, value=DEFAULT_ZOOMS[format_choice])
     if st.button('Übersichtskarte als PDF (mit Karte) exportieren'):
+        with st.spinner('Erstelle PDF-Karte, bitte warten...'):
+            pdf_file = export_routes_pdf_osm(
+                st.session_state.new_assignments,
+                figsize=size,
+                dpi=pdf_dpi,
+                zoom=basemap_zoom
+            )
+        st.success('PDF erstellt!')
+        with open(pdf_file, 'rb') as f:
+            st.download_button(
+                label='PDF-Karte herunterladen',
+                data=f,
+                file_name='routen_uebersicht.pdf',
+                mime='application/pdf'
+            ) (mit Karte) exportieren'):
         pdf_file = export_routes_pdf_osm(
             st.session_state.new_assignments,
             figsize=size,
