@@ -252,6 +252,7 @@ with st.sidebar:
     )
     uploaded = st.file_uploader('Alternative Zuweisung importieren', type=['xlsx'])
     if uploaded:
+        # import logic
         imp = pd.read_excel(uploaded, sheet_name=None)
         temp = []
         for sheet, df in imp.items():
@@ -274,12 +275,11 @@ with st.sidebar:
         graph = get_graph()
         for label in sel:
             addr = label.split(' - ',1)[1]
-            idx = st.session_state.new_assignments.index[st.session_state.new_assignments['Wahlraum-A']==addr][0]
+            idx = st.session_state.new_assignments[st.session_state.new_assignments['Wahlraum-A']==addr].index[0]
             st.session_state.new_assignments.at[idx,'team'] = tgt
-        for team_id in {tgt}:
-            df_team = st.session_state.new_assignments[st.session_state.new_assignments['team']==team_id]
-            opt = tsp_solve_route(graph, df_team)
-            st.session_state.new_assignments.loc[opt.index,'tsp_order'] = range(len(opt))
+        df_team = st.session_state.new_assignments[st.session_state.new_assignments['team']==tgt]
+        opt = tsp_solve_route(graph, df_team)
+        st.session_state.new_assignments.loc[opt.index,'tsp_order'] = range(len(opt))
         st.success('Zuweisung gesetzt.')
     if not st.session_state.show_new:
         if st.button('Neuen Kontrollbezirk erstellen'):
@@ -294,7 +294,7 @@ with st.sidebar:
                 graph = get_graph()
                 for label in sel2:
                     addr = label.split(' - ',1)[1]
-                    idx = st.session_state.new_assignments.index[st.session_state.new_assignments['Wahlraum-A']==addr][0]
+                    idx = st.session_state.new_assignments[st.session_state.new_assignments['Wahlraum-A']==addr].index[0]
                     st.session_state.new_assignments.at[idx,'team'] = max_t
                 df_nt = st.session_state.new_assignments[st.session_state.new_assignments['team']==max_t]
                 opt2 = tsp_solve_route(graph, df_nt)
@@ -309,7 +309,7 @@ with st.sidebar:
             st.session_state.new_assignments.loc[opt.index,'tsp_order'] = range(len(opt))
         st.success('Routen neu berechnet.')
 
-                # Excel-Export
+    # Excel-Export
     export_buf = make_export(st.session_state.new_assignments)
     st.download_button(
         'Kontrollbezirke herunterladen',
@@ -318,8 +318,7 @@ with st.sidebar:
         mime='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
     )
 
-        # GeoJSON-Export der Routen
-    # Erstelle GeoDataFrame mit Linien für jeden Kontrollbezirk
+    # GeoJSON-Export der Routen
     line_features = []
     for t in sorted(st.session_state.new_assignments['team'].dropna().astype(int).unique()):
         df_t = st.session_state.new_assignments[st.session_state.new_assignments['team']==t]
