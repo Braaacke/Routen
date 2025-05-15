@@ -46,20 +46,14 @@ def export_routes_pdf_osm(df_assign, filename="routen_uebersicht.pdf", figsize=(
     import geopandas as gpd
     # Load graph
     graph = get_graph()
-    # Create figure and axis
-    fig, ax = plt.subplots(figsize=figsize)
-    # Add basemap first
+    # Convert stops to Web Mercator GeoDataFrame
     pts_gdf = gpd.GeoDataFrame(
         df_assign,
         geometry=gpd.points_from_xy(df_assign['lon'], df_assign['lat']),
         crs='EPSG:4326'
     ).to_crs(epsg=3857)
-    ctx.add_basemap(
-        ax,
-        crs=pts_gdf.crs.to_string(),
-        source=ctx.providers.OpenStreetMap.Mapnik,
-        zoom=zoom
-    )
+    # Create figure
+    fig, ax = plt.subplots(figsize=figsize)
     # Plot control district routes
     colors = [
         'magenta','cyan','lime','red','orange','yellow','turquoise','purple','pink','blue',
@@ -80,29 +74,35 @@ def export_routes_pdf_osm(df_assign, filename="routen_uebersicht.pdf", figsize=(
                     coords = [(graph.nodes[n]['x'], graph.nodes[n]['y']) for n in path_nodes]
                     line = LineString(coords)
                     gdf_line = gpd.GeoDataFrame(geometry=[line], crs='EPSG:4326').to_crs(epsg=3857)
-                    gdf_line.plot(ax=ax, color=colors[i % len(colors)], linewidth=4, zorder=5)
+                    gdf_line.plot(ax=ax, color=colors[i % len(colors)], linewidth=4, zorder=3)
                     if not labeled:
                         mid = line.interpolate(0.5, normalized=True)
                         mx, my = gpd.GeoSeries([mid], crs='EPSG:4326').to_crs(epsg=3857)[0].coords[0]
                         ax.text(mx, my, str(t), fontsize=10, color='black', fontweight='bold',
-                                ha='center', va='center', bbox=dict(boxstyle='round,pad=0.3', fc='white', alpha=0.85, lw=1), zorder=6)
+                                ha='center', va='center', bbox=dict(boxstyle='round,pad=0.3', fc='white', alpha=0.85, lw=1), zorder=4)
                         labeled = True
                 except Exception as e:
                     print(f"Fehler Route {t}: {e}")
         elif len(pts) == 1:
             lon, lat = pts[0][1], pts[0][0]
             gdf_pt = gpd.GeoDataFrame({'team':[t]}, geometry=[Point(lon, lat)], crs='EPSG:4326').to_crs(epsg=3857)
-            gdf_pt.plot(ax=ax, color=colors[i % len(colors)], marker='o', zorder=5)
+            gdf_pt.plot(ax=ax, color=colors[i % len(colors)], marker='o', zorder=3)
             x, y = gdf_pt.geometry.iloc[0].coords[0]
             ax.text(x, y, str(t), fontsize=10, color='black', fontweight='bold', ha='center', va='center',
-                    bbox=dict(boxstyle='round,pad=0.3', fc='white', alpha=0.85, lw=1), zorder=6)
+                    bbox=dict(boxstyle='round,pad=0.3', fc='white', alpha=0.85, lw=1), zorder=4)
     # Plot points of stops
     pts_gdf.plot(ax=ax, color='k', markersize=24, label='Wahllokale', zorder=5)
-    # Title and legend
+    # Add basemap now that data extents are set
+    ctx.add_basemap(
+        ax,
+        crs=pts_gdf.crs.to_string(),
+        source=ctx.providers.OpenStreetMap.Mapnik,
+        zoom=zoom
+    )
+    # Final touches
     ax.set_axis_off()
     ax.set_title('Routenübersicht Kontrollbezirke', fontsize=22, fontweight='bold', pad=20)
     ax.legend(loc='upper right', fontsize=12)
-    # Save with high DPI
     plt.tight_layout()
     plt.savefig(filename, bbox_inches='tight', dpi=dpi)
     plt.close(fig)
