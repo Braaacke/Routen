@@ -89,16 +89,19 @@ def export_routes_pdf_osm(df_assign, filename="routen_uebersicht.pdf", figsize=(
         source=ctx.providers.OpenStreetMap.Mapnik,
         zoom=zoom
     )
-    # Plot lines and points on top
+    # Plot lines on top of basemap
     colors = [
         'magenta','cyan','lime','red','orange','yellow','turquoise','purple','pink','blue',
         'black','green','brown','violet','gold','deepskyblue','indigo','crimson','darkorange','teal'
     ]
-    for i, row in gdf_lines.iterrows():
-        row.geometry.plot(ax=ax, color=colors[i % len(colors)], linewidth=4, zorder=5)
+    for idx, row in gdf_lines.iterrows():
+        line = row.geometry
+        xs, ys = line.xy
+        ax.plot(xs, ys, color=colors[idx % len(colors)], linewidth=4, zorder=5)
         # label at midpoint
-        mid = row.geometry.interpolate(0.5, normalized=True)
-        ax.text(mid.x, mid.y, str(int(row['team'])), fontsize=10, color='black',
+        mid = line.interpolate(0.5, normalized=True)
+        mx, my = mid.x, mid.y
+        ax.text(mx, my, str(int(row['team'])), fontsize=10, color='black',
                 fontweight='bold', ha='center', va='center',
                 bbox=dict(boxstyle='round,pad=0.3', fc='white', alpha=0.85, lw=1), zorder=6)
     # Plot points
