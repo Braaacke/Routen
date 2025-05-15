@@ -344,6 +344,24 @@ with st.sidebar:
         mime='application/geo+json'
     )
 
+    # Karte als A3 PDF (600 dpi) exportieren
+    if st.button('Karte als A3 PDF (600dpi) exportieren'):
+        with st.spinner('Erstelle A3-PDF-Karte, bitte warten...'):
+            pdf_file = export_routes_pdf_osm(
+                st.session_state.new_assignments,
+                figsize=FORMAT_SIZES['A3'],
+                dpi=600,
+                zoom=DEFAULT_ZOOMS['A3']
+            )
+        st.success('A3 PDF-Karte erstellt!')
+        with open(pdf_file, 'rb') as f:
+            st.download_button(
+                label='A3 PDF-Karte herunterladen',
+                data=f,
+                file_name='routen_karte_A3.pdf',
+                mime='application/pdf'
+            )
+
 # Funktion zum Zeichnen der interaktiven Karte
 def draw_map(df_assign):
     search_sel = st.session_state.get('search_selection','')
