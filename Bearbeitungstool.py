@@ -297,7 +297,7 @@ def draw_map(df_assign):
         m.fit_bounds(df_assign[['lat','lon']].values.tolist())
     m.to_streamlit(use_container_width=True, height=700)
 
-def export_routes_pdf_osm(df_assign, filename="routen_uebersicht.pdf", figsize=(8.27, 11.69), dpi=300):
+def export_routes_pdf_osm(df_assign, filename="routen_uebersicht.pdf", figsize=(8.27, 11.69), dpi=300, basemap_zoom=15):
     import geopandas as gpd
     from shapely.geometry import Point, LineString
     import matplotlib.pyplot as plt
@@ -309,7 +309,6 @@ def export_routes_pdf_osm(df_assign, filename="routen_uebersicht.pdf", figsize=(
         'black', 'green', 'brown', 'violet', 'gold', 'deepskyblue', 'indigo', 'crimson', 'darkorange', 'teal'
     ]
     teams = sorted(df_assign['team'].dropna().astype(int).unique())
-
     for i, t in enumerate(teams):
         df_t = df_assign[df_assign['team'] == t]
         if 'tsp_order' in df_t.columns:
@@ -330,7 +329,7 @@ def export_routes_pdf_osm(df_assign, filename="routen_uebersicht.pdf", figsize=(
                         mid_x, mid_y = gpd.GeoSeries([midpoint], crs='EPSG:4326').to_crs(epsg=3857)[0].coords[0]
                         ax.text(
                             mid_x, mid_y, str(t),
-                            fontsize=10, color='black',  # <- jetzt kleiner!
+                            fontsize=10, color='black',
                             fontweight='bold', ha='center', va='center',
                             bbox=dict(boxstyle="round,pad=0.3", fc="white", alpha=0.85, lw=1)
                         )
@@ -347,16 +346,13 @@ def export_routes_pdf_osm(df_assign, filename="routen_uebersicht.pdf", figsize=(
                 fontsize=10, color='black', fontweight='bold', ha='center', va='center',
                 bbox=dict(boxstyle="round,pad=0.3", fc="white", alpha=0.85, lw=1)
             )
-
-    # Marker für alle Wahllokale (ohne Labels)
     gdf_points = gpd.GeoDataFrame(
         df_assign,
         geometry=gpd.points_from_xy(df_assign['lon'], df_assign['lat']),
         crs='EPSG:4326'
     ).to_crs(epsg=3857)
     gdf_points.plot(ax=ax, color='k', markersize=24, label='Wahllokale')
-
-    ctx.add_basemap(ax, crs=gdf_points.crs.to_string(), source=ctx.providers.OpenStreetMap.Mapnik)
+    ctx.add_basemap(ax, crs=gdf_points.crs.to_string(), source=ctx.providers.OpenStreetMap.Mapnik, zoom=basemap_zoom)
     ax.set_axis_off()
     ax.set_title("Routenübersicht Kontrollbezirke", fontsize=22, fontweight='bold', pad=20)
     ax.legend(loc="upper right", fontsize=12)
@@ -364,6 +360,7 @@ def export_routes_pdf_osm(df_assign, filename="routen_uebersicht.pdf", figsize=(
     plt.savefig(filename, bbox_inches='tight', dpi=dpi)
     plt.close(fig)
     return filename
+
 
 
 
@@ -382,12 +379,14 @@ with st.sidebar:
         index=0
     )
     pdf_dpi = st.slider("Druckauflösung (dpi)", min_value=72, max_value=600, value=300, step=24)
+    basemap_zoom = st.slider("Karten-Detailstufe (Zoom)", min_value=10, max_value=19, value=15)
 
     if st.button('Übersichtskarte als PDF (mit Karte) exportieren'):
         pdf_file = export_routes_pdf_osm(
             st.session_state.new_assignments,
             figsize=FORMAT_SIZES[pdf_format],
-            dpi=pdf_dpi
+            dpi=pdf_dpi,
+            basemap_zoom=basemap_zoom
         )
         with open(pdf_file, "rb") as f:
             st.download_button(
@@ -396,3 +395,4 @@ with st.sidebar:
                 file_name="routen_uebersicht.pdf",
                 mime="application/pdf"
             )
+
