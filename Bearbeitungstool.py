@@ -104,10 +104,7 @@ def export_routes_pdf_osm(df_assign, filename="routen_uebersicht.pdf", figsize=(
                 fontsize=6, color='gray', ha='center', va='center', zorder=3
             )
     except Exception:
-        pass,
-        source=provider,
-        zoom=zoom
-    )
+        pass
     # Plot lines on top of background tiles with thinner lines
     colors = [
         'magenta','cyan','lime','red','orange','yellow','turquoise','purple','pink','blue',
